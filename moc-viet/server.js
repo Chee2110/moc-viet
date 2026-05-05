@@ -10,7 +10,7 @@ const fs2          = require('fs');
 const WebSocket    = require('ws');
 const ExcelJS      = require('exceljs');
 const nodemailer   = require('nodemailer');
-const { initDatabase, query, queryOne } = require('./database');
+const { initDatabase, query, queryOne, getPool } = require('./database');
 
 let googleClient = null;
 try {
