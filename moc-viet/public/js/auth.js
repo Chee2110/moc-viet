@@ -147,4 +147,47 @@ function initDashNotif() {
     if (!e.target.closest('#notif-toggle') && !e.target.closest('#notif-dropdown'))
       document.getElementById('notif-dropdown')?.classList.remove('open');
   });
+  initMobileMenu();
+}
+
+function initMobileMenu() {
+  const sidebar = document.querySelector('.dash-sidebar');
+  if (!sidebar) return;
+
+  const btn = document.createElement('button');
+  btn.className = 'mob-menu-btn';
+  btn.setAttribute('aria-label', 'Mở menu');
+  btn.innerHTML = '&#9776;';
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'mob-backdrop';
+
+  document.body.appendChild(btn);
+  document.body.appendChild(backdrop);
+
+  function openSidebar() {
+    sidebar.classList.add('mob-open');
+    backdrop.classList.add('open');
+    btn.innerHTML = '&#10005;';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('mob-open');
+    backdrop.classList.remove('open');
+    btn.innerHTML = '&#9776;';
+    document.body.style.overflow = '';
+  }
+
+  btn.addEventListener('click', () =>
+    sidebar.classList.contains('mob-open') ? closeSidebar() : openSidebar()
+  );
+  backdrop.addEventListener('click', closeSidebar);
+
+  sidebar.querySelectorAll('a').forEach(link =>
+    link.addEventListener('click', closeSidebar)
+  );
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) closeSidebar();
+  });
 }
