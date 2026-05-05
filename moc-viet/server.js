@@ -979,6 +979,45 @@ app.patch('/api/admin/users/:id/role', adminAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+app.delete('/api/admin/users/:id', adminAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const user = await queryOne('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    if (user.role === 'admin') return res.status(400).json({ message: 'Không thể xóa tài khoản Admin' });
+    if (userId === req.user.id) return res.status(400).json({ message: 'Không thể xóa tài khoản của chính mình' });
+
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM notifications WHERE user_id=$1', [userId]);
+      await client.query('DELETE FROM cart_items   WHERE user_id=$1', [userId]);
+      await client.query('DELETE FROM favorites    WHERE user_id=$1', [userId]);
+      const shops = await client.query('SELECT id FROM shops WHERE user_id=$1', [userId]);
+      for (const shop of shops.rows) {
+        const prods = await client.query('SELECT id FROM products WHERE shop_id=$1', [shop.id]);
+        const prodIds = prods.rows.map(p => p.id);
+        if (prodIds.length) {
+          await client.query('DELETE FROM deals      WHERE product_id=ANY($1)', [prodIds]);
+          await client.query('DELETE FROM orders     WHERE product_id=ANY($1)', [prodIds]);
+          await client.query('DELETE FROM favorites  WHERE product_id=ANY($1)', [prodIds]);
+          await client.query('DELETE FROM cart_items WHERE product_id=ANY($1)', [prodIds]);
+          await client.query('DELETE FROM products   WHERE id=ANY($1)', [prodIds]);
+        }
+      }
+      await client.query('DELETE FROM shops WHERE user_id=$1', [userId]);
+      await client.query('DELETE FROM users WHERE id=$1', [userId]);
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // ── Admin broadcast
 app.post('/api/admin/notifications/broadcast', adminAuth, async (req, res) => {
   try {

@@ -108,6 +108,27 @@
   </div>
 </div>
 
+<!-- Delete user modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Xóa người dùng</div>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;font-size:14px">Bạn có chắc muốn xóa tài khoản:</p>
+      <p id="delete-modal-email" style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:16px"></p>
+      <div class="alert alert-danger" style="font-size:13px">
+        Hành động này sẽ xóa vĩnh viễn tài khoản, cửa hàng, sản phẩm và toàn bộ dữ liệu liên quan. Không thể hoàn tác.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Huỷ</button>
+      <button class="btn btn-sm" id="delete-confirm-btn" style="background:#dc2626;color:#fff;padding:10px 22px;border-radius:9999px;font-weight:600" onclick="confirmDelete()">Xóa vĩnh viễn</button>
+    </div>
+  </div>
+</div>
+
 <!-- Broadcast modal -->
 <div class="modal-overlay" id="broadcast-modal">
   <div class="modal" style="max-width:480px">
@@ -214,7 +235,10 @@ function renderUsers(users) {
           </div>
         </div>
         <div class="shop-actions">
-          ${u.id !== Number(me.id) ? `<button class="btn btn-primary btn-sm" onclick="openRoleModal(${u.id},'${u.role}','${u.email}')">Thay đổi vai trò</button>` : '<span class="badge badge-secondary">Tài khoản của bạn</span>'}
+          ${u.id !== Number(me.id)
+            ? `<button class="btn btn-primary btn-sm" onclick="openRoleModal(${u.id},'${u.role}','${u.email}')">Thay đổi vai trò</button>
+               ${u.role !== 'admin' ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff" onclick="deleteUser(${u.id},'${u.email}')">Xóa</button>` : ''}`
+            : '<span class="badge badge-secondary">Tài khoản của bạn</span>'}
         </div>
       </div>
     </div>`).join('')}</div>`;
@@ -261,6 +285,31 @@ async function confirmRoleChange() {
   if (res?.success) {
     toast('Đã cập nhật vai trò', 'success');
     closeRoleModal();
+    await loadUsers();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+let deleteTarget = null;
+function deleteUser(userId, email) {
+  deleteTarget = userId;
+  document.getElementById('delete-modal-email').textContent = email;
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+  deleteTarget = null;
+}
+async function confirmDelete() {
+  if (!deleteTarget) return;
+  const btn = document.getElementById('delete-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Đang xóa...';
+  const res = await api.delete(`/api/admin/users/${deleteTarget}`);
+  btn.disabled = false; btn.textContent = 'Xóa vĩnh viễn';
+  if (res?.success) {
+    toast('Đã xóa người dùng thành công', 'success');
+    closeDeleteModal();
     await loadUsers();
   } else {
     toast(res?.message || 'Có lỗi xảy ra', 'error');
