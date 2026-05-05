@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Đăng ký — Mộc Việt</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><img src="/img/logo.png" alt="Mộc Việt" class="brand-logo"></a>
+    <div class="navbar-right" id="navbar-right"></div>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo"><img src="/img/logo.png" alt="Mộc Việt" class="auth-logo-img"></div>
+    <h1 class="auth-title">Khởi đầu hành trình</h1>
+    <p class="auth-subtitle">Cùng chúng tôi lan tỏa vẻ đẹp truyền thống Việt.</p>
+
+    <div class="role-tabs">
+      <button class="role-tab active" onclick="selectRole('buyer', this)">Mua hàng</button>
+      <button class="role-tab" onclick="selectRole('seller', this)">Bán hàng</button>
+    </div>
+
+    <form onsubmit="register(event)">
+      <input type="hidden" id="role-input" value="buyer">
+      <div class="form-group">
+        <label class="form-label">Họ và tên</label>
+        <input type="text" id="full_name" class="form-control" placeholder="Nguyễn Văn A">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email <span class="req">*</span></label>
+        <input type="email" id="email" class="form-control" placeholder="ban@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Số điện thoại</label>
+        <input type="tel" id="phone" class="form-control" placeholder="0901234567">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu <span class="req">*</span></label>
+        <input type="password" id="password" class="form-control" placeholder="Ít nhất 6 ký tự" required minlength="6">
+      </div>
+
+      <div id="seller-fields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Tên shop <span class="req">*</span></label>
+          <input type="text" id="shop_name" class="form-control" placeholder="Tên shop của bạn">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mô tả shop</label>
+          <textarea id="shop_desc" class="form-control" rows="2" placeholder="Giới thiệu về shop của bạn..."></textarea>
+        </div>
+        <div class="alert alert-info" style="font-size:13px;margin-bottom:16px">
+          Shop sẽ cần Admin duyệt trước khi bán hàng. Chúng tôi sẽ thông báo qua hệ thống.
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="register-btn">Đăng ký</button>
+    </form>
+
+    <div class="auth-footer">Đã có tài khoản? <a href="/login.html" style="font-weight:700">Đăng nhập</a></div>
+    <div class="auth-footer" style="margin-top:8px">
+      <a href="/" style="color:var(--text-muted);font-size:13px">Quay lại trang chủ</a>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+function selectRole(role, btn) {
+  document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('role-input').value = role;
+  document.getElementById('seller-fields').style.display = role === 'seller' ? 'block' : 'none';
+}
+
+async function register(e) {
+  e.preventDefault();
+  const role      = document.getElementById('role-input').value;
+  const email     = document.getElementById('email').value.trim();
+  const password  = document.getElementById('password').value;
+  const full_name = document.getElementById('full_name').value.trim();
+  const phone     = document.getElementById('phone').value.trim();
+  const shop_name = document.getElementById('shop_name')?.value.trim();
+  const shop_desc = document.getElementById('shop_desc')?.value.trim();
+
+  if (role === 'seller' && !shop_name) return toast('Vui lòng nhập tên shop', 'error');
+
+  const btn = document.getElementById('register-btn');
+  btn.disabled = true; btn.textContent = 'Đang xử lý...';
+
+  const res = await api.post('/api/auth/register', { email, password, full_name, phone, role, shop_name, shop_description: shop_desc });
+  btn.disabled = false; btn.textContent = 'Đăng ký';
+
+  if (!res) return;
+  if (res.success) {
+    toast(res.message || 'Đăng ký thành công!', 'success');
+    setTimeout(() => window.location.href = '/login.html', 1500);
+  } else {
+    toast(res.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+</script>
+</body>
+</html>

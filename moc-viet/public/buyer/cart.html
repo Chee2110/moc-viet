@@ -1,0 +1,314 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Giỏ hàng — Mộc Việt</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-name" class="dash-user-email">...</div>
+      <div class="dash-user-role">Người mua</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/buyer/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="opacity:.9" alt=""></span>Đơn hàng của tôi</a>
+      <a href="/buyer/cart.html" class="active"><span class="nav-icon"><img src="/icons/cart.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Giỏ hàng</a>
+      <a href="/buyer/wishlist.html"><span class="nav-icon"><img src="/icons/wishlist.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Yêu thích</a>
+      <a href="/buyer/track.html"><span class="nav-icon"><img src="/icons/clock.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tra cứu đơn</a>
+      <div class="dash-nav-label" style="margin-top:16px">Khác</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Giỏ hàng</div>
+        <div class="dash-subtitle">Xem lại sản phẩm trước khi đặt hàng</div>
+      </div>
+    </div>
+
+    <div id="cart-content">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkout-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Thông tin giao hàng</div>
+      <button class="modal-close" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Họ và tên <span class="req">*</span></label>
+        <input type="text" id="co-name" class="form-control" placeholder="Nguyễn Văn A">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Số điện thoại <span class="req">*</span></label>
+        <input type="tel" id="co-phone" class="form-control" placeholder="0901234567">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tỉnh / Thành phố <span class="req">*</span></label>
+        <select id="co-province" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quận / Huyện <span class="req">*</span></label>
+        <select id="co-district" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Địa chỉ cụ thể <span class="req">*</span></label>
+        <textarea id="co-detail-addr" class="form-control" rows="2" placeholder="Số nhà, tên đường, phường/xã..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ghi chú (tuỳ chọn)</label>
+        <input type="text" id="co-note" class="form-control" placeholder="Yêu cầu đặc biệt...">
+      </div>
+
+      <div class="price-box" style="margin-top:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px">TÓM TẮT ĐƠN HÀNG</div>
+        <div id="co-summary" style="font-size:14px"></div>
+        <div class="summary-total" style="margin-top:12px">
+          <span>Tổng cộng</span>
+          <span id="co-total" style="color:var(--primary)"></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCheckout()">Huỷ</button>
+      <button class="btn btn-primary" onclick="placeOrders()" id="place-btn">Xác nhận đặt hàng</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="modal-body" style="padding:40px">
+      <div style="font-size:4rem;margin-bottom:16px"></div>
+      <h2 style="font-size:1.3rem;margin-bottom:8px">Đặt hàng thành công!</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px">
+        Đã tạo <strong id="order-count-display"></strong> đơn hàng. Seller sẽ xác nhận sớm nhất.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <a href="/" class="btn btn-outline">Tiếp tục mua sắm</a>
+        <a href="/buyer/orders.html" class="btn btn-primary">Xem đơn hàng</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/vietnamloc.js"></script>
+<script>
+requireRole('buyer');
+const user = getUser();
+document.getElementById('sidebar-name').textContent = user.full_name || user.email;
+
+let cartItems = [];
+
+window.onload = () => loadCart();
+
+async function loadCart() {
+  const el = document.getElementById('cart-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  cartItems = await api.get('/api/cart') || [];
+  renderCart();
+}
+
+function calcTotal() {
+  return cartItems.reduce((s, i) => s + (i.discounted_price || i.price) * i.quantity, 0);
+}
+
+function renderCart() {
+  const el = document.getElementById('cart-content');
+  if (!cartItems.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"></div>
+      <p>Giỏ hàng của bạn đang trống</p>
+      <a href="/" class="btn btn-primary mt-4">Khám phá sản phẩm</a>
+    </div>`;
+    return;
+  }
+
+  const total = calcTotal();
+  el.innerHTML = `
+    <div class="cart-layout">
+      <div>
+        <div class="cart-list">
+          <div class="cart-list-header">
+            <span>Sản phẩm (${cartItems.length})</span>
+            <button class="btn btn-ghost btn-sm" onclick="clearCart()">Xoá tất cả</button>
+          </div>
+          ${cartItems.map(item => cartItemHtml(item)).join('')}
+        </div>
+      </div>
+      <div class="cart-summary">
+        <h3>Tóm tắt đơn hàng</h3>
+        ${cartItems.map(i => `
+          <div class="summary-row">
+            <span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.name} x${i.quantity}</span>
+            <span style="font-weight:600">${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
+          </div>`).join('')}
+        <div class="summary-total">
+          <span>Tổng cộng</span>
+          <span>${fmtPrice(total)}</span>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg mt-4" onclick="openCheckout()">
+          Tiến hành đặt hàng
+        </button>
+      </div>
+    </div>`;
+}
+
+function cartItemHtml(item) {
+  const ep = item.discounted_price || item.price;
+  const imgHtml = item.image_url
+    ? `<img src="${item.image_url}" alt="${item.name}" class="cart-item-img" onerror="this.style.display='none'">`
+    : `<div class="cart-item-img" style="display:flex;align-items:center;justify-content:center;font-size:2rem"></div>`;
+  const dealBadge = item.discount_percent
+    ? `<span class="badge badge-danger" style="margin-left:6px">-${item.discount_percent}%</span>` : '';
+  return `<div class="cart-item" id="cart-item-${item.id}">
+    ${imgHtml}
+    <div class="cart-item-info">
+      <div class="cart-item-name"><a href="/product.html?id=${item.product_id}" style="color:inherit">${item.name}</a></div>
+      <div class="cart-item-shop">${item.shop_name}</div>
+      <div class="cart-item-price">${fmtPrice(ep)}${dealBadge}
+        ${item.discount_percent ? `<span style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-left:6px">${fmtPrice(item.price)}</span>` : ''}</div>
+      <div class="qty-control mt-2">
+        <button class="qty-btn" onclick="updateQty(${item.id}, ${item.quantity-1})">−</button>
+        <input type="number" class="qty-input" value="${item.quantity}" min="1" max="${item.stock_quantity||99}"
+          onchange="updateQty(${item.id}, parseInt(this.value)||1)">
+        <button class="qty-btn" onclick="updateQty(${item.id}, ${item.quantity+1})">+</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div class="cart-item-subtotal">${fmtPrice(ep * item.quantity)}</div>
+      <button class="btn btn-ghost btn-sm" onclick="removeItem(${item.id})">Xoá</button>
+    </div>
+  </div>`;
+}
+
+async function updateQty(cartItemId, newQty) {
+  if (newQty < 1) { removeItem(cartItemId); return; }
+  const item = cartItems.find(i => i.id === cartItemId);
+  if (!item) return;
+  const max = item.stock_quantity || 99;
+  newQty = Math.min(newQty, max);
+  const res = await api.patch(`/api/cart/${cartItemId}`, { quantity: newQty });
+  if (res && res.success) {
+    item.quantity = newQty;
+    renderCart();
+    updateCartBadge();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+    loadCart();
+  }
+}
+
+async function removeItem(cartItemId) {
+  const res = await api.delete(`/api/cart/${cartItemId}`);
+  if (res && res.success) {
+    cartItems = cartItems.filter(i => i.id !== cartItemId);
+    renderCart();
+    updateCartBadge();
+    toast('Đã xoá khỏi giỏ hàng', 'info');
+  }
+}
+
+async function clearCart() {
+  if (!confirm('Xoá tất cả sản phẩm khỏi giỏ hàng?')) return;
+  const res = await api.delete('/api/cart');
+  if (res && res.success) {
+    cartItems = [];
+    renderCart();
+    updateCartBadge();
+    toast('Đã xoá giỏ hàng', 'info');
+  }
+}
+
+function openCheckout() {
+  if (!cartItems.length) return;
+  /* Pre-fill user info */
+  document.getElementById('co-name').value = user.full_name || '';
+  document.getElementById('co-phone').value = user.phone || '';
+  document.getElementById('co-detail-addr').value = '';
+  document.getElementById('co-note').value = '';
+
+  /* Init Locations */
+  initVietnamLoc('co-province', 'co-district');
+
+  /* Summary */
+  document.getElementById('co-summary').innerHTML = cartItems.map(i =>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">
+      <span>${i.name} × ${i.quantity}</span>
+      <span>${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
+    </div>`).join('');
+  document.getElementById('co-total').textContent = fmtPrice(calcTotal());
+
+  document.getElementById('checkout-modal').classList.add('open');
+}
+
+function closeCheckout() {
+  document.getElementById('checkout-modal').classList.remove('open');
+}
+
+async function placeOrders() {
+  const name  = document.getElementById('co-name').value.trim();
+  const phone = document.getElementById('co-phone').value.trim();
+  const prov  = document.getElementById('co-province').value;
+  const dist  = document.getElementById('co-district').value;
+  const det   = document.getElementById('co-detail-addr').value.trim();
+  const note  = document.getElementById('co-note').value.trim();
+
+  if (!name || name.length < 2)  return toast('Vui lòng nhập họ tên', 'error');
+  if (!/^0[3-9]\d{8}$/.test(phone)) return toast('Số điện thoại không hợp lệ (VD: 0901234567)', 'error');
+  if (!prov) return toast('Vui lòng chọn Tỉnh/Thành phố', 'error');
+  if (!dist) return toast('Vui lòng chọn Quận/Huyện', 'error');
+  if (!det || det.length < 5) return toast('Vui lòng nhập địa chỉ cụ thể (số nhà, đường...)', 'error');
+
+  const addr = `${det}, ${dist}, ${prov}`;
+
+  const btn = document.getElementById('place-btn');
+  btn.disabled = true; btn.textContent = 'Đang xử lý...';
+
+  try {
+    let successCount = 0;
+    for (const item of cartItems) {
+      const res = await api.post('/api/orders', {
+        product_id: item.product_id,
+        full_name: name, phone, address: addr, quantity: item.quantity, note
+      });
+      if (res && res.success) successCount++;
+    }
+
+    if (successCount > 0) {
+      await api.delete('/api/cart');
+      cartItems = [];
+      updateCartBadge();
+      closeCheckout();
+      document.getElementById('order-count-display').textContent = successCount + ' đơn hàng';
+      document.getElementById('success-modal').classList.add('open');
+    } else {
+      toast('Có lỗi xảy ra, vui lòng thử lại', 'error');
+    }
+  } catch {
+    toast('Lỗi kết nối, vui lòng thử lại', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Xác nhận đặt hàng';
+  }
+}
+</script>
+</body>
+</html>

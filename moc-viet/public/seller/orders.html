@@ -1,0 +1,330 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quản lý Đơn hàng — Mộc Việt Seller</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Đối tác Seller</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản lý</div>
+      <a href="/seller/dashboard.html"><span class="nav-icon"><img src="/icons/dashboard.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tổng quan</a>
+      <a href="/seller/products.html"><span class="nav-icon"><img src="/icons/delivery.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Sản phẩm</a>
+      <a href="/seller/orders.html" class="active"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Đơn hàng</a>
+      <a href="/seller/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Doanh thu</a>
+      <a href="/seller/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Danh mục</a>
+      <div class="dash-nav-label" style="margin-top:16px">Tài khoản</div>
+      <a href="/seller/profile.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Hồ sơ cá nhân</a>
+      <div class="dash-nav-label" style="margin-top:16px">Cửa hàng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Quản lý Đơn hàng</div>
+        <div class="dash-subtitle">Theo dõi và xử lý đơn đặt hàng từ khách</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="position:relative">
+          <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" style="width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:none;border-radius:50%;cursor:pointer;position:relative">
+            <img src="/icons/notification.png" style="width:24px;height:24px;object-fit:contain;filter:brightness(0) invert(.35);opacity:.85" alt="thông báo">
+            <span class="notif-badge" id="notif-badge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:600">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar" style="flex-wrap:wrap;gap:10px">
+      <div class="filter-tabs" id="status-tabs">
+        <button class="filter-tab active" data-status="all" onclick="setStatus('all',this)">Tất cả</button>
+        <button class="filter-tab" data-status="pending"   onclick="setStatus('pending',this)">Chờ xác nhận</button>
+        <button class="filter-tab" data-status="approved"  onclick="setStatus('approved',this)">Đã duyệt</button>
+        <button class="filter-tab" data-status="shipping"  onclick="setStatus('shipping',this)">Đang giao</button>
+        <button class="filter-tab" data-status="completed" onclick="setStatus('completed',this)">Hoàn thành</button>
+        <button class="filter-tab" data-status="rejected"  onclick="setStatus('rejected',this)">Từ chối</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+        <input type="text" id="search" placeholder="Tìm khách hàng, SĐT..." oninput="filterOrders()" style="min-width:200px">
+        <button class="btn btn-primary" onclick="exportOrders()" id="export-btn"><img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px" alt=""> Xuất Excel</button>
+      </div>
+    </div>
+
+    <div class="table-wrap" id="orders-wrap">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- EXPORT PERIOD MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="modal-header">
+      <span class="modal-title">📅 Xuất Excel đơn hàng</span>
+      <button class="modal-close" onclick="closeExportModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:24px 28px">
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px">Chọn khoảng thời gian cần xuất:</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExport('week')">
+          <span style="font-size:1.4rem">🗓️</span>
+          <span style="font-weight:700">Theo tuần</span>
+          <span style="font-size:11px;color:var(--text-muted)">7 ngày qua</span>
+        </button>
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExport('month')">
+          <span style="font-size:1.4rem">📆</span>
+          <span style="font-weight:700">Theo tháng</span>
+          <span style="font-size:11px;color:var(--text-muted)">Tháng hiện tại</span>
+        </button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExport('quarter')">
+        <span style="font-size:1.4rem">📈</span>
+        <span style="font-weight:700">Theo quý</span>
+        <span style="font-size:11px;color:var(--text-muted)">Quý hiện tại</span>
+      </button>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="doExport('')" style="color:var(--text-muted);font-size:12px">↓ Xuất tất cả (không giới hạn thời gian)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-title">Chi tiết đơn hàng</span>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer" id="detail-footer"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('seller');
+document.getElementById('sidebar-email').textContent = getUser().email;
+
+function startScroll(el) {
+  const t = el.querySelector('.scroll-text');
+  if (t && t.scrollWidth > el.clientWidth) t.classList.add('scrolling');
+}
+function stopScroll(el) {
+  const t = el.querySelector('.scroll-text');
+  if (t) t.classList.remove('scrolling');
+}
+initDashNotif();
+
+let orders = [];
+let currentStatus = 'all';
+let currentOrder = null;
+
+window.onload = () => loadOrders();
+
+async function loadOrders() {
+  const wrap = document.getElementById('orders-wrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const url = currentStatus === 'all' ? '/api/seller/orders' : `/api/seller/orders?status=${currentStatus}`;
+  orders = await api.get(url);
+  filterOrders();
+}
+
+function setStatus(s, el) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadOrders();
+}
+
+function filterOrders() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = orders.filter(o => !q || o.full_name.toLowerCase().includes(q) || o.phone.includes(q));
+  renderOrders(filtered);
+}
+
+function renderOrders(list) {
+  const wrap = document.getElementById('orders-wrap');
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty-state"><p>Không có đơn hàng nào</p></div>';
+    return;
+  }
+
+  // Tab Tất cả → dropdown chọn bất kỳ trạng thái
+  // Tab cụ thể → chỉ hiện nút hành động kế tiếp hợp lệ
+  const isAllTab = currentStatus === 'all';
+
+  const ALL_STATUSES = [
+    { v:'pending',   l:'Chờ xác nhận' },
+    { v:'approved',  l:'Đã duyệt' },
+    { v:'shipping',  l:'Đang giao' },
+    { v:'completed', l:'Hoàn thành' },
+    { v:'rejected',  l:'Từ chối' },
+  ];
+
+  const NEXT_BTN_STYLE = {
+    approved:  'btn-success',
+    rejected:  'btn-danger',
+    shipping:  'btn-primary',
+    completed: 'btn-success',
+  };
+
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Sản phẩm</th><th>Khách hàng</th><th>SL</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày đặt</th><th>Thao tác</th></tr></thead>
+    <tbody>${list.map(o => {
+      let actionHtml;
+      if (isAllTab) {
+        // Tab Tất cả: hiện dropdown chọn trạng thái
+        actionHtml = `<select class="form-control" style="width:110px;padding:5px 8px;font-size:12px" onchange="updateStatusFromSelect(${o.id}, this)">
+          ${ALL_STATUSES.map(s => `<option value="${s.v}"${s.v===o.status?' selected':''}>${s.l}</option>`).join('')}
+        </select>`;
+      } else {
+        // Tab cụ thể: hiện nút hành động kế tiếp
+        const nextSteps = NEXT_STATUS[o.status] || [];
+        actionHtml = nextSteps.length > 0
+          ? nextSteps.map(ns =>
+              `<button class="btn btn-sm ${NEXT_BTN_STYLE[ns]||'btn-primary'}" onclick="updateStatus(${o.id},'${ns}',this)" style="white-space:nowrap">${NEXT_LABEL[ns]}</button>`
+            ).join(' ')
+          : `<span style="font-size:11px;color:var(--text-muted);font-style:italic">Hoàn tất</span>`;
+      }
+      return `
+      <tr>
+        <td><strong>#${o.id}</strong></td>
+        <td>
+          <div class="td-product">
+            ${o.image_url ? `<img src="${o.image_url}" onerror="this.style.display='none'">` : `<div class="td-product-placeholder"></div>`}
+            <div class="td-product-text" title="${o.product_name}">
+              <span class="td-product-name">${o.product_name}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="td-name-scroll" onmouseenter="startScroll(this)" onmouseleave="stopScroll(this)" title="${o.full_name}">
+            <span class="scroll-text">${o.full_name}</span>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted)">${o.phone}</span>
+        </td>
+        <td>${o.quantity}</td>
+        <td><strong>${fmtPrice(o.total_price)}</strong></td>
+        <td>${statusBadge(o.status)}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+        <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="showDetail(${o.id})">Chi tiết</button>
+          ${actionHtml}
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}
+
+function showDetail(id) {
+  currentOrder = orders.find(o => o.id === id);
+  if (!currentOrder) return;
+  const o = currentOrder;
+  document.getElementById('detail-title').textContent = `Đơn hàng #${o.id}`;
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SẢN PHẨM</div><strong>${o.product_name}</strong></div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">TRẠNG THÁI</div>${statusBadge(o.status)}</div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KHÁCH HÀNG</div><strong>${o.full_name}</strong></div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SĐT</div><strong>${o.phone}</strong></div>
+      <div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">ĐỊA CHỈ</div>${o.address}</div>
+      ${o.note?`<div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">GHI CHÚ</div>${o.note}</div>`:''}
+    </div>
+    <div style="background:var(--primary-pale);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+      <span>Số lượng: <strong>${o.quantity}</strong> × ${fmtPrice(o.unit_price)}</span>
+      <span style="font-size:1.2rem;font-weight:800;color:var(--primary)">${fmtPrice(o.total_price)}</span>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Đặt lúc: ${fmtDate(o.created_at)}</div>`;
+  const footer = document.getElementById('detail-footer');
+  const actions = (NEXT_STATUS[o.status]||[]).map(ns =>
+    `<button class="btn btn-sm ${ns==='rejected'?'btn-danger':ns==='completed'?'btn-success':'btn-primary'}" onclick="updateStatusFromDetail(${o.id},'${ns}')">${NEXT_LABEL[ns]}</button>`
+  ).join('');
+  footer.innerHTML = `<button class="btn btn-ghost" onclick="closeDetail()">Đóng</button>${actions}`;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+
+async function updateStatus(id, status, btn) {
+  if (btn) btn.disabled = true;
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res.success) { toast('Đã cập nhật trạng thái đơn hàng'); loadOrders(); closeDetail(); }
+  else { toast(res.message, 'error'); if (btn) btn.disabled = false; }
+}
+async function updateStatusFromSelect(id, sel) {
+  const status = sel.value;
+  if (!status) return;
+  sel.disabled = true;
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res.success) { toast('Đã cập nhật trạng thái đơn hàng'); loadOrders(); }
+  else { toast(res.message, 'error'); sel.disabled = false; sel.value = ''; }
+}
+async function updateStatusFromDetail(id, status) {
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res.success) { toast('Đã cập nhật trạng thái đơn hàng'); closeDetail(); loadOrders(); }
+  else toast(res.message, 'error');
+}
+
+async function exportOrders() { openExportModal(); }
+
+function openExportModal() {
+  document.getElementById('export-modal').classList.add('open');
+}
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+
+async function doExport(period) {
+  closeExportModal();
+  const btn = document.getElementById('export-btn');
+  btn.disabled = true; btn.textContent = 'Đang tải...';
+  try {
+    const token = localStorage.getItem('mv_token');
+    const params = new URLSearchParams();
+    if (currentStatus !== 'all') params.set('status', currentStatus);
+    if (period) params.set('period', period);
+    const qs = params.toString() ? '?' + params.toString() : '';
+    const res = await fetch(`/api/seller/orders/export${qs}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { const e = await res.json(); toast(e.message || 'Xuất thất bại', 'error'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const STATUS_SLUG = { all:'tat-ca', pending:'cho-xac-nhan', approved:'da-duyet', shipping:'dang-giao', completed:'hoan-thanh', rejected:'tu-choi' };
+    const PERIOD_SLUG = { week:'7-ngay', month:'thang-nay', quarter:'quy-nay', '':'tat-ca-tg' };
+    a.href = url;
+    a.download = `don-hang-${STATUS_SLUG[currentStatus]||currentStatus}-${PERIOD_SLUG[period]||period}-${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Đã xuất file Excel thành công!');
+  } catch (err) {
+    toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '📅 Xuất Excel';
+  }
+}
+</script>
+</body>
+</html>
+

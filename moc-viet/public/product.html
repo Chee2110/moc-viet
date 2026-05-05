@@ -1,0 +1,1053 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sản phẩm — Mộc Việt</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ══════════════════════════════
+       PAGE WRAPPER
+    ══════════════════════════════ */
+    .lp-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      background: #fdfbf6;
+      padding: 40px 80px;
+    }
+
+    /* ══════════════════════════════
+       SPLIT GRID  (desktop)
+    ══════════════════════════════ */
+    .lp-split {
+      display: grid;
+      grid-template-columns: 2.1fr 3fr;
+      align-items: start;
+      gap: 30px;
+    }
+
+    /* ── Left column: sticky square image ── */
+    .lp-left {
+      position: sticky;
+      top: 80px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ede8df, #d9c9a8);
+      border-radius: 12px;
+    }
+
+    .lp-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+    .lp-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .lp-img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7rem; color: rgba(0,0,0,0.12);
+    }
+    .lp-wish-btn {
+      position: absolute;
+      top: 16px; right: 16px;
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.93);
+      border: none; cursor: pointer;
+      font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      transition: transform 0.2s, background 0.2s;
+      z-index: 5;
+    }
+    .lp-wish-btn:hover  { transform: scale(1.1); }
+    .lp-wish-btn.active { background: #fee2e2; }
+    .lp-wish-btn img { width:24px;height:24px;object-fit:contain;opacity:.4;filter:grayscale(1); }
+    .lp-wish-btn.active img { opacity:1;filter:none; }
+
+    /* ── Image carousel arrows ── */
+    .lp-arr {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,0.88); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      transition: background 0.2s, transform 0.2s; z-index: 6;
+      padding: 0;
+    }
+    .lp-arr img { width: 22px; height: 22px; object-fit: contain; display: block; }
+    .lp-arr:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+    .lp-arr-l { left: 10px; }
+    .lp-arr-r { right: 10px; }
+    .lp-img-dots {
+      position: absolute; bottom: 12px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 6px; pointer-events: none;
+    }
+    .img-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer; pointer-events: all; transition: background 0.2s, transform 0.2s;
+    }
+    .img-dot.active { background: #fff; transform: scale(1.25); }
+
+    /* ── Right column: scrollable content ── */
+    .lp-right {
+    }
+
+    /* ── Section spacing inside right column ── */
+    .lp-info        { margin: 20px 0; }
+    .lp-desc        { margin: 20px 0; }
+    .lp-order-box   { margin: 20px 0; }
+    .lp-contact-bar { margin: 20px 0; }
+    .lp-reviews     { margin: 20px 0 28px; }
+
+    /* ══════════════════════════════
+       SHIP BANNER
+    ══════════════════════════════ */
+    .ship-banner {
+      margin-top: 64px; /* đẩy xuống dưới navbar cố định */
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fff;
+      text-align: center;
+      padding: 11px 16px;
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .ship-icon { font-size: 18px; animation: bounce 1.2s infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+
+
+    /* ══════════════════════════════
+       PRODUCT INFO BLOCK
+    ══════════════════════════════ */
+    .lp-info {
+      background: #fff;
+      padding: 20px 22px 4px;
+      border-bottom: 5px solid #f4f2ec;
+    }
+
+    .lp-rating-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .stars-wrap { display: flex; gap: 2px; }
+    .star       { color: #f59e0b; font-size: 16px; }
+    .star.empty { color: #d1d5db; }
+    .rating-text  { font-size: 14px; font-weight: 700; color: #374151; }
+    .rating-count { font-size: 13px; color: #9ca3af; }
+
+    .lp-product-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 800;
+      color: #1a1a1a; line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    .lp-meta {
+      display: flex; flex-wrap: wrap; gap: 14px;
+      font-size: 13px; color: #6b7280;
+      margin-bottom: 16px;
+    }
+    .lp-meta strong { color: #111827; }
+    .in-stock  { color: #16a34a; }
+    .out-stock { color: #dc2626; }
+
+    /* ── Price box ── */
+    .lp-price-box {
+      background: #fff7ed;
+      border: 2px dashed #fb923c;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .lp-price-main {
+      font-size: 34px; font-weight: 900;
+      color: #dc2626; font-family: 'Outfit', sans-serif;
+      line-height: 1; margin-bottom: 4px;
+    }
+    .lp-price-was {
+      font-size: 14px; color: #9ca3af;
+      text-decoration: line-through;
+    }
+    .lp-discount-badge {
+      display: inline-block;
+      background: #dc2626; color: #fff;
+      font-size: 13px; font-weight: 800;
+      padding: 3px 10px; border-radius: 999px;
+      margin-left: 8px; vertical-align: middle;
+    }
+
+    /* Flash sale countdown */
+    .lp-flash-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px dashed #fb923c;
+    }
+    .flash-label-sm {
+      font-size: 12px; font-weight: 800;
+      color: #dc2626; white-space: nowrap;
+    }
+    .flash-timer-sm { display: flex; align-items: center; gap: 4px; }
+    .ftd {
+      background: #1f2937; color: #fff;
+      font-size: 14px; font-weight: 800;
+      padding: 4px 8px; border-radius: 6px;
+      min-width: 30px; text-align: center;
+      font-family: monospace;
+    }
+    .ftd-sep { font-weight: 800; color: #dc2626; font-size: 15px; }
+
+    /* ══════════════════════════════
+       DESCRIPTION
+    ══════════════════════════════ */
+    .lp-desc {
+      background: #fff;
+      padding: 18px 22px;
+      border-bottom: 5px solid #f4f2ec;
+    }
+    .lp-desc-title {
+      font-size: 13px; font-weight: 800;
+      color: #374151; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .lp-desc-title::after {
+      content: ''; flex: 1;
+      height: 2px; background: #e5e7eb;
+      border-radius: 2px;
+    }
+    .lp-desc-body {
+      font-size: 14px; color: #374151;
+      line-height: 1.8; white-space: pre-line;
+    }
+
+    /* ══════════════════════════════
+       ORDER FORM BOX
+    ══════════════════════════════ */
+    .lp-order-box {
+      border-top: 5px solid #dc2626;
+      background: #fff;
+    }
+    .lp-order-header {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      padding: 16px 20px 13px;
+      text-align: center;
+    }
+    .lp-order-title {
+      color: #fff; font-size: 20px;
+      font-weight: 900; letter-spacing: 0.4px;
+      margin-bottom: 3px;
+    }
+    .lp-order-promo {
+      color: #fde68a; font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Form fields */
+    .lp-form-body { padding: 18px 20px 4px; }
+    .lp-field     { margin-bottom: 13px; }
+    .lp-label {
+      display: block; font-size: 12px;
+      font-weight: 700; color: #374151;
+      margin-bottom: 5px;
+    }
+    .lp-label .req { color: #dc2626; margin-left: 2px; }
+    .lp-input {
+      width: 100%;
+      padding: 11px 13px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      color: #111827; background: #fff;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .lp-input:focus { border-color: #dc2626; }
+    .lp-input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── Size / variant section ── */
+    .lp-size-section {
+      padding: 16px 20px 14px;
+      border-bottom: 2px dashed #e5e7eb;
+    }
+    .lp-size-label {
+      font-size: 13px; font-weight: 800;
+      color: #374151; margin-bottom: 10px;
+    }
+    /* Chip row */
+    .size-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .size-chip {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 9px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; background: #fff;
+      color: #374151;
+      transition: all 0.18s;
+      line-height: 1.3;
+    }
+    .size-chip:hover { border-color: #dc2626; color: #dc2626; }
+    .size-chip.active {
+      border-color: #dc2626;
+      background: #dc2626; color: #fff;
+      box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+    }
+    .size-chip .chip-price {
+      font-size: 11px; font-weight: 600;
+      opacity: 0.8; display: block; margin-top: 1px;
+    }
+    .size-chip.active .chip-price { opacity: 0.9; }
+    /* Qty row */
+    .lp-qty-row {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .lp-qty-label { font-size: 13px; font-weight: 700; color: #374151; }
+    .lp-v-ctrl {
+      display: flex; align-items: center;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px; overflow: hidden;
+    }
+    .lp-v-btn {
+      width: 36px; height: 36px;
+      background: #f9fafb; border: none;
+      font-size: 18px; font-weight: 800;
+      color: #374151; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; line-height: 1;
+    }
+    .lp-v-btn:hover  { background: #f3f4f6; }
+    .lp-v-btn:active { background: #fee2e2; color: #dc2626; }
+    .lp-v-qty {
+      width: 40px; text-align: center;
+      border: none; background: #fff;
+      font-size: 15px; font-weight: 800;
+      color: #111827; pointer-events: none;
+      font-family: 'Outfit', sans-serif;
+    }
+    .lp-selected-info {
+      font-size: 12px; color: #6b7280;
+      margin-top: 10px;
+    }
+    .lp-selected-info strong { color: #dc2626; }
+
+    /* ── Total + submit ── */
+    .lp-total-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-top: 2px dashed #e5e7eb;
+      background: #fff;
+    }
+    .lp-total-label  { font-size: 14px; font-weight: 700; color: #6b7280; }
+    .lp-total-amount {
+      font-size: 28px; font-weight: 900;
+      color: #dc2626; font-family: 'Outfit', sans-serif;
+    }
+    .lp-submit-wrap { padding: 14px 20px 20px; }
+    .lp-submit-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fff; font-size: 17px; font-weight: 900;
+      letter-spacing: 0.4px; border: none;
+      border-radius: 12px; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(220,38,38,0.33);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .lp-submit-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(220,38,38,0.42);
+    }
+    .lp-submit-btn:active:not(:disabled) { transform: translateY(0); }
+    .lp-submit-btn:disabled {
+      background: #9ca3af; box-shadow: none; cursor: not-allowed;
+    }
+
+    /* ══════════════════════════════
+       HOTLINE + DELIVERY
+    ══════════════════════════════ */
+    .lp-contact-bar {
+      background: #fff;
+      border-top: 5px solid #f4f2ec;
+      padding: 16px 22px;
+    }
+    .lp-hotline {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 16px; font-weight: 800;
+      color: #dc2626; margin-bottom: 10px;
+    }
+    .lp-hotline a { color: inherit; }
+    .lp-delivery {
+      display: flex; align-items: center; gap: 10px;
+      background: #ecfdf5; border: 1px solid #6ee7b7;
+      border-radius: 10px; padding: 11px 14px;
+      font-size: 13px; font-weight: 700; color: #065f46;
+    }
+
+    /* ══════════════════════════════
+       REVIEWS
+    ══════════════════════════════ */
+    .lp-reviews {
+      background: #fff;
+      border-top: 5px solid #f4f2ec;
+      padding: 18px 22px;
+    }
+    .lp-reviews-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .lp-reviews-title {
+      font-size: 14px; font-weight: 800;
+      color: #374151; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .lp-avg-big { display: flex; align-items: baseline; gap: 4px; }
+    .lp-avg-num   { font-size: 26px; font-weight: 900; color: #f59e0b; }
+    .lp-avg-denom { font-size: 13px; color: #9ca3af; font-weight: 600; }
+
+    .review-card {
+      border: 1px solid #f3f4f6; border-radius: 10px;
+      padding: 13px; margin-bottom: 9px; background: #fafafa;
+    }
+    .review-card-top {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 7px;
+    }
+    .review-author  { font-size: 13px; font-weight: 700; color: #374151; }
+    .review-date    { font-size: 12px; color: #9ca3af; }
+    .review-stars   { display: flex; gap: 2px; }
+    .review-star    { color: #f59e0b; font-size: 13px; }
+    .review-star.e  { color: #e5e7eb; }
+    .review-comment { font-size: 13px; color: #4b5563; line-height: 1.6; }
+
+    .write-review-btn {
+      width: 100%; padding: 11px;
+      border: 2px solid #dc2626; border-radius: 10px;
+      background: #fff; color: #dc2626;
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      margin-top: 10px; transition: background 0.2s, color 0.2s;
+    }
+    .write-review-btn:hover { background: #dc2626; color: #fff; }
+    .review-form-box {
+      border: 2px solid #e5e7eb; border-radius: 12px;
+      padding: 14px; margin-top: 10px; display: none;
+    }
+    .review-form-box.open { display: block; }
+    .star-picker { display: flex; gap: 6px; margin-bottom: 12px; }
+    .star-pick {
+      font-size: 26px; color: #d1d5db; cursor: pointer;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .star-pick.on    { color: #f59e0b; }
+    .star-pick:hover { transform: scale(1.15); }
+
+    /* Success modal icon */
+    .success-confetti {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(22,163,74,0.3);
+    }
+
+    /* ══════════════════════════════
+       MOBILE  (≤ 767px)
+    ══════════════════════════════ */
+    @media (max-width: 767px) {
+      .lp-page {
+        padding: 24px 16px 48px;
+      }
+      .lp-split {
+        display: block;
+      }
+      .lp-left {
+        position: static;
+        border-radius: 10px;
+      }
+      .lp-right {
+      }
+      .lp-product-name { font-size: 22px; }
+      .lp-price-main   { font-size: 28px; }
+      .lp-order-title  { font-size: 18px; }
+      .lp-submit-btn   { font-size: 16px; padding: 15px; }
+      /* Province/district stack on very small screens */
+      .lp-input-grid   { grid-template-columns: 1fr; }
+    }
+
+    /* Medium screens: keep grid but allow province/district grid */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .lp-product-name { font-size: 22px; }
+      .lp-price-main   { font-size: 28px; }
+      .lp-order-title  { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><img src="/img/logo.png" alt="Mộc Việt" class="brand-logo"></a>
+    <div class="navbar-right" id="navbar-right"></div>
+  </div>
+</nav>
+
+<!-- Ship banner — fixed under navbar -->
+<div class="ship-banner">
+  <span class="ship-icon"><img src="/icons/oto.png" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;filter:brightness(10);opacity:.9" alt=""></span>
+  MIỂN SHIP HÔM NAY — ĐẶT NGAY NHẬN LIỀN
+  <span class="ship-icon"><img src="/icons/oto.png" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;filter:brightness(10);opacity:.9" alt=""></span>
+</div>
+
+<div style="padding-top:64px" id="page-content">
+  <div style="padding-top:60px;text-align:center">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Success modal -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="modal-body" style="padding:36px 28px">
+      <div class="success-confetti">✓</div>
+      <h2 style="font-size:1.3rem;margin-bottom:8px;font-family:'Playfair Display',serif">Đặt hàng thành công!</h2>
+      <p style="color:var(--text-muted);margin-bottom:6px">Mã đơn hàng: <strong id="order-id-display" style="color:#dc2626"></strong></p>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px">Người bán sẽ liên hệ xác nhận đơn trong thời gian sớm nhất.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <a href="/" class="btn btn-outline">Tiếp tục mua sắm</a>
+        <a href="/buyer/orders.html" class="btn btn-primary" id="view-orders-btn" style="display:none">Xem đơn hàng</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer" style="margin-top:0">
+  <div class="container">
+    <div class="footer-bottom">&copy; 2026 Mộc Việt. Tất cả quyền được bảo lưu.</div>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/vietnamloc.js"></script>
+<script>
+let CATEGORIES = [
+  { value: 'go-tre',    label: 'Gỗ & Tre' },
+  { value: 'gom-su',   label: 'Gốm & Sứ' },
+  { value: 'trang-tri',label: 'Trang trí' },
+  { value: 'thu-cong', label: 'Thủ công' },
+  { value: 'khac',     label: 'Khác' },
+];
+api.get('/api/categories').then(cats => { if (cats?.length) CATEGORIES = cats; });
+
+let product = null;
+let reviews = [];
+let selectedRating = 0;
+
+// ── Helpers ────────────────────────────────────────────
+function starsHtml(avg, cls = 'star') {
+  if (!avg) return Array(5).fill(`<span class="${cls} empty">☆</span>`).join('');
+  const full = Math.floor(avg);
+  const half = avg - full >= 0.5 ? 1 : 0;
+  let h = '';
+  for (let i = 0; i < full; i++)         h += `<span class="${cls}">★</span>`;
+  if (half)                               h += `<span class="${cls}">★</span>`;
+  for (let i = full+half; i < 5; i++)    h += `<span class="${cls} empty">☆</span>`;
+  return h;
+}
+
+function reviewStarsHtml(r) {
+  let h = '';
+  for (let i = 1; i <= 5; i++)
+    h += `<span class="review-star${i <= r ? '' : ' e'}">${i <= r ? '★' : '☆'}</span>`;
+  return h;
+}
+
+// ── Init ───────────────────────────────────────────────
+async function init() {
+  initNavbar();
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) return window.location.href = '/';
+
+  const data = await api.get('/api/products/' + id);
+  if (!data || data.message) {
+    document.getElementById('page-content').innerHTML = `
+      <div class="container" style="padding:100px 0;text-align:center">
+        <div style="font-size:3rem;margin-bottom:16px">😕</div>
+        <p style="color:var(--text-muted);margin-bottom:20px">Sản phẩm không tồn tại hoặc đã bị gỡ.</p>
+        <a href="/" class="btn btn-primary">Quay về trang chủ</a>
+      </div>`;
+    return;
+  }
+  product = data;
+
+  const revData = await api.get('/api/products/' + id + '/reviews?limit=5');
+  reviews = revData?.reviews || [];
+
+  renderProduct();
+}
+
+// ── Render ─────────────────────────────────────────────
+function renderProduct() {
+  const user        = getUser();
+  const ep          = product.discounted_price || product.price;
+  const catLabel    = CATEGORIES.find(c => c.value === product.category)?.label || 'Sản phẩm';
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+  const hotline     = product.hotline;
+  const deliveryDays = product.delivery_days || '2-4';
+
+  /* ── Image carousel ── */
+  allImages = (Array.isArray(product.images) && product.images.length > 0)
+    ? product.images
+    : (product.image_url ? [product.image_url] : []);
+  currentImgIdx = 0;
+
+  const mainImgHtml = allImages.length
+    ? `<img id="main-img" src="${allImages[0]}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none'">`
+    : `<div class="lp-img-placeholder">🪵</div>`;
+  const arrowsHtml = allImages.length > 1
+    ? `<button class="lp-arr lp-arr-l" onclick="prevImg()" title="Trước"><img src="/icons/arrow-left.png" alt="‹"></button>
+       <button class="lp-arr lp-arr-r" onclick="nextImg()" title="Tiếp"><img src="/icons/arrow-right.png" alt="›"></button>
+       <div class="lp-img-dots">${allImages.map((_,i)=>`<span class="img-dot${i===0?' active':''}" onclick="showImg(${i})"></span>`).join('')}</div>`
+    : '';
+  const imgContent = mainImgHtml + arrowsHtml;
+
+  /* ── Rating bar ── */
+  const avgR = product.avg_rating;
+  const cntR = product.review_count || 0;
+  const ratingBarHtml = `
+    <div class="lp-rating-bar">
+      <div class="stars-wrap">${starsHtml(avgR)}</div>
+      ${avgR
+        ? `<span class="rating-text">${avgR}</span><span class="rating-count">(${cntR} đánh giá)</span>`
+        : `<span class="rating-count">Chưa có đánh giá</span>`}
+    </div>`;
+
+  /* ── Price block ── */
+  let priceHtml;
+  if (product.discount_percent) {
+    priceHtml = `
+      <div class="lp-price-box">
+        <div style="margin-bottom:5px">
+          <span class="lp-price-main">${fmtPrice(ep)}</span>
+          <span class="lp-discount-badge">-${product.discount_percent}%</span>
+        </div>
+        <div class="lp-price-was">Giá gốc: ${fmtPrice(product.price)}</div>
+        <div class="lp-flash-row">
+          <span class="flash-label-sm">⚡ Flash Sale kết thúc sau:</span>
+          <div class="flash-timer-sm">
+            <span class="ftd" id="ft-h">00</span>
+            <span class="ftd-sep">:</span>
+            <span class="ftd" id="ft-m">00</span>
+            <span class="ftd-sep">:</span>
+            <span class="ftd" id="ft-s">00</span>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    priceHtml = `
+      <div class="lp-price-box">
+        <div class="lp-price-main">${fmtPrice(ep)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px">Giá đã bao gồm thuế VAT</div>
+      </div>`;
+  }
+
+  /* ── Order promo text ── */
+  const promoLine = product.discount_percent
+    ? `<div class="lp-order-promo">GIẢM GIÁ ${product.discount_percent}% — MUA NGAY — ÁP DỤNG HÔM NAY</div>`
+    : `<div class="lp-order-promo">HÀNG THỦ CÔNG CHẤT LƯỢNG CAO — GIAO TẬN NHÀ</div>`;
+
+  /* ── Size chips + quantity ── */
+  let variantHtml;
+  if (hasVariants) {
+    const chips = product.variants.map((v, i) => {
+      const vPrice = product.discounted_price || v.price;
+      return `<button class="size-chip" data-idx="${i}" onclick="selectChip(this,${i})"
+                      title="${(parseInt(v.quantity)||0) <= 10 ? 'Chỉ còn '+v.quantity : ''}">
+                ${v.name}
+                <span class="chip-price">${fmtPrice(vPrice)}</span>
+              </button>`;
+    }).join('');
+    variantHtml = `
+      <div class="lp-size-label">Kích thước:</div>
+      <div class="size-chips">${chips}</div>
+      <div class="lp-qty-row">
+        <span class="lp-qty-label">Số lượng:</span>
+        <div class="lp-v-ctrl">
+          <button class="lp-v-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="v-qty-main" value="1" class="lp-v-qty" readonly>
+          <button class="lp-v-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <div class="lp-selected-info" id="selected-info">Vui lòng chọn kích thước</div>`;
+  } else {
+    variantHtml = `
+      <div class="lp-size-label">Số lượng:</div>
+      <div class="lp-qty-row">
+        <span class="lp-qty-label">Sản phẩm:</span>
+        <div class="lp-v-ctrl">
+          <button class="lp-v-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="v-qty-main" value="1" class="lp-v-qty" readonly>
+          <button class="lp-v-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>`;
+  }
+
+  /* ── Reviews ── */
+  const reviewsHtml = reviews.length > 0
+    ? reviews.map(r => `
+        <div class="review-card">
+          <div class="review-card-top">
+            <div>
+              <div class="review-author">${r.author || 'Khách hàng'}</div>
+              <div class="review-stars">${reviewStarsHtml(r.rating)}</div>
+            </div>
+            <div class="review-date">${timeAgo(r.created_at)}</div>
+          </div>
+          ${r.comment ? `<div class="review-comment">${r.comment}</div>` : ''}
+        </div>`).join('')
+    : `<div style="text-align:center;padding:20px 0;color:#9ca3af;font-size:13px">Chưa có đánh giá nào. Hãy là người đầu tiên!</div>`;
+
+  const hotlineHtml = hotline
+    ? `<div class="lp-hotline">📞 Hotline: <a href="tel:${hotline}">${hotline}</a></div>`
+    : '';
+
+  /* ════════════════════════════════════════
+     HTML OUTPUT — 2-column split layout
+  ════════════════════════════════════════ */
+  document.getElementById('page-content').innerHTML = `
+    <div class="lp-page">
+      <div class="lp-split">
+
+        <!-- ═══ LEFT: Sticky image ═══ -->
+        <div class="lp-left">
+          <div class="lp-img-wrap">
+            ${imgContent}
+            <button class="lp-wish-btn${product.is_favorite ? ' active' : ''}"
+                    id="detail-wish-btn"
+                    onclick="toggleWishlist(event, ${product.id})"
+                    title="Yêu thích">
+              <img src="/icons/wishlist.png" alt="♥">
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══ RIGHT: All content ═══ -->
+        <div class="lp-right">
+
+          <!-- Product info -->
+          <div class="lp-info">
+            ${ratingBarHtml}
+            <h1 class="lp-product-name">${product.name}</h1>
+            <div class="lp-meta">
+              <span>SKU: <strong>P-${product.id.toString().padStart(4,'0')}</strong></span>
+              <span>Kho: <strong class="${product.stock_quantity > 0 ? 'in-stock' : 'out-stock'}">
+                ${product.stock_quantity > 0 ? `Còn ${product.stock_quantity} sản phẩm` : 'Hết hàng'}
+              </strong></span>
+              <span>Loại: <strong>${catLabel}</strong></span>
+            </div>
+            ${priceHtml}
+            <!-- Kích thưỡc & số lượng -->
+            <div class="lp-size-section" style="padding:16px 0 4px;border-top:2px dashed #e5e7eb;margin-top:12px">
+              ${variantHtml}
+            </div>
+          </div>
+
+          <!-- Description -->
+          ${product.description ? `
+          <div class="lp-desc">
+            <div class="lp-desc-title">📋 Mô tả sản phẩm</div>
+            <div class="lp-desc-body">${product.description}</div>
+          </div>` : ''}
+
+          <!-- Order form -->
+          <div class="lp-order-box">
+            <div class="lp-order-header">
+              <div class="lp-order-title"><img src="/icons/cart.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.8;margin-right:6px" alt=""> ĐẶT HÀNG TẠI ĐÂY</div>
+              ${promoLine}
+            </div>
+
+            <!-- Thông tin giao hàng -->
+            <div class="lp-form-body">
+              <div class="lp-field">
+                <label class="lp-label">Họ và tên <span class="req">*</span></label>
+                <input type="text" id="fn" class="lp-input" placeholder="Nguyễn Văn A" value="${user?.full_name||''}">
+              </div>
+              <div class="lp-field">
+                <label class="lp-label">Số điện thoại <span class="req">*</span></label>
+                <input type="tel" id="ph" class="lp-input" placeholder="0901234567" value="${user?.phone||''}">
+              </div>
+              <div class="lp-input-grid lp-field">
+                <div>
+                  <label class="lp-label">Tỉnh / Thành phố <span class="req">*</span></label>
+                  <select id="co-province" class="lp-input">
+                    <option value="">Chọn tỉnh/thành</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="lp-label">Quận / Huyện <span class="req">*</span></label>
+                  <select id="co-district" class="lp-input">
+                    <option value="">Chọn quận/huyện</option>
+                  </select>
+                </div>
+              </div>
+              <div class="lp-field">
+                <label class="lp-label">Địa chỉ cụ thể <span class="req">*</span></label>
+                <textarea id="co-detail-addr" class="lp-input" rows="2" placeholder="Số nhà, tên đường, khu/ấp..."></textarea>
+              </div>
+              <div class="lp-field">
+                <label class="lp-label">Ghi chú đơn hàng</label>
+                <textarea id="order-note" class="lp-input" rows="2" placeholder="Yêu cầu đặc biệt, màu sắc, thời gian giao hàng..."></textarea>
+              </div>
+            </div>
+
+            <!-- Total -->
+            <div class="lp-total-row">
+              <span class="lp-total-label">Tổng thanh toán:</span>
+              <span class="lp-total-amount" id="total-display">${fmtPrice(ep)}</span>
+            </div>
+
+            <!-- Submit -->
+            <div class="lp-submit-wrap">
+              <button class="lp-submit-btn" onclick="submitOrder()" id="submit-btn"
+                      ${product.stock_quantity === 0 ? 'disabled' : ''}>
+                ${product.stock_quantity === 0 ? 'Sản phẩm đã hết hàng' : 'XÁC NHẬN ĐẶT HÀNG NGAY'}
+              </button>
+            </div>
+          </div>
+
+          <!-- Hotline + Delivery -->
+          <div class="lp-contact-bar">
+            ${hotlineHtml}
+            <div class="lp-delivery">
+              <img src="/icons/Ship.png" style="width:26px;height:26px;object-fit:contain;opacity:.8" alt="">
+              <div>
+                <div>QUÝ KHÁCH NHẬN HÀNG SAU <strong>${deliveryDays} NGÀY</strong></div>
+                <div style="font-size:11px;font-weight:500;color:#047857;margin-top:2px">Hỗ trợ đổi trả trong 7 ngày nếu lỗi nhà sản xuất</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end .lp-right -->
+      </div><!-- end .lp-split -->
+    </div><!-- end .lp-page -->`;
+
+
+  initVietnamLoc('co-province', 'co-district');
+  if (product.discount_percent) startCountdown();
+  updateTotal();
+  if (getUser()) {
+    const voBtn = document.getElementById('view-orders-btn');
+    if (voBtn) voBtn.style.display = 'inline-flex';
+  }
+}
+
+// ── Countdown ──────────────────────────────────────────
+function startCountdown() {
+  const target = product.deal_end_time ? new Date(product.deal_end_time) : (() => {
+    const t = new Date(); t.setHours(23,59,59,999); return t;
+  })();
+  const tick = () => {
+    const diff = target - Date.now();
+    const hEl = document.getElementById('ft-h');
+    const mEl = document.getElementById('ft-m');
+    const sEl = document.getElementById('ft-s');
+    if (!hEl) return;
+    if (diff <= 0) { hEl.textContent = mEl.textContent = sEl.textContent = '00'; return; }
+    hEl.textContent = String(Math.floor(diff / 3600000)).padStart(2,'0');
+    mEl.textContent = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+    sEl.textContent = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── Image carousel ─────────────────────────────────────
+let allImages = [];
+let currentImgIdx = 0;
+
+function showImg(idx) {
+  if (!allImages.length) return;
+  currentImgIdx = (idx + allImages.length) % allImages.length;
+  const img = document.getElementById('main-img');
+  if (img) img.src = allImages[currentImgIdx];
+  document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === currentImgIdx));
+}
+function prevImg() { showImg(currentImgIdx - 1); }
+function nextImg() { showImg(currentImgIdx + 1); }
+
+// ── Chip selection ─────────────────────────────────────
+let selectedChipIdx = -1;
+
+function selectChip(el, idx) {
+  document.querySelectorAll('.size-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedChipIdx = idx;
+  const v = product.variants[idx];
+
+  // Switch image to variant's image if available
+  if (v.image_url) {
+    const img = document.getElementById('main-img');
+    if (img) img.src = v.image_url;
+    const inAllImages = allImages.indexOf(v.image_url);
+    document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === inAllImages));
+  }
+
+  // Update price display
+  const priceEl = document.querySelector('.lp-price-main');
+  if (priceEl) priceEl.textContent = fmtPrice(product.discounted_price || v.price);
+
+  const info = document.getElementById('selected-info');
+  if (info) {
+    const stock = parseInt(v.quantity) || 0;
+    const stockTxt = stock <= 10 ? ` — <strong style="color:#d97706">Chỉ còn ${stock}</strong>` : '';
+    info.innerHTML = `Đã chọn: <strong>${v.name}</strong>${stockTxt}`;
+  }
+  updateTotal();
+}
+
+// ── Quantity control ───────────────────────────────────
+function changeQty(delta) {
+  const el = document.getElementById('v-qty-main');
+  if (!el) return;
+  let val = parseInt(el.value) || 1;
+  val = Math.max(1, val + delta);
+  el.value = val;
+  updateTotal();
+}
+
+function updateTotal() {
+  const ep = product.discounted_price || product.price;
+  const qty = parseInt(document.getElementById('v-qty-main')?.value || 1);
+  let unitPrice = ep;
+  if (Array.isArray(product.variants) && product.variants.length > 0 && selectedChipIdx >= 0) {
+    const v = product.variants[selectedChipIdx];
+    unitPrice = product.discounted_price || v.price;
+  }
+  const total = unitPrice * qty;
+  const el = document.getElementById('total-display');
+  if (el) el.textContent = fmtPrice(total);
+}
+
+// ── Submit order ───────────────────────────────────────
+async function submitOrder() {
+  const fn   = document.getElementById('fn').value.trim();
+  const ph   = document.getElementById('ph').value.trim();
+  const prov = document.getElementById('co-province');
+  const dist = document.getElementById('co-district');
+  const det  = document.getElementById('co-detail-addr').value.trim();
+
+  if (!fn || fn.length < 2)                  return toast('Vui lòng nhập họ tên', 'error');
+  if (!ph || !/^0[3-9]\d{8}$/.test(ph))     return toast('Số điện thoại không hợp lệ', 'error');
+  if (!prov.value)                           return toast('Vui lòng chọn Tỉnh/Thành phố', 'error');
+  if (!dist.value)                           return toast('Vui lòng chọn Quận/Huyện', 'error');
+  if (!det || det.length < 5)               return toast('Vui lòng nhập địa chỉ cụ thể', 'error');
+
+  const note = document.getElementById('order-note')?.value.trim() || '';
+  const qty  = parseInt(document.getElementById('v-qty-main')?.value || 1);
+
+  const items = [];
+  if (Array.isArray(product.variants) && product.variants.length > 0) {
+    if (selectedChipIdx < 0) return toast('Vui lòng chọn kích thước sản phẩm', 'error');
+    const v = product.variants[selectedChipIdx];
+    items.push({ product_id: product.id, variant_name: v.name, quantity: qty });
+  } else {
+    items.push({ product_id: product.id, quantity: qty });
+  }
+
+  const addr = `${det}, ${dist.options[dist.selectedIndex].text}, ${prov.options[prov.selectedIndex].text}`;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Đang xử lý...';
+
+  try {
+    const res = await api.post('/api/orders', { full_name: fn, phone: ph, address: addr, note, items });
+    if (res && res.success) {
+      document.getElementById('order-id-display').textContent = '#' + res.order_id;
+      document.getElementById('success-modal').classList.add('open');
+      if (getUser()) updateCartBadge();
+    } else {
+      toast(res?.message || 'Có lỗi xảy ra', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<img src="/icons/delivery.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;filter:brightness(10);opacity:.9;margin-right:6px" alt=""> XÁC NHẬN ĐẶT HÀNG NGAY';
+    }
+  } catch {
+    toast('Lỗi kết nối máy chủ', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<img src="/icons/delivery.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;filter:brightness(10);opacity:.9;margin-right:6px" alt=""> XÁC NHẬN ĐẶT HÀNG NGAY';
+  }
+}
+
+// ── Wishlist ───────────────────────────────────────────
+async function toggleWishlist(event, productId) {
+  if (!getUser()) { window.location.href = '/login.html'; return; }
+  event.stopPropagation();
+  const btn = document.getElementById('detail-wish-btn');
+  const res = await api.post('/api/favorites/' + productId);
+  if (res && res.success) {
+    const added = res.action === 'added';
+    btn.classList.toggle('active', added);
+    btn.classList.toggle('active', added);
+    toast(added ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích', added ? 'success' : 'info');
+  }
+}
+
+// ── Reviews ────────────────────────────────────────────
+function toggleReviewForm() {
+  document.getElementById('review-form')?.classList.toggle('open');
+}
+
+function setRating(val) {
+  selectedRating = val;
+  document.querySelectorAll('.star-pick').forEach(el => {
+    el.classList.toggle('on', parseInt(el.dataset.v) <= val);
+  });
+}
+
+async function submitReview() {
+  if (!selectedRating) return toast('Vui lòng chọn số sao', 'error');
+  const comment = document.getElementById('review-comment').value.trim();
+  const res = await api.post('/api/reviews', {
+    product_id: product.id,
+    rating: selectedRating,
+    comment,
+  });
+  if (res && res.success) {
+    toast('Cảm ơn đánh giá của bạn!', 'success');
+    document.getElementById('review-form')?.classList.remove('open');
+    const list = document.getElementById('reviews-list');
+    if (list) list.insertAdjacentHTML('afterbegin', `
+      <div class="review-card">
+        <div class="review-card-top">
+          <div>
+            <div class="review-author">${getUser()?.full_name || 'Bạn'}</div>
+            <div class="review-stars">${reviewStarsHtml(selectedRating)}</div>
+          </div>
+          <div class="review-date">Vừa xong</div>
+        </div>
+        ${comment ? `<div class="review-comment">${comment}</div>` : ''}
+      </div>`);
+  } else {
+    toast(res?.message || 'Không thể gửi đánh giá', 'error');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hồ sơ cá nhân — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Hệ thống Quản trị</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html" class="active"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block" style="color:rgba(255,255,255,0.7)">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <h2 class="dash-title">Hồ sơ cá nhân</h2>
+        <p class="dash-subtitle">Chỉnh sửa thông tin tài khoản của bạn.</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:960px">
+
+      <!-- Card: Thông tin cơ bản -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Thông tin cơ bản</span></div>
+        <div class="card-body">
+
+          <!-- Avatar -->
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border-color)">
+            <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;font-family:'Playfair Display',serif;flex-shrink:0"></div>
+            <div>
+              <div id="profile-name" style="font-weight:700;font-size:16px;margin-bottom:2px"></div>
+              <div id="profile-role" style="font-size:13px;color:var(--text-muted)"></div>
+              <div id="profile-email-sm" style="font-size:13px;color:var(--text-muted)"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Họ và tên</label>
+            <input type="text" id="p-fullname" class="form-control" placeholder="Nguyễn Văn A">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số điện thoại</label>
+            <input type="tel" id="p-phone" class="form-control" placeholder="0901234567">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="p-email" class="form-control" placeholder="email@example.com">
+          </div>
+
+          <button class="btn btn-primary btn-block" onclick="saveInfo()">Lưu thông tin</button>
+        </div>
+      </div>
+
+      <!-- Card: Đổi mật khẩu -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Đổi mật khẩu</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu hiện tại <span class="req">*</span></label>
+            <input type="password" id="p-curpwd" class="form-control" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mật khẩu mới <span class="req">*</span></label>
+            <input type="password" id="p-newpwd" class="form-control" placeholder="Ít nhất 6 ký tự" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Xác nhận mật khẩu mới <span class="req">*</span></label>
+            <input type="password" id="p-confirmpwd" class="form-control" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password">
+          </div>
+          <button class="btn btn-primary btn-block" onclick="changePassword()">Đổi mật khẩu</button>
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+const user = getUser();
+document.getElementById('sidebar-email').textContent = user.email;
+initDashNotif();
+
+async function loadProfile() {
+  const data = await api.get('/api/auth/me');
+  if (!data) return;
+  const u = data.user;
+  document.getElementById('p-fullname').value = u.full_name || '';
+  document.getElementById('p-phone').value    = u.phone     || '';
+  document.getElementById('p-email').value    = u.email     || '';
+
+  const initials = (u.full_name || u.email).charAt(0).toUpperCase();
+  document.getElementById('avatar-preview').textContent = initials;
+  document.getElementById('profile-name').textContent   = u.full_name || u.email;
+  document.getElementById('profile-email-sm').textContent = u.email;
+  const roleMap = { admin: 'Quản trị viên', seller: 'Người bán', buyer: 'Khách hàng' };
+  document.getElementById('profile-role').textContent = roleMap[u.role] || u.role;
+}
+
+async function saveInfo() {
+  const full_name = document.getElementById('p-fullname').value.trim();
+  const phone     = document.getElementById('p-phone').value.trim();
+  const email     = document.getElementById('p-email').value.trim();
+  if (!full_name) return toast('Vui lòng nhập họ tên', 'error');
+  if (!email)     return toast('Vui lòng nhập email', 'error');
+  const res = await api.put('/api/auth/profile', { full_name, phone, email });
+  if (res?.success) {
+    toast('Đã lưu thông tin', 'success');
+    const stored = JSON.parse(localStorage.getItem('mv_user') || '{}');
+    localStorage.setItem('mv_user', JSON.stringify({ ...stored, full_name, email }));
+    document.getElementById('profile-name').textContent = full_name;
+    document.getElementById('avatar-preview').textContent = full_name.charAt(0).toUpperCase();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+async function changePassword() {
+  const current_password = document.getElementById('p-curpwd').value;
+  const new_password     = document.getElementById('p-newpwd').value;
+  const confirm          = document.getElementById('p-confirmpwd').value;
+  if (!current_password) return toast('Vui lòng nhập mật khẩu hiện tại', 'error');
+  if (!new_password)     return toast('Vui lòng nhập mật khẩu mới', 'error');
+  if (new_password.length < 6) return toast('Mật khẩu mới phải ít nhất 6 ký tự', 'error');
+  if (new_password !== confirm) return toast('Mật khẩu xác nhận không khớp', 'error');
+  const res = await api.put('/api/auth/profile', { current_password, new_password });
+  if (res?.success) {
+    toast('Đổi mật khẩu thành công', 'success');
+    document.getElementById('p-curpwd').value     = '';
+    document.getElementById('p-newpwd').value     = '';
+    document.getElementById('p-confirmpwd').value = '';
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+loadProfile();
+</script>
+</body>
+</html>
+

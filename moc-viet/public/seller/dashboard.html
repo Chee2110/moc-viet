@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard — Mộc Việt Seller</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Đối tác Seller</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản lý</div>
+      <a href="/seller/dashboard.html" class="active"><span class="nav-icon"><img src="/icons/dashboard.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tổng quan</a>
+      <a href="/seller/products.html"><span class="nav-icon"><img src="/icons/delivery.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Sản phẩm</a>
+      <a href="/seller/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Đơn hàng</a>
+      <a href="/seller/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Doanh thu</a>
+      <a href="/seller/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Danh mục</a>
+      <div class="dash-nav-label" style="margin-top:16px">Tài khoản</div>
+      <a href="/seller/profile.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Hồ sơ cá nhân</a>
+      <div class="dash-nav-label" style="margin-top:16px">Cửa hàng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Tổng quan</div>
+        <div class="dash-subtitle" id="shop-status-msg"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="position:relative">
+          <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" style="width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:none;border-radius:50%;cursor:pointer;position:relative">
+            <img src="/icons/notification.png" style="width:24px;height:24px;object-fit:contain;filter:brightness(0) invert(.35);opacity:.85" alt="thông báo">
+            <span class="notif-badge" id="notif-badge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:600">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+        <a href="/seller/products.html" class="btn btn-primary" id="add-product-btn" style="display:none">+ Thêm sản phẩm mới</a>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Re-register shop (shown when rejected) -->
+    <div id="register-shop-section" style="display:none" class="card mt-4">
+      <div class="card-body" style="text-align:center;padding:32px">
+        <div style="font-size:2.5rem;margin-bottom:12px"></div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">Đăng ký gian hàng mới</div>
+        <p style="color:var(--text-muted);margin-bottom:20px">Shop trước đã bị từ chối. Bạn có thể đăng ký gian hàng mới để bắt đầu bán hàng.</p>
+        <button class="btn btn-primary" onclick="openRegisterShop()">+ Đăng ký shop mới</button>
+      </div>
+    </div>
+
+    <!-- Shop contact settings (shown when approved) -->
+    <div class="card mt-4" id="shop-settings-card" style="display:none">
+      <div class="card-header">
+        <span class="card-title"><span class="nav-icon"><img src="/icons/hotline.png" alt="Hotline" class="icon-img-sm" style="filter:brightness(10);opacity:.8"></span>Cài đặt hiển thị trên trang sản phẩm</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Hotline (hiển thị cho khách)</label>
+            <input type="tel" id="shop-hotline" class="form-control" placeholder="0901234567">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Thời gian giao hàng (ngày)</label>
+            <input type="text" id="shop-delivery" class="form-control" placeholder="2-4">
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn btn-primary btn-sm" onclick="saveShopSettings()">Lưu cài đặt</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="pending-orders-card" style="display:none">
+      <div class="card-header">
+        <span class="card-title">Đơn hàng chờ xác nhận</span>
+        <a href="/seller/orders.html" style="font-size:13px;color:var(--primary)">Xem tất cả →</a>
+      </div>
+      <div class="card-body" style="padding:0" id="pending-orders-wrap">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Register shop modal -->
+<div class="modal-overlay" id="register-shop-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Đăng ký gian hàng</div>
+      <button class="modal-close" onclick="closeRegisterShop()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Tên shop <span class="req">*</span></label>
+        <input type="text" id="shop-name" class="form-control" placeholder="Tên gian hàng của bạn">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mô tả shop</label>
+        <textarea id="shop-desc" class="form-control" rows="3" placeholder="Giới thiệu về gian hàng..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRegisterShop()">Huỷ</button>
+      <button class="btn btn-primary" onclick="submitShop()" id="submit-shop-btn">Gửi đăng ký</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('seller');
+const user = getUser();
+document.getElementById('sidebar-email').textContent = user.email;
+initDashNotif();
+
+window.onload = async () => {
+  const [stats, orders] = await Promise.all([
+    api.get('/api/seller/stats'),
+    api.get('/api/seller/orders?status=pending')
+  ]);
+
+  const statusMap = {
+    approved: { msg:'Shop đang hoạt động', showAdd: true, showOrders: true },
+    pending:  { msg:'Shop đang chờ Admin duyệt', showAdd: false, showOrders: false },
+    rejected: { msg:'Shop đã bị từ chối. Hãy đăng ký shop mới.', showAdd: false, showOrders: false },
+  };
+  const info = statusMap[stats?.shop_status] || {};
+  document.getElementById('shop-status-msg').textContent = info.msg || 'Chưa có gian hàng';
+
+  if (info.showAdd) document.getElementById('add-product-btn').style.display = '';
+  if (stats?.shop_status === 'rejected' || !stats?.shop_status) {
+    document.getElementById('register-shop-section').style.display = '';
+  }
+  if (stats?.shop_status === 'approved') {
+    document.getElementById('shop-settings-card').style.display = '';
+    const shopData = await api.get('/api/seller/shop');
+    if (shopData) {
+      document.getElementById('shop-hotline').value  = shopData.hotline       || '';
+      document.getElementById('shop-delivery').value = shopData.delivery_days || '2-4';
+    }
+  }
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-icon"><img src="/icons/cart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">${stats?.total_orders||0}</div></div>
+    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/wait_confirmation.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Chờ xác nhận</div><div class="stat-value">${stats?.pending_orders||0}</div></div>
+    <div class="stat-card green"><div class="stat-icon"><img src="/icons/product.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Sản phẩm</div><div class="stat-value">${stats?.total_products||0}</div></div>
+    <div class="stat-card"><div class="stat-icon"><img src="/icons/total_revenue.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Doanh thu</div><div class="stat-value" style="font-size:1.2rem">${fmtPrice(stats?.total_revenue||0)}</div></div>`;
+
+  if (!info.showOrders) return;
+  const card = document.getElementById('pending-orders-card');
+  card.style.display = '';
+  const wrap = document.getElementById('pending-orders-wrap');
+
+  if (!orders?.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:40px"><p>Không có đơn hàng chờ xác nhận</p></div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Sản phẩm</th><th>Khách hàng</th><th>SĐT</th><th>SL</th><th>Tổng</th><th>Ngày đặt</th><th>Hành động</th></tr></thead>
+    <tbody>${orders.slice(0,8).map(o => `
+      <tr>
+        <td>#${o.id}</td>
+        <td>${o.product_name}</td>
+        <td><strong>${o.full_name}</strong></td>
+        <td>${o.phone}</td>
+        <td>${o.quantity}</td>
+        <td><strong>${fmtPrice(o.total_price)}</strong></td>
+        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+        <td>
+          <select class="form-control" style="width:110px;padding:5px 8px;font-size:12px" onchange="quickUpdateStatus(${o.id}, this)">
+            <option value="pending" selected>Chờ xác nhận</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="shipping">Đang giao</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+};
+
+async function quickUpdateStatus(id, sel) {
+  const status = sel.value;
+  if (!status) return;
+  sel.disabled = true;
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res?.success) {
+    toast(status === 'approved' ? 'Đã duyệt đơn hàng' : 'Đã từ chối đơn hàng');
+    sel.closest('tr').remove();
+  } else {
+    toast(res?.message, 'error');
+    sel.disabled = false;
+    sel.value = '';
+  }
+};
+
+async function updateStatus(id, status, btn) {
+  btn.disabled = true;
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res?.success) {
+    toast(status === 'approved' ? 'Đã duyệt đơn hàng' : 'Đã từ chối đơn hàng');
+    btn.closest('tr').remove();
+  } else { toast(res?.message, 'error'); btn.disabled = false; }
+}
+
+async function saveShopSettings() {
+  const hotline      = document.getElementById('shop-hotline').value.trim();
+  const delivery_days = document.getElementById('shop-delivery').value.trim();
+  const res = await api.put('/api/seller/shop', { hotline: hotline || null, delivery_days: delivery_days || '2-4' });
+  if (res?.success) toast('Đã lưu cài đặt shop', 'success');
+  else toast(res?.message || 'Có lỗi xảy ra', 'error');
+}
+
+function openRegisterShop() { document.getElementById('register-shop-modal').classList.add('open'); }
+function closeRegisterShop() { document.getElementById('register-shop-modal').classList.remove('open'); }
+
+async function submitShop() {
+  const name = document.getElementById('shop-name').value.trim();
+  const desc = document.getElementById('shop-desc').value.trim();
+  if (!name) { toast('Vui lòng nhập tên shop', 'error'); return; }
+  const btn = document.getElementById('submit-shop-btn');
+  btn.disabled = true; btn.textContent = 'Đang gửi...';
+  const res = await api.post('/api/seller/shop', { name, description: desc });
+  btn.disabled = false; btn.textContent = 'Gửi đăng ký';
+  if (res?.success) {
+    toast(res.message, 'success');
+    closeRegisterShop();
+    setTimeout(() => window.location.reload(), 1000);
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+</script>
+</body>
+</html>
+

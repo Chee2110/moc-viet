@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tra cứu đơn hàng — Mộc Việt</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><img src="/img/logo.png" alt="Mộc Việt" class="brand-logo"></a>
+    <div class="navbar-search">
+      <input type="text" placeholder="Tìm kiếm đồ thủ công..." onkeyup="if(event.key==='Enter')window.location.href='/?q='+this.value">
+    </div>
+    <div class="navbar-right" id="navbar-right"></div>
+  </div>
+</nav>
+
+<div class="container page-top" style="max-width:580px;padding-bottom:60px">
+  <div class="auth-card" style="text-align:left;margin-top:0">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:3rem">🔍</div>
+      <h2 style="font-size:1.5rem;font-weight:700;color:var(--text);margin:8px 0 4px">Tra cứu đơn hàng</h2>
+      <p style="color:var(--text-muted);font-size:14px">Nhập mã đơn hàng và số điện thoại để xem trạng thái</p>
+    </div>
+
+    <form onsubmit="trackOrder(event)">
+      <div class="form-group">
+        <label class="form-label">Mã đơn hàng <span class="req">*</span></label>
+        <input type="number" id="order-id" class="form-control" placeholder="VD: 12" required min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Số điện thoại đặt hàng <span class="req">*</span></label>
+        <input type="tel" id="phone" class="form-control" placeholder="VD: 0901234567" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="track-btn">
+        Tra cứu
+      </button>
+    </form>
+
+    <div id="error-msg" class="alert alert-danger" style="display:none;margin-top:16px"></div>
+
+    <div id="result" style="display:none;margin-top:24px">
+      <div class="divider"></div>
+      <h3 style="font-size:15px;font-weight:700;margin:16px 0 12px">Thông tin đơn hàng</h3>
+      <div id="result-body"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:20px">
+    <a href="/" style="color:var(--text-muted);font-size:13px">Quay lại trang chủ</a>
+    <span style="color:var(--border);margin:0 12px">|</span>
+    <a href="/login.html" style="color:var(--text-muted);font-size:13px">Đăng nhập</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-bottom">
+      &copy; 2026 Mộc Việt. Tất cả quyền được bảo lưu.
+    </div>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+initNavbar();
+
+const STATUS_LABEL = {
+  pending:   'Chờ xác nhận',
+  approved:  'Đã xác nhận',
+  shipping:  'Đang giao hàng',
+  completed: 'Hoàn thành',
+  rejected:  'Đã từ chối'
+};
+
+async function trackOrder(e) {
+  e.preventDefault();
+  const orderId = document.getElementById('order-id').value.trim();
+  const phone   = document.getElementById('phone').value.trim();
+  const btn     = document.getElementById('track-btn');
+  const errEl   = document.getElementById('error-msg');
+  const result  = document.getElementById('result');
+
+  errEl.style.display = 'none';
+  result.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Đang tra cứu...';
+
+  try {
+    const res = await fetch(`/api/orders/track?order_id=${encodeURIComponent(orderId)}&phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+
+    btn.disabled = false; btn.innerHTML = 'Tra cứu';
+
+    if (!res.ok) {
+      errEl.textContent = data.message || 'Không tìm thấy đơn hàng';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const o = data;
+    const statusColors = { pending:'#F59E0B', approved:'#10B981', shipping:'#3B82F6', completed:'#6B7280', rejected:'#EF4444' };
+    const statusEmoji  = {
+      pending:   `<img src="/icons/wait_confirmation.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.85" alt="">`,
+      approved:  `<img src="/icons/delivery.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.85" alt="">`,
+      shipping:  `<img src="/icons/Ship.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.85" alt="">`,
+      completed: `<img src="/icons/Total_order.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.85" alt="">`,
+      rejected:  `<img src="/icons/clock.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.85" alt="">`,
+    };
+
+    document.getElementById('result-body').innerHTML = `
+      <div style="background:var(--bg-card);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-weight:700;font-size:15px">#${o.id}</div>
+          <div style="background:${statusColors[o.status]||'#888'};color:#fff;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600">
+            ${statusEmoji[o.status]||''} ${STATUS_LABEL[o.status]||o.status}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px">
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">SẢN PHẨM</div>
+            <div style="font-weight:600">${o.product_name}</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">SHOP</div>
+            <div>${o.shop_name}</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">SỐ LƯỢNG</div>
+            <div>${o.quantity}</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">TỔNG TIỀN</div>
+            <div style="font-weight:700;color:var(--primary)">${fmtPrice(o.total_price)}</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">NGÀY ĐẶT</div>
+            <div>${fmtDate(o.created_at)}</div>
+          </div>
+          <div>
+            <div style="color:var(--text-muted);font-size:11px;font-weight:600;margin-bottom:2px">CẬP NHẬT</div>
+            <div>${fmtDate(o.updated_at||o.created_at)}</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border-radius:12px;padding:16px;font-size:14px;border:1px solid var(--border)">
+        <div style="font-weight:700;margin-bottom:8px">Thông tin giao hàng</div>
+        <div style="margin-bottom:4px"><strong>Người nhận:</strong> ${o.full_name}</div>
+        <div style="margin-bottom:4px"><strong>Điện thoại:</strong> ${o.phone}</div>
+        <div style="margin-bottom:4px"><strong>Địa chỉ:</strong> ${o.address}</div>
+        ${o.note ? `<div><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
+      </div>
+      <div style="margin-top:12px">
+        ${progressBar(o.status)}
+      </div>`;
+
+    result.style.display = 'block';
+  } catch {
+    btn.disabled = false; btn.innerHTML = '<img src="/icons/search.png" class="icon-img" style="filter:brightness(10)" alt=""> Tra cứu';
+    errEl.textContent = 'Lỗi kết nối, vui lòng thử lại';
+    errEl.style.display = 'block';
+  }
+}
+
+function progressBar(status) {
+  const steps  = ['pending','approved','shipping','completed'];
+  const labels = ['Đặt hàng','Xác nhận','Đang giao','Hoàn thành'];
+  if (status === 'rejected') {
+    return '<div style="text-align:center;color:#EF4444;font-weight:600;padding:12px 0">Đơn hàng đã bị từ chối</div>';
+  }
+  const activeIdx = steps.indexOf(status);
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;padding:0 8px">
+    <div style="position:absolute;top:14px;left:8%;right:8%;height:3px;background:var(--border);border-radius:2px;z-index:0">
+      <div style="height:100%;background:var(--secondary);border-radius:2px;width:${activeIdx >= 0 ? (activeIdx/3*100) : 0}%;transition:.3s"></div>
+    </div>
+    ${steps.map((s,i) => `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;z-index:1">
+        <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;
+          background:${i<=activeIdx?'var(--secondary)':'var(--border)'};
+          color:${i<=activeIdx?'#fff':'var(--text-muted)'}">
+          ${i<=activeIdx?'✓':(i+1)}
+        </div>
+        <div style="font-size:11px;color:${i<=activeIdx?'var(--secondary)':'var(--text-muted)'};font-weight:${i===activeIdx?700:400}">${labels[i]}</div>
+      </div>`).join('')}
+  </div>`;
+}
+</script>
+</body>
+</html>

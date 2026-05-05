@@ -1,0 +1,312 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Deal Giảm Giá — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Admin</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html" class="active"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block" style="color:rgba(255,255,255,0.7)">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <h2 class="dash-title">Deal & Khuyến mãi</h2>
+        <p class="dash-subtitle">Quản lý các chương trình Flash Sale và sự kiện giảm giá toàn sàn.</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="position:relative">
+          <button class="navbar-icon-btn" id="notif-toggle" onclick="toggleNotif()">
+            <img src="/icons/notification.png" alt="">
+            <span class="notif-badge" id="notif-badge"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Tạo deal mới</button>
+      </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="stats-grid mb-4" id="stats-grid"></div>
+
+    <div class="filter-bar mb-4">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('',this)">Tất cả deal</button>
+        <button class="filter-tab" onclick="setFilter('running',this)">Đang chạy</button>
+        <button class="filter-tab" onclick="setFilter('upcoming',this)">Sắp diễn ra</button>
+        <button class="filter-tab" onclick="setFilter('ended',this)">Đã kết thúc</button>
+      </div>
+    </div>
+
+    <div id="deals-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- CREATE DEAL MODAL -->
+<div class="modal-overlay" id="deal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Tạo Deal Giảm Giá</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Sản phẩm <span class="req">*</span></label>
+        <select id="d-product" class="form-control" onchange="onProductChange()">
+          <option value="">-- Chọn sản phẩm --</option>
+        </select>
+      </div>
+      <div id="product-price-preview" style="display:none" class="section-info-banner mb-3">
+        Giá gốc: <strong id="original-price-text"></strong>
+      </div>
+      <div class="form-group">
+        <label class="form-label">% Giảm giá <span class="req">*</span></label>
+        <div class="input-group">
+          <input type="number" id="d-percent" class="form-control" placeholder="VD: 20" min="1" max="99" oninput="calcPrice()">
+          <span style="padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-left:none;border-radius:0 8px 8px 0;font-weight:600">%</span>
+        </div>
+      </div>
+      <div id="discounted-preview" style="display:none" class="alert alert-success mb-3">
+        Giá sau giảm: <strong id="discounted-price-text"></strong>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Bắt đầu <span class="req">*</span></span>
+            <button type="button" onclick="setStartNow()" style="font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-weight:600">Ngay bây giờ</button>
+          </label>
+          <input type="datetime-local" id="d-start" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kết thúc <span class="req">*</span></label>
+          <input type="datetime-local" id="d-end" class="form-control">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+        Thời gian theo múi giờ của bạn (GMT+7)
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-accent" id="create-btn" onclick="createDeal()">Tạo Deal</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
+
+let products = [];
+let deals = [];
+
+// Format a Date as local datetime-local string (YYYY-MM-DDTHH:MM)
+function fmtLocalDT(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+    + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function setStartNow() {
+  const now = new Date();
+  document.getElementById('d-start').value = fmtLocalDT(now);
+}
+
+let filterType = '';
+
+window.onload = async () => {
+  [products, deals] = await Promise.all([api.get('/api/admin/products'), api.get('/api/admin/deals')]);
+  renderStats();
+  renderDeals();
+  populateProductSelect();
+  const now = new Date();
+  const end = new Date(now); end.setHours(end.getHours() + 24);
+  document.getElementById('d-start').value = fmtLocalDT(now);
+  document.getElementById('d-end').value   = fmtLocalDT(end);
+};
+
+function renderStats() {
+  const now = new Date();
+  const running  = deals.filter(d => now >= new Date(d.start_time) && now <= new Date(d.end_time)).length;
+  const upcoming = deals.filter(d => now < new Date(d.start_time)).length;
+  const ended    = deals.filter(d => now > new Date(d.end_time)).length;
+  
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card red"><div class="stat-icon">🔥</div><div class="stat-label">Đang chạy</div><div class="stat-value">${running}</div></div>
+    <div class="stat-card info"><div class="stat-icon"><img src="/icons/wait_confirmation.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Sắp diễn ra</div><div class="stat-value">${upcoming}</div></div>
+    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/Total_order.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng cộng</div><div class="stat-value">${deals.length}</div></div>
+    <div class="stat-card green"><div class="stat-icon"><img src="/icons/chart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Sản phẩm có Deal</div><div class="stat-value">${[...new Set(deals.map(d=>d.product_id))].length}</div></div>`;
+}
+
+function setFilter(type, btn) {
+  filterType = type;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderDeals();
+}
+
+function populateProductSelect() {
+  const sel = document.getElementById('d-product');
+  sel.innerHTML = '<option value="">-- Chọn sản phẩm --</option>' +
+    products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} (${p.shop_name}) — ${fmtPrice(p.price)}</option>`).join('');
+}
+
+function onProductChange() {
+  const sel = document.getElementById('d-product');
+  const opt = sel.selectedOptions[0];
+  const price = parseFloat(opt?.dataset?.price || 0);
+  if (price > 0) {
+    document.getElementById('original-price-text').textContent = fmtPrice(price);
+    document.getElementById('product-price-preview').style.display = 'block';
+  } else {
+    document.getElementById('product-price-preview').style.display = 'none';
+  }
+  calcPrice();
+}
+
+function calcPrice() {
+  const sel = document.getElementById('d-product');
+  const pct = parseFloat(document.getElementById('d-percent').value || 0);
+  const price = parseFloat(sel.selectedOptions[0]?.dataset?.price || 0);
+  const preview = document.getElementById('discounted-preview');
+  if (price > 0 && pct > 0 && pct < 100) {
+    const discounted = Math.round(price * (1 - pct / 100));
+    document.getElementById('discounted-price-text').textContent = fmtPrice(discounted);
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function renderDeals() {
+  const container = document.getElementById('deals-container');
+  const now = new Date();
+  
+  let filtered = deals;
+  if (filterType === 'running')  filtered = deals.filter(d => now >= new Date(d.start_time) && now <= new Date(d.end_time));
+  else if (filterType === 'upcoming') filtered = deals.filter(d => now < new Date(d.start_time));
+  else if (filterType === 'ended')    filtered = deals.filter(d => now > new Date(d.end_time));
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏷️</div><p>Không tìm thấy chương trình nào phù hợp.</p></div>';
+    return;
+  }
+  
+  container.innerHTML = `<div style="display:grid;gap:16px">${filtered.map(d => {
+    const start = new Date(d.start_time), end = new Date(d.end_time);
+    let status, badge;
+    if (now < start)       { status = 'Sắp diễn ra'; badge = 'badge-info'; }
+    else if (now > end)    { status = 'Đã kết thúc'; badge = 'badge-secondary'; }
+    else                   { status = 'Đang chạy'; badge = 'badge-danger'; }
+    
+    return `
+    <div class="shop-card">
+      <div class="shop-icon" style="background:var(--bg-subtle)">🏷️</div>
+      <div class="shop-info" style="flex:1">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div class="shop-name">${d.product_name}</div>
+          <span class="badge ${badge}">${status}</span>
+        </div>
+        <div class="shop-email">
+          <span style="color:#dc2626;font-weight:700;font-size:16px">-${d.discount_percent}%</span> · 
+          <span style="text-decoration:line-through;color:var(--text-muted)">${fmtPrice(d.original_price)}</span> → 
+          <strong style="color:var(--primary)">${fmtPrice(d.discounted_price)}</strong>
+        </div>
+        <div class="shop-desc">⏰ ${fmtDate(d.start_time)} — ${fmtDate(d.end_time)}</div>
+        <div class="shop-actions">
+          <button class="btn btn-ghost btn-sm" style="color:#dc2626" onclick="deleteDeal(${d.id},this)">Xoá chương trình</button>
+        </div>
+      </div>
+    </div>`;}).join('')}</div>`;
+}
+
+function openModal() {
+  document.getElementById('deal-modal').classList.add('open');
+  document.getElementById('d-product').value = '';
+  document.getElementById('d-percent').value = '';
+  document.getElementById('discounted-preview').style.display = 'none';
+  document.getElementById('product-price-preview').style.display = 'none';
+  // Reset to current local time defaults
+  const now = new Date();
+  const end = new Date(now); end.setHours(end.getHours() + 24);
+  document.getElementById('d-start').value = fmtLocalDT(now);
+  document.getElementById('d-end').value   = fmtLocalDT(end);
+}
+function closeModal() { document.getElementById('deal-modal').classList.remove('open'); }
+
+async function createDeal() {
+  const product_id       = document.getElementById('d-product').value;
+  const discount_percent = parseInt(document.getElementById('d-percent').value);
+  const startRaw         = document.getElementById('d-start').value;
+  const endRaw           = document.getElementById('d-end').value;
+
+  if (!product_id) return toast('Vui lòng chọn sản phẩm', 'error');
+  if (!discount_percent || discount_percent < 1 || discount_percent > 99) return toast('% giảm giá phải từ 1 đến 99', 'error');
+  if (!startRaw || !endRaw) return toast('Vui lòng chọn thời gian', 'error');
+  if (new Date(endRaw) <= new Date(startRaw)) return toast('Thời gian kết thúc phải sau bắt đầu', 'error');
+
+  // Convert local datetime-local values to UTC ISO so PostgreSQL NOW() comparison is correct
+  const start_time = new Date(startRaw).toISOString();
+  const end_time   = new Date(endRaw).toISOString();
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true; btn.textContent = 'Đang tạo...';
+  const res = await api.post('/api/admin/deals', { product_id: parseInt(product_id), discount_percent, start_time, end_time });
+  btn.disabled = false; btn.textContent = 'Tạo Deal';
+
+  if (res.success) {
+    toast(`Tạo deal thành công! Giá giảm: ${fmtPrice(res.discounted_price)}`);
+    closeModal();
+    deals = await api.get('/api/admin/deals');
+    renderDeals();
+  } else {
+    toast(res.message || 'Lỗi tạo deal', 'error');
+  }
+}
+
+async function deleteDeal(id, btn) {
+  if (!confirm('Xóa deal này?')) return;
+  btn.disabled = true;
+  const res = await api.delete(`/api/admin/deals/${id}`);
+  if (res.success) { toast('Đã xóa deal'); deals = deals.filter(d => d.id !== id); renderDeals(); }
+  else { toast(res.message, 'error'); btn.disabled = false; }
+}
+</script>
+</body>
+</html>
+

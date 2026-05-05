@@ -1,0 +1,630 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quản lý Sản phẩm — Mộc Việt Seller</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <style>
+    .variant-table-head {
+      display: grid;
+      grid-template-columns: 1fr 120px 90px 44px 34px;
+      gap: 12px;
+      padding: 10px 0;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 12px;
+    }
+    .variant-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 90px 44px 34px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      animation: fadeIn 0.3s ease;
+    }
+    .variant-row .form-control { 
+      margin: 0; 
+      padding: 10px 12px;
+      font-size: 14px;
+      background: white;
+    }
+    .v-img-label {
+      display: flex; align-items: center; justify-content: center;
+      height: 40px; border: 1.5px dashed var(--border-color);
+      border-radius: 8px; cursor: pointer; transition: var(--transition);
+      font-size: 18px; background: #fff;
+    }
+    .v-img-label:hover { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.02); }
+    .v-img-label img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; }
+    .remove-variant-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #fff; color: #ff4d4f; border: 1px solid #ffccc7;
+      cursor: pointer; font-size: 14px; transition: var(--transition);
+    }
+    .remove-variant-btn:hover { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+    .add-variant-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; width: 100%;
+      background: #fff; border: 1.5px dashed var(--primary);
+      color: var(--primary); font-weight: 700; font-size: 14px;
+      padding: 14px; border-radius: 12px; cursor: pointer;
+      transition: var(--transition); margin-top: 12px;
+    }
+    .add-variant-btn:hover { background: rgba(var(--primary-rgb),.05); transform: translateY(-2px); }
+    .section-divider {
+      font-weight: 800; color: var(--primary); font-size: 12px;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      margin: 20px 0 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal .form-group { margin-bottom: 16px; }
+    .img-slots { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .img-slot {
+      width: 84px; height: 84px;
+      border: 2px dashed var(--border-color); border-radius: 12px;
+      background: #fafafa; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: var(--transition); position: relative;
+      font-size: 24px; color: var(--text-muted); overflow: hidden; flex-shrink: 0;
+    }
+    .img-slot:hover { border-color: var(--primary); background: white; box-shadow: var(--shadow-sm); }
+    .img-slot.has-img { border-color: var(--primary); border-style: solid; }
+    .img-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+    .img-slot-del {
+      position: absolute; top: 3px; right: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(0,0,0,0.55); color: white;
+      font-size: 11px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 2; opacity: 0; transition: opacity 0.15s; border: none;
+    }
+    .img-slot:hover .img-slot-del { opacity: 1; }
+    .img-slot-badge {
+      position: absolute; bottom: 3px; left: 5px;
+      font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.35); border-radius: 4px; padding: 1px 4px; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Đối tác Seller</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản lý</div>
+      <a href="/seller/dashboard.html"><span class="nav-icon"><img src="/icons/dashboard.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tổng quan</a>
+      <a href="/seller/products.html" class="active"><span class="nav-icon"><img src="/icons/delivery.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Sản phẩm</a>
+      <a href="/seller/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Đơn hàng</a>
+      <a href="/seller/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Doanh thu</a>
+      <a href="/seller/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Danh mục</a>
+      <div class="dash-nav-label" style="margin-top:16px">Tài khoản</div>
+      <a href="/seller/profile.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Hồ sơ cá nhân</a>
+      <div class="dash-nav-label" style="margin-top:16px">Cửa hàng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Quản lý Sản phẩm</div>
+        <div class="dash-subtitle">Đăng và cập nhật sản phẩm của bạn</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="position:relative">
+          <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" style="width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:none;border-radius:50%;cursor:pointer;position:relative">
+            <img src="/icons/notification.png" style="width:24px;height:24px;object-fit:contain;filter:brightness(0) invert(.35);opacity:.85" alt="thông báo">
+            <span class="notif-badge" id="notif-badge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:600">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Thêm sản phẩm mới</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="search" placeholder="Tìm tên sản phẩm..." oninput="filterProducts()" style="min-width:220px">
+      <select id="filter-hidden" onchange="filterProducts()">
+        <option value="all">Tất cả</option>
+        <option value="visible">Đang hiển thị</option>
+        <option value="hidden">Đang ẩn</option>
+      </select>
+    </div>
+
+    <div class="table-wrap" id="products-wrap">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL ADD/EDIT -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal" style="max-width:900px;width:95%">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="modal-title">Đăng Sản Phẩm Mới</span>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px">Điền đầy đủ thông tin để sản phẩm hiển thị tốt hơn.</p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:0">
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:0">
+
+        <!-- LEFT: Form -->
+        <div style="padding:20px 24px;border-right:1px solid var(--border-color);max-height:72vh;overflow-y:auto">
+
+          <div class="section-divider">Thông tin cơ bản</div>
+
+          <div class="form-group">
+            <label class="form-label">Tên sản phẩm chính <span class="req">*</span></label>
+            <input type="text" id="p-name" class="form-control" placeholder="VD: Kệ sách gỗ tre tự nhiên" oninput="updateLivePreview()">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="form-group">
+              <label class="form-label">Danh mục</label>
+              <select id="p-category" class="form-control">
+                <option value="khac">Đang tải...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Trạng thái</label>
+              <select id="p-status" class="form-control" onchange="updateLivePreview()">
+                <option value="visible">Đang bán</option>
+                <option value="hidden">Đã ẩn</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ảnh sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tối đa 5 — ảnh đầu là ảnh đại diện)</span></label>
+            <div class="img-slots" id="img-slots"></div>
+            <input type="file" id="p-img-input" accept="image/*" style="display:none" onchange="handleSlotFile(event)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mô tả sản phẩm</label>
+            <textarea id="p-desc" class="form-control" rows="3" placeholder="Mô tả chất liệu, kích thước, công dụng..."></textarea>
+          </div>
+
+          <div class="section-divider">Phân loại sản phẩm <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(tên, giá, số lượng cho từng loại)</span></div>
+
+          <div class="variant-table-head">
+            <span>Tên phân loại</span>
+            <span>Giá (đ)</span>
+            <span>Số lượng</span>
+            <span style="text-align:center">Ảnh</span>
+            <span></span>
+          </div>
+          <div id="variant-list"></div>
+          <button type="button" class="add-variant-btn" onclick="addVariant()">
+            <span style="font-size:18px;line-height:1">+</span> Thêm phân loại
+          </button>
+
+        </div>
+
+        <!-- RIGHT: Preview -->
+        <div style="padding:28px 24px;background:#fafafa;display:flex;flex-direction:column;align-items:center">
+          <div style="font-weight:700;color:var(--text-muted);margin-bottom:20px;font-size:11px;text-transform:uppercase;letter-spacing:1px;align-self:flex-start">Xem trước</div>
+          <div id="live-preview-card" style="width:100%;transform:scale(.93);transform-origin:top"></div>
+          <div style="margin-top:auto;padding-top:16px;width:100%">
+            <div style="font-size:11px;line-height:1.5;color:var(--text-muted);background:rgba(var(--primary-rgb),.05);border:1px solid rgba(var(--primary-rgb),.12);border-radius:10px;padding:10px 12px">
+              <strong style="color:var(--primary)">Mẹo:</strong> Ảnh vuông (1:1) hiển thị đẹp nhất. Thêm nhiều phân loại để tăng lựa chọn cho khách.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveProduct()">Đăng sản phẩm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete Confirm Modal ───────────────── -->
+<div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="modal-body" style="padding:32px 28px 20px">
+      <div style="margin-bottom:12px"><img src="/icons/delete.png" style="width:48px;height:48px;object-fit:contain;opacity:.5" alt=""></div>
+      <h3 style="margin:0 0 8px;font-size:1.1rem">Xóa sản phẩm?</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin:0 0 24px">Hành động này không thể hoàn tác. Sản phẩm sẽ bị xóa vĩnh viễn.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-ghost" onclick="closeDeleteConfirm()">Hủy</button>
+        <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteProduct()">Xác nhận xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('seller');
+document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
+
+let products = [];
+let editId = null;
+let variantList = [];
+let sellerShopName = 'Cửa hàng của bạn';
+
+// Load shop name once for preview
+(async () => {
+  try {
+    const shop = await api.get('/api/seller/shop');
+    if (shop && shop.name) sellerShopName = shop.name;
+  } catch {}
+})();
+
+let categoryList = [];
+
+async function loadCategorySelect(selectedValue) {
+  const cats = await api.get('/api/categories');
+  categoryList = cats || [];
+  const sel = document.getElementById('p-category');
+  if (!sel) return;
+  sel.innerHTML = categoryList.map(c =>
+    `<option value="${c.value}"${c.value === selectedValue ? ' selected' : ''}>${c.label}</option>`
+  ).join('') || '<option value="khac">Khác</option>';
+}
+
+window.onload = async () => { await loadCategorySelect(); loadProducts(); };
+
+async function loadProducts() {
+  const wrap = document.getElementById('products-wrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const data = await api.get('/api/seller/products');
+  products = Array.isArray(data) ? data : [];
+  renderTable();
+}
+
+function filterProducts() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const hiddenFilter = document.getElementById('filter-hidden').value;
+  const filtered = products.filter(p => {
+    const nameMatch = (p.name || '').toLowerCase().includes(q);
+    const hiddenMatch = hiddenFilter === 'all' || (hiddenFilter === 'hidden' ? p.is_hidden : !p.is_hidden);
+    return nameMatch && hiddenMatch;
+  });
+  renderTable(filtered);
+}
+
+function renderTable(list = products) {
+  const wrap = document.getElementById('products-wrap');
+  if (!list || !list.length) {
+    wrap.innerHTML = '<div class="empty-state"><p>Chưa có sản phẩm nào</p></div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Ảnh</th><th>Tên sản phẩm</th><th>Giá</th><th>Phân loại</th><th>Trạng thái</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
+    <tbody>${list.map(p => {
+      const vars = Array.isArray(p.variants) ? p.variants : [];
+      const varInfo = vars.length > 0
+        ? `<span style="font-size:12px;color:var(--text-muted)">${vars.length} phân loại</span>`
+        : `<span style="font-size:12px;color:var(--text-muted)">—</span>`;
+      return `
+      <tr style="${p.is_hidden?'opacity:.6':''}">
+        <td>${p.image_url
+          ? `<img src="${p.image_url}" style="width:50px;height:50px;border-radius:8px;object-fit:cover" onerror="this.style.display='none'">`
+          : `<div style="width:50px;height:50px;border-radius:8px;background:linear-gradient(135deg,#C4956A,#8B5E3C);display:flex;align-items:center;justify-content:center"><img src="/icons/product.png" style="width:26px;height:26px;object-fit:contain;filter:brightness(10);opacity:.8" alt=""></div>`}
+        </td>
+        <td><div class="td-product-text" title="${p.name}${p.description?' — '+p.description:''}"><span class="td-product-name">${p.name}</span></div></td>
+        <td><strong>${fmtPrice(p.price)}</strong></td>
+        <td>${varInfo}</td>
+        <td>${p.is_hidden ? '<span class="badge badge-secondary">Đang ẩn</span>' : '<span class="badge badge-success">Hiển thị</span>'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(p.created_at)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="openModal(${p.id})">Sửa</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleHide(${p.id})" title="${p.is_hidden?'Hiện':'Ẩn'} sản phẩm">${p.is_hidden?'Hiện':'Ẩn'}</button>
+          <button title="Xóa sản phẩm" onclick="deleteProduct(${p.id})" style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;transition:background .15s;display:inline-flex;align-items:center;justify-content:center" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'"><img src="/icons/delete.png" style="width:18px;height:18px;object-fit:contain;opacity:.7" alt="Xóa"></button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}
+
+// ── Variant helpers ──────────────────────────────────
+function syncVariantsFromDOM() {
+  document.querySelectorAll('.variant-row').forEach((row, i) => {
+    if (!variantList[i]) return;
+    variantList[i].name     = row.querySelector('.v-name').value;
+    variantList[i].price    = row.querySelector('.v-price').value;
+    variantList[i].quantity = parseInt(row.querySelector('.v-qty').value) || 0;
+  });
+}
+
+function addVariant() {
+  syncVariantsFromDOM();
+  variantList.push({ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null });
+  renderVariants();
+}
+
+function removeVariant(i) {
+  if (variantList.length <= 1) { toast('Cần ít nhất 1 phân loại', 'error'); return; }
+  syncVariantsFromDOM();
+  variantList.splice(i, 1);
+  renderVariants();
+  updateLivePreview();
+}
+
+function renderVariants() {
+  const container = document.getElementById('variant-list');
+  container.innerHTML = variantList.map((v, i) => `
+    <div class="variant-row">
+      <input class="form-control v-name" placeholder="VD: Màu xanh, Size M" value="${escHtml(v.name)}" oninput="updateLivePreview()">
+      <div style="position:relative">
+        <input class="form-control v-price" type="number" placeholder="Giá" min="1000" value="${v.price}" oninput="updateLivePreview()" style="padding-right:24px">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);pointer-events:none">đ</span>
+      </div>
+      <input class="form-control v-qty" type="number" placeholder="SL" min="0" value="${v.quantity}" oninput="updateLivePreview()">
+      <label class="v-img-label" id="v-img-label-${i}" title="Ảnh phân loại (tùy chọn)">
+        ${v._preview ? `<img src="${v._preview}">` : ''}
+        <input type="file" accept="image/*" style="display:none" onchange="previewVariantImg(${i},this)">
+      </label>
+      <button type="button" class="remove-variant-btn" onclick="removeVariant(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function previewVariantImg(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  variantList[i]._file = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    variantList[i]._preview = ev.target.result;
+    const label = document.getElementById('v-img-label-' + i);
+    if (label) label.innerHTML = `<img src="${ev.target.result}"><input type="file" accept="image/*" style="display:none" onchange="previewVariantImg(${i},this)">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Multi-image slots (up to 5) ──────────────────
+let productImages = []; // [{_file, _preview, _url}]
+let activeSlotIdx = -1;
+
+// ── Modal open/close ─────────────────────────────────
+function openModal(id = null) {
+  editId = id;
+  document.getElementById('modal-title').textContent = id ? 'Chỉnh sửa sản phẩm' : 'Đăng Sản Phẩm Mới';
+  document.getElementById('save-btn').textContent = id ? 'Lưu thay đổi' : 'Đăng sản phẩm';
+  // Reset file input
+  const imgInput = document.getElementById('p-img-input');
+  if (imgInput) imgInput.value = '';
+  activeSlotIdx = -1;
+
+  if (id) {
+    const p = products.find(x => x.id === id);
+    document.getElementById('p-name').value = p.name;
+    loadCategorySelect(p.category || 'khac');
+    document.getElementById('p-status').value   = p.is_hidden ? 'hidden' : 'visible';
+    document.getElementById('p-desc').value     = p.description || '';
+
+    // Load existing images into slots
+    const existingImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
+    productImages = existingImgs.map(url => ({ _file: null, _preview: url, _url: url }));
+
+    const vars = Array.isArray(p.variants) ? p.variants : [];
+    if (vars.length > 0) {
+      variantList = vars.map(v => ({ name: v.name||'', price: v.price||'', quantity: v.quantity||0, image_url: v.image_url||'', _file: null, _preview: v.image_url||null }));
+    } else {
+      variantList = [{ name: '', price: String(p.price||''), quantity: p.stock_quantity||1, image_url: '', _file: null, _preview: null }];
+    }
+  } else {
+    document.getElementById('p-name').value = '';
+    loadCategorySelect(categoryList[0]?.value || 'khac');
+    document.getElementById('p-status').value   = 'visible';
+    document.getElementById('p-desc').value     = '';
+    productImages = [];
+    variantList = [{ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null }];
+  }
+
+  renderVariants();
+  renderImgSlots();
+  updateLivePreview();
+  document.getElementById('product-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('product-modal').classList.remove('open');
+  editId = null;
+}
+
+function renderImgSlots() {
+  const container = document.getElementById('img-slots');
+  if (!container) return;
+  const slots = [];
+  for (let i = 0; i < 5; i++) {
+    const img = productImages[i];
+    const src = img?._preview || img?._url || '';
+    if (src) {
+      slots.push(`
+        <div class="img-slot has-img" onclick="openSlot(${i})">
+          <img src="${src}" alt="">
+          <button class="img-slot-del" onclick="removeSlot(${i},event)" title="Xóa">×</button>
+          ${i === 0 ? '<span class="img-slot-badge">Chính</span>' : ''}
+        </div>`);
+    } else if (i === 0 || productImages[i-1]) {
+      slots.push(`<div class="img-slot" onclick="openSlot(${i})" title="Thêm ảnh ${i+1}">+</div>`);
+    }
+  }
+  container.innerHTML = slots.join('');
+}
+
+function openSlot(idx) {
+  activeSlotIdx = idx;
+  const inp = document.getElementById('p-img-input');
+  inp.value = '';
+  inp.click();
+}
+
+function handleSlotFile(e) {
+  const file = e.target.files[0];
+  if (!file || activeSlotIdx < 0) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    if (!productImages[activeSlotIdx]) productImages[activeSlotIdx] = {};
+    productImages[activeSlotIdx]._file    = file;
+    productImages[activeSlotIdx]._preview = ev.target.result;
+    productImages[activeSlotIdx]._url     = '';
+    renderImgSlots();
+    updateLivePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeSlot(idx, event) {
+  event.stopPropagation();
+  productImages.splice(idx, 1);
+  renderImgSlots();
+  updateLivePreview();
+}
+
+function updateLivePreview() {
+  const name   = document.getElementById('p-name')?.value || 'Tên sản phẩm';
+  const imgUrl = productImages[0]?._preview || productImages[0]?._url || '';
+  const shopName = sellerShopName || 'Cửa hàng của bạn';
+
+  // Compute min price from variant inputs
+  let minPrice = 0;
+  document.querySelectorAll('.v-price').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (v > 0 && (minPrice === 0 || v < minPrice)) minPrice = v;
+  });
+
+  document.getElementById('live-preview-card').innerHTML = `
+    <div class="product-card" style="box-shadow:var(--shadow-md);pointer-events:none">
+      <div class="product-img-wrap">
+        ${imgUrl ? `<img src="${imgUrl}" class="product-img">` : `<div class="product-img" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:3rem"></div>`}
+      </div>
+      <div class="product-body">
+        <div class="product-shop">${shopName}</div>
+        <div class="product-name">${name}</div>
+        <div class="product-price-wrap">
+          <span class="product-price">${minPrice > 0 ? fmtPrice(minPrice) : '—'}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Save ─────────────────────────────────────────────
+async function saveProduct() {
+  syncVariantsFromDOM();
+
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) return toast('Vui lòng nhập tên sản phẩm', 'error');
+  if (variantList.length === 0) return toast('Cần ít nhất 1 phân loại', 'error');
+
+  for (let i = 0; i < variantList.length; i++) {
+    const price = parseFloat(variantList[i].price);
+    if (!price || price < 1000) return toast(`Phân loại #${i+1}: giá phải ≥ 1.000 đ`, 'error');
+  }
+
+  const fd = new FormData();
+  fd.append('name',        name);
+  fd.append('category',    document.getElementById('p-category').value);
+  fd.append('description', document.getElementById('p-desc').value.trim());
+  fd.append('is_hidden',   document.getElementById('p-status').value === 'hidden' ? '1' : '0');
+
+  const variantsPayload = variantList.map(({ name, price, quantity, image_url }) => ({ name, price, quantity, image_url }));
+  fd.append('variants', JSON.stringify(variantsPayload));
+
+  // Attach up to 5 product images
+  productImages.forEach((img, i) => {
+    if (img._file) fd.append(`product_image_${i}`, img._file);
+  });
+
+  variantList.forEach((v, i) => {
+    if (v._file) fd.append(`variant_image_${i}`, v._file);
+  });
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+  try {
+    const res = editId
+      ? await api.put(`/api/seller/products/${editId}`, fd)
+      : await api.post('/api/seller/products', fd);
+
+    if (!res) {
+      toast('Không thể kết nối máy chủ, vui lòng thử lại', 'error');
+      btn.disabled = false; btn.textContent = editId ? 'Lưu thay đổi' : 'Đăng sản phẩm';
+      return;
+    }
+
+    btn.disabled = false; btn.textContent = editId ? 'Lưu thay đổi' : 'Đăng sản phẩm';
+
+    if (res.success || res.product) {
+      toast(editId ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!');
+      closeModal();
+      loadProducts();
+    } else {
+      toast(res.message || 'Lỗi không xác định, vui lòng thử lại', 'error');
+    }
+  } catch (err) {
+    btn.disabled = false; btn.textContent = editId ? 'Lưu thay đổi' : 'Đăng sản phẩm';
+    toast('Có lỗi xảy ra: ' + (err.message || 'Kết nối thất bại'), 'error');
+  }
+}
+
+async function toggleHide(id) {
+  const res = await api.patch(`/api/seller/products/${id}/hide`);
+  if (res.success) { toast(res.is_hidden ? 'Đã ẩn sản phẩm' : 'Đã hiện sản phẩm'); loadProducts(); }
+  else toast(res.message, 'error');
+}
+
+let _pendingDeleteId = null;
+
+function deleteProduct(id) {
+  _pendingDeleteId = id;
+  document.getElementById('delete-confirm-modal').classList.add('open');
+}
+
+function closeDeleteConfirm() {
+  _pendingDeleteId = null;
+  document.getElementById('delete-confirm-modal').classList.remove('open');
+}
+
+async function confirmDeleteProduct() {
+  if (!_pendingDeleteId) return;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.textContent = 'Đang xóa...';
+  const res = await api.delete(`/api/seller/products/${_pendingDeleteId}`);
+  btn.disabled = false; btn.innerHTML = 'Xác nhận xóa';
+  if (res.success) {
+    toast('Đã xóa sản phẩm');
+    closeDeleteConfirm();
+    loadProducts();
+  } else {
+    toast(res.message, 'error');
+  }
+}
+</script>
+</body>
+</html>
+

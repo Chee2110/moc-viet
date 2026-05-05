@@ -1,0 +1,290 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Doanh thu — Mộc Việt Seller</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Đối tác Seller</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản lý</div>
+      <a href="/seller/dashboard.html"><span class="nav-icon"><img src="/icons/dashboard.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tổng quan</a>
+      <a href="/seller/products.html"><span class="nav-icon"><img src="/icons/delivery.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Sản phẩm</a>
+      <a href="/seller/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Đơn hàng</a>
+      <a href="/seller/revenue.html" class="active"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Doanh thu</a>
+      <a href="/seller/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Danh mục</a>
+      <div class="dash-nav-label" style="margin-top:16px">Tài khoản</div>
+      <a href="/seller/profile.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Hồ sơ cá nhân</a>
+      <div class="dash-nav-label" style="margin-top:16px">Cửa hàng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Doanh thu</div>
+        <div class="dash-subtitle">Phân tích hiệu quả kinh doanh của bạn</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="position:relative">
+          <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" style="width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:none;border-radius:50%;cursor:pointer;position:relative">
+            <img src="/icons/notification.png" style="width:24px;height:24px;object-fit:contain;filter:brightness(0) invert(.35);opacity:.85" alt="thông báo">
+            <span class="notif-badge" id="notif-badge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:600">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="exportExcel()"><img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px" alt=""> Xuất báo cáo Excel</button>
+      </div>
+    </div>
+
+    <!-- Period selector -->
+    <div class="filter-bar mb-4">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setPeriod('monthly',this)">Theo tháng</button>
+        <button class="filter-tab" onclick="setPeriod('quarterly',this)">Theo quý</button>
+        <button class="filter-tab" onclick="setPeriod('yearly',this)">Theo năm</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px" id="year-wrap">
+        <label style="font-size:14px;color:var(--text-muted);white-space:nowrap">Năm:</label>
+        <select id="year-sel" class="form-control" style="width:100px" onchange="loadRevenue()">
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid mb-4" id="stats-grid">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title" id="chart-title">Biểu đồ doanh thu</span>
+      </div>
+      <div class="card-body">
+        <div style="position:relative;height:320px">
+          <canvas id="revenue-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Chi tiết doanh thu</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th id="period-col-header">Tháng</th>
+              <th>Số đơn</th>
+              <th>Doanh thu</th>
+              <th>TB/đơn</th>
+            </tr>
+          </thead>
+          <tbody id="revenue-tbody">
+            <tr><td colspan="4" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('seller');
+const user = getUser();
+document.getElementById('sidebar-email').textContent = user.email;
+initDashNotif();
+
+let currentPeriod = 'monthly';
+let revenueChart  = null;
+
+// Populate year select
+const thisYear = new Date().getFullYear();
+const yearSel = document.getElementById('year-sel');
+for (let y = thisYear; y >= thisYear - 5; y--) {
+  const o = document.createElement('option');
+  o.value = y; o.textContent = y;
+  yearSel.appendChild(o);
+}
+
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('year-wrap').style.display = period === 'yearly' ? 'none' : 'flex';
+  const headers = { monthly:'Tháng', quarterly:'Quý', yearly:'Năm' };
+  document.getElementById('period-col-header').textContent = headers[period];
+  loadRevenue();
+}
+
+async function loadRevenue() {
+  const year = document.getElementById('year-sel').value;
+  const data = await api.get(`/api/seller/revenue?period=${currentPeriod}&year=${year}`);
+  if (!data) return;
+
+  // Stats
+  const s = data.summary;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card green"><div class="stat-icon"><img src="/icons/total_revenue.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng doanh thu</div><div class="stat-value" style="font-size:1.2rem">${fmtPrice(s.total_revenue||0)}</div></div>
+    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/total_order.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">${s.total_orders||0}</div></div>
+    <div class="stat-card"><div class="stat-icon"><img src="/icons/chart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Trung bình/đơn</div><div class="stat-value" style="font-size:1.1rem">${fmtPrice(Math.round(s.avg_order||0))}</div></div>`;
+
+  // Chart
+  const labels = buildLabels(data.data);
+  const values = buildValues(data.data);
+  document.getElementById('chart-title').textContent = `Biểu đồ doanh thu ${currentPeriod === 'yearly' ? 'các năm' : 'năm ' + year}`;
+  renderChart(labels, values);
+
+  // Table
+  const tbody = document.getElementById('revenue-tbody');
+  if (!data.data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:32px">Chưa có dữ liệu doanh thu</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.data.map(r => `
+    <tr>
+      <td><strong>${formatPeriodKey(r.period_key)}</strong></td>
+      <td>${r.orders} đơn</td>
+      <td style="color:var(--secondary);font-weight:700">${fmtPrice(Number(r.revenue))}</td>
+      <td style="color:var(--text-muted)">${fmtPrice(Math.round(Number(r.revenue)/r.orders))}</td>
+    </tr>`).join('');
+}
+
+function buildLabels(data) {
+  if (currentPeriod === 'monthly') {
+    const all = Array.from({length:12}, (_,i) => `Tháng ${i+1}`);
+    return all;
+  }
+  if (currentPeriod === 'quarterly') return ['Quý 1','Quý 2','Quý 3','Quý 4'];
+  return data.map(r => 'Năm ' + r.period_key);
+}
+
+function buildValues(data) {
+  if (currentPeriod === 'monthly') {
+    const arr = new Array(12).fill(0);
+    data.forEach(r => { arr[r.period_key - 1] = Number(r.revenue); });
+    return arr;
+  }
+  if (currentPeriod === 'quarterly') {
+    const arr = new Array(4).fill(0);
+    data.forEach(r => { arr[r.period_key - 1] = Number(r.revenue); });
+    return arr;
+  }
+  return data.map(r => Number(r.revenue));
+}
+
+function formatPeriodKey(key) {
+  if (currentPeriod === 'monthly')   return 'Tháng ' + key;
+  if (currentPeriod === 'quarterly') return 'Quý ' + key;
+  return 'Năm ' + key;
+}
+
+function renderChart(labels, values) {
+  const ctx = document.getElementById('revenue-chart').getContext('2d');
+  if (revenueChart) revenueChart.destroy();
+  revenueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Doanh thu (đ)',
+        data: values,
+        backgroundColor: 'rgba(139,94,60,0.75)',
+        borderColor: '#8B5E3C',
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + fmtPrice(ctx.parsed.y)
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: v => fmtPrice(v)
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+async function exportExcel() {
+  const year = document.getElementById('year-sel').value;
+  const token = localStorage.getItem('mv_token');
+  if (!token) return toast('Vui lòng đăng nhập lại', 'error');
+
+  const btn = document.querySelector('button[onclick="exportExcel()"]');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xuất...'; }
+
+  try {
+    const res = await fetch(`/api/seller/revenue/export?year=${year}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (!res.ok) {
+      let errMsg = 'Không thể xuất file Excel';
+      try { const err = await res.json(); errMsg = err.message || errMsg; } catch {}
+      toast(errMsg, 'error');
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `doanh-thu-seller-${year}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Xuất Excel thành công!', 'success');
+  } catch {
+    toast('Lỗi kết nối, vui lòng thử lại', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+  }
+}
+
+window.onload = () => loadRevenue();
+</script>
+</body>
+</html>
+

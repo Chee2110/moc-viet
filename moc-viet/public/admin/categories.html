@@ -1,0 +1,283 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quản lý Danh mục — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <style>
+    .top-bar {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      background: #fff; border: 1.5px solid var(--border-color);
+      border-radius: 12px; padding: 20px 0; margin-bottom: 20px;
+      align-items: center;
+    }
+    .top-bar-col {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 6px 28px; gap: 6px;
+    }
+    .top-bar-col + .top-bar-col { border-left: 1px solid var(--border-color); }
+    .stat-inline { display: flex; align-items: center; gap: 14px; }
+    .stat-count-big {
+      width: 46px; height: 46px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .stat-count-label { font-size: 15px; font-weight: 700; color: var(--text-main); }
+    .fi-group { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 280px; }
+    .fi-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+    .fi-group input {
+      padding: 9px 13px; border: 1.5px solid var(--border-color);
+      border-radius: 8px; font-size: 14px; font-family: inherit;
+      outline: none; transition: border-color 0.2s; background: #fafafa;
+      width: 100%; box-sizing: border-box;
+    }
+    .fi-group input:focus { border-color: var(--primary); background: #fff; }
+    .hint { font-size: 11px; color: var(--text-muted); }
+    .cat-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cat-row {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border: 1.5px solid var(--border-color);
+      border-radius: 10px; padding: 12px 14px;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .cat-row:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); border-color: var(--primary-light); }
+    .cat-row-info { flex: 1; min-width: 0; overflow: hidden; }
+    .cat-row-label { font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cat-slug { font-size: 11px; color: var(--text-muted); font-family: monospace; background: #f4f2ec; padding: 1px 6px; border-radius: 5px; display: inline-block; margin-top: 3px; }
+    .cat-row-adder { font-size: 12px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
+    .cat-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .cat-edit-btn {
+      padding: 4px 10px; border-radius: 6px; background: #f0fdf4;
+      border: 1.5px solid #86efac; color: #16a34a; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s;
+    }
+    .cat-edit-btn:hover { background: #dcfce7; }
+    .cat-del-btn {
+      padding: 4px 10px; border-radius: 6px; background: #fee2e2;
+      border: 1.5px solid #fca5a5; color: #dc2626; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s;
+    }
+    .cat-del-btn:hover { background: #fca5a5; }
+    .cat-edit-input {
+      padding: 5px 9px; border: 1.5px solid var(--primary);
+      border-radius: 6px; font-size: 13px; font-family: inherit;
+      outline: none; width: 100%; background: #fff; box-sizing: border-box;
+    }
+    .cat-save-btn {
+      padding: 4px 10px; border-radius: 6px; background: var(--primary);
+      border: none; color: #fff; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity 0.15s;
+    }
+    .cat-save-btn:hover { opacity: 0.88; }
+    .cat-cancel-btn {
+      padding: 4px 10px; border-radius: 6px; background: #f3f4f6;
+      border: 1.5px solid var(--border-color); color: var(--text-muted); font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .cat-cancel-btn:hover { background: #e5e7eb; }
+  </style>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Quản trị viên</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html" class="active"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block" style="color:rgba(255,255,255,0.7)">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <h2 class="dash-title">Quản lý Danh mục</h2>
+        <p class="dash-subtitle">Thêm hoặc xoá các danh mục sản phẩm trên hệ thống.</p>
+      </div>
+      <div style="position:relative">
+        <button class="navbar-icon-btn" id="notif-toggle" onclick="toggleNotif()">
+          <img src="/icons/notification.png" alt="">
+          <span class="notif-badge" id="notif-badge"></span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            <span>Thông báo</span>
+            <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Đọc tất cả</button>
+          </div>
+          <div class="notif-list" id="notif-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top bar: 3 equal columns -->
+    <div class="top-bar">
+      <div class="top-bar-col">
+        <div class="stat-inline">
+          <div class="stat-count-big" id="cat-count">0</div>
+          <div class="stat-count-label">Tổng danh mục</div>
+        </div>
+      </div>
+      <div class="top-bar-col">
+        <div class="fi-group">
+          <label>Tên danh mục <span style="color:#dc2626">*</span></label>
+          <input type="text" id="inp-label" placeholder="Ví dụ: Đồ mây tre">
+        </div>
+      </div>
+      <div class="top-bar-col">
+        <div class="fi-group">
+          <label>Mã slug <span style="color:#dc2626">*</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="inp-value" placeholder="do-may-tre">
+            <button class="btn btn-primary" onclick="addCategory()" id="add-btn" style="white-space:nowrap;flex-shrink:0">+ Thêm</button>
+          </div>
+          <div class="hint">Chỉ dùng chữ thường, số, dấu gạch ngang</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category list: 2-column vertical -->
+    <div id="cat-grid" class="cat-list">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
+
+let catData = [];
+
+async function loadCategories() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div></div>';
+  const cats = await api.get('/api/categories');
+  catData = cats || [];
+  document.getElementById('cat-count').textContent = catData.length;
+  if (!catData.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Chưa có danh mục nào</p></div>';
+    return;
+  }
+  grid.innerHTML = catData.map(c => renderRow(c)).join('');
+}
+
+function renderRow(c) {
+  const adder = c.created_by_name || 'Hệ thống';
+  return `<div class="cat-row" id="cat-${c.id}">
+    <div class="cat-row-info">
+      <div class="cat-row-label">${c.label}</div>
+      <span class="cat-slug">${c.value}</span>
+    </div>
+    <div class="cat-row-adder" title="${adder}">${adder}</div>
+    <div class="cat-row-actions">
+      <button class="cat-edit-btn" onclick="startEdit(${c.id})">Sửa</button>
+      <button class="cat-del-btn" onclick="deleteCategory(${c.id},'${c.label.replace(/'/g,"\\'")}')">Xóa</button>
+    </div>
+  </div>`;
+}
+
+function startEdit(id) {
+  const cat = catData.find(c => c.id === id);
+  if (!cat) return;
+  const adder = cat.created_by_name || 'Hệ thống';
+  const row = document.getElementById(`cat-${id}`);
+  row.innerHTML = `
+    <div class="cat-row-info" style="flex:1">
+      <input class="cat-edit-input" id="edit-inp-${id}" value="${cat.label.replace(/"/g,'&quot;')}" placeholder="Tên danh mục">
+      <span class="cat-slug">${cat.value}</span>
+    </div>
+    <div class="cat-row-adder" title="${adder}">${adder}</div>
+    <div class="cat-row-actions">
+      <button class="cat-save-btn" onclick="saveEdit(${id})">Lưu</button>
+      <button class="cat-cancel-btn" onclick="cancelEdit(${id})">Hủy</button>
+    </div>`;
+  const inp = document.getElementById(`edit-inp-${id}`);
+  if (inp) { inp.focus(); inp.select(); }
+  inp?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveEdit(id);
+    if (e.key === 'Escape') cancelEdit(id);
+  });
+}
+
+function cancelEdit(id) {
+  const cat = catData.find(c => c.id === id);
+  if (!cat) return;
+  document.getElementById(`cat-${id}`).outerHTML = renderRow(cat);
+}
+
+async function saveEdit(id) {
+  const inp = document.getElementById(`edit-inp-${id}`);
+  const newLabel = inp?.value.trim();
+  if (!newLabel) { toast('Tên danh mục không được để trống', 'error'); return; }
+  const res = await api.patch(`/api/admin/categories/${id}`, { label: newLabel });
+  if (res?.success) {
+    toast('Đã cập nhật danh mục', 'success');
+    loadCategories();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+async function addCategory() {
+  const label  = document.getElementById('inp-label').value.trim();
+  const rawVal = document.getElementById('inp-value').value.trim();
+  if (!label || !rawVal) { toast('Vui lòng nhập đầy đủ tên và mã slug', 'error'); return; }
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = '...';
+  const res = await api.post('/api/admin/categories', { value: rawVal, label });
+  btn.disabled = false; btn.textContent = '+ Thêm';
+  if (res?.success) {
+    toast('Đã thêm danh mục thành công', 'success');
+    document.getElementById('inp-label').value = '';
+    document.getElementById('inp-value').value = '';
+    loadCategories();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+async function deleteCategory(id, label) {
+  if (!confirm(`Xoá danh mục "${label}"?\n\nChỉ có thể xoá nếu không có sản phẩm đang sử dụng danh mục này.`)) return;
+  const res = await api.delete(`/api/admin/categories/${id}`);
+  if (res?.success) {
+    toast('Đã xoá danh mục', 'success');
+    loadCategories();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+document.getElementById('inp-label').addEventListener('input', function() {
+  document.getElementById('inp-value').value = this.value
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd').replace(/[^a-z0-9\s-]/g, '')
+    .trim().replace(/\s+/g, '-');
+});
+document.getElementById('inp-label').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-value').focus(); });
+document.getElementById('inp-value').addEventListener('keydown', e => { if (e.key === 'Enter') addCategory(); });
+
+loadCategories();
+</script>
+</body>
+</html>
+

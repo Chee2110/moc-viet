@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mộc Việt — Thủ công mỹ nghệ Việt Nam</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><img src="/img/logo.png" alt="Mộc Việt" class="brand-logo"></a>
+    <div class="navbar-right" id="navbar-right"></div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <h1>Thủ công mỹ nghệ<br><span>Tinh hoa</span> Việt Nam</h1>
+    <p>Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công được chế tác tỉ mỉ từ những đôi tay nghệ nhân Việt.</p>
+    <div class="hero-search-wrap">
+      <div class="hero-search">
+        <input type="text" id="hero-search" placeholder="Tìm kiếm sản phẩm..."
+               oninput="heroSuggest(this.value)" onkeydown="heroKey(event)" autocomplete="off">
+        <button onclick="doHeroSearch()">Tìm kiếm</button>
+      </div>
+      <div id="search-suggest" class="search-suggest-drop"></div>
+    </div>
+  </div>
+</section>
+
+<div class="container section-padding">
+  <div class="section-header">
+    <div>
+      <h2 class="section-title" id="products-title">Sản phẩm nổi bật</h2>
+      <p style="color:var(--text-muted); margin-top:8px">Những sản phẩm thủ công tinh xảo nhất dành cho không gian của bạn</p>
+    </div>
+    <div class="filter-bar" style="margin:0;gap:8px">
+      <select id="sort-select" class="pill" style="width:auto; cursor:pointer" onchange="loadProducts()">
+        <option value="newest">Mới nhất</option>
+        <option value="price_asc">Giá: Thấp đến Cao</option>
+        <option value="price_desc">Giá: Cao đến Thấp</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="category-pills" id="category-pills">
+    <button class="pill active" data-cat="" onclick="selectCat(this,'')">Tất cả</button>
+  </div>
+
+  <div id="products-container">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img"></div>
+        <p class="footer-desc">Nơi lưu giữ và lan toả giá trị thủ công mỹ nghệ truyền thống Việt Nam. Mỗi sản phẩm là một câu chuyện về tâm huyết và đôi bàn tay khéo léo.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Khám phá</h4>
+        <a href="/">Trang chủ</a>
+        <a href="/register.html">Trở thành người bán</a>
+        <a href="/login.html">Đăng nhập</a>
+      </div>
+      <div class="footer-col">
+        <h4>Chính sách</h4>
+        <a href="#">Hướng dẫn mua hàng</a>
+        <a href="#">Chính sách đổi trả</a>
+        <a href="#">Bảo mật thông tin</a>
+      </div>
+      <div class="footer-col">
+        <h4>Liên hệ</h4>
+        <p>Email: contact@mocviet.vn</p>
+        <p>Hotline: 1900 1234</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 Mộc Việt. Tất cả quyền được bảo lưu. Thiết kế bởi Antigravity.
+    </div>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+let searchQuery = '';
+let currentCat  = '';
+let currentPage = 1;
+
+window.onload = async () => {
+  initNavbar();
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) {
+    searchQuery = q;
+    document.getElementById('search-input').value = q;
+    document.getElementById('hero-search').value = q;
+  }
+  // Load categories dynamically
+  const cats = await api.get('/api/categories');
+  if (cats?.length) {
+    const pills = document.getElementById('category-pills');
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'pill';
+      btn.dataset.cat = c.value;
+      btn.textContent = c.label;
+      btn.onclick = () => selectCat(btn, c.value);
+      pills.appendChild(btn);
+    });
+  }
+  await loadProducts();
+};
+
+async function loadProducts() {
+  const container = document.getElementById('products-container');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const params = new URLSearchParams();
+  if (searchQuery) params.set('search', searchQuery);
+  if (currentCat)  params.set('category', currentCat);
+  params.set('sort', document.getElementById('sort-select').value);
+  params.set('page', currentPage);
+  params.set('limit', 12);
+  const data = await api.get('/api/products?' + params.toString());
+  if (!data) return;
+  renderProducts(data.products);
+  renderPagination(data.total, data.page, data.limit);
+}
+
+function renderProducts(products) {
+  const user = getUser();
+  const container = document.getElementById('products-container');
+  if (!products.length) {
+    container.innerHTML = '<div class="empty-state"><p>Không tìm thấy sản phẩm nào</p></div>';
+    return;
+  }
+  container.innerHTML = '<div class="product-grid">' + products.map(p => productCard(p, user)).join('') + '</div>';
+}
+
+function effectivePrice(p) { return p.discounted_price || p.price; }
+
+function productCard(p, user) {
+  const ep = effectivePrice(p);
+  const imgHtml = p.image_url
+    ? `<img src="${p.image_url}" alt="${p.name}" class="product-img" onerror="this.style.display='none'">`
+    : `<div class="product-img-placeholder"></div>`;
+  const flashStrip = p.discount_percent ? `<div class="product-flash-strip">Flash Sale · -${p.discount_percent}%</div>` : '';
+  const priceHtml = p.discount_percent
+    ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+         <span class="product-price" style="color:#ff4d4f">${fmtPrice(ep)}</span>
+         <span class="flash-pct-badge">-${p.discount_percent}%</span>
+       </div>
+       <div><span class="product-price-original">${fmtPrice(p.price)}</span></div>`
+    : `<span class="product-price">${fmtPrice(p.price)}</span>`;
+  const heartBtn = user
+    ? `<button class="wishlist-btn" onclick="event.stopPropagation();toggleWishlist(event,${p.id})" title="Yêu thích"><img src="/icons/wishlist.png" alt="♥"></button>`
+    : '';
+  const stockBadge = p.stock_quantity <= 5 && p.stock_quantity > 0
+    ? `<span class="stock-low">Còn ${p.stock_quantity}</span>`
+    : p.stock_quantity === 0 ? `<span class="stock-out">Hết hàng</span>` : '';
+  const cartBtn = user && user.role === 'buyer'
+    ? `<button class="btn btn-primary btn-sm btn-block mt-2" onclick="event.stopPropagation();addToCart(${p.id},this)" ${p.stock_quantity === 0 ? 'disabled' : ''}>Thêm vào giỏ</button>`
+    : '';
+  return `<div class="product-card" onclick="window.location.href='/product.html?id=${p.id}'">
+    <div class="product-img-wrap">${imgHtml}${heartBtn}${flashStrip}</div>
+    <div class="product-body">
+      <div class="product-shop">${p.shop_name}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-price-wrap">${priceHtml}${stockBadge}</div>
+      ${cartBtn}
+    </div></div>`;
+}
+
+function renderPagination(total, page, limit) {
+  const totalPages = Math.ceil(total / limit);
+  const el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  if (page > 1) html += `<button onclick="goPage(${page-1})">Trước</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (page < totalPages) html += `<button onclick="goPage(${page+1})">Sau</button>`;
+  el.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; loadProducts(); window.scrollTo(0,0); }
+
+function selectCat(btn, cat) {
+  document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentCat = cat; currentPage = 1;
+  loadProducts();
+}
+
+function onSearch(e) {
+  if (e.key === 'Enter') {
+    searchQuery = e.target.value.trim();
+    document.getElementById('hero-search').value = searchQuery;
+    currentPage = 1; loadProducts();
+  }
+}
+function doHeroSearch() {
+  closeSuggest();
+  searchQuery = document.getElementById('hero-search').value.trim();
+  const si = document.getElementById('search-input');
+  if (si) si.value = searchQuery;
+  currentPage = 1; loadProducts();
+  document.querySelector('.section-padding')?.scrollIntoView({ behavior:'smooth' });
+}
+
+// ── Autocomplete suggest ───────────────────────────────
+let _suggestTimer = null;
+
+function heroSuggest(val) {
+  clearTimeout(_suggestTimer);
+  const drop = document.getElementById('search-suggest');
+  if (!val || !val.trim()) { closeSuggest(); return; }
+  _suggestTimer = setTimeout(async () => {
+    const data = await api.get('/api/products?search=' + encodeURIComponent(val.trim()) + '&limit=6');
+    const list = data?.products || [];
+    if (!list.length) {
+      drop.innerHTML = '<div class="suggest-empty">Không tìm thấy sản phẩm phù hợp</div>';
+    } else {
+      drop.innerHTML = list.map(p => `
+        <div class="suggest-item" onclick="window.location.href='/product.html?id=${p.id}'">
+          ${p.image_url
+            ? `<img src="${p.image_url}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'suggest-item-placeholder'}))">`
+            : `<div class="suggest-item-placeholder"></div>`}
+          <div style="flex:1;min-width:0">
+            <div class="suggest-item-name">${p.name}</div>
+            <div class="suggest-item-price">${fmtPrice(p.discounted_price || p.price)}</div>
+          </div>
+        </div>`).join('');
+    }
+    drop.classList.add('open');
+  }, 220);
+}
+
+function heroKey(e) {
+  if (e.key === 'Enter')  { closeSuggest(); doHeroSearch(); }
+  if (e.key === 'Escape') { closeSuggest(); }
+}
+
+function closeSuggest() {
+  document.getElementById('search-suggest')?.classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.hero-search-wrap')) closeSuggest();
+});
+
+async function toggleWishlist(event, productId) {
+  const user = getUser();
+  if (!user) { window.location.href = '/login.html'; return; }
+  const btn = event.currentTarget;
+  const res = await api.post('/api/favorites/' + productId);
+  if (res && res.success) {
+    btn.classList.toggle('active', res.action === 'added');
+    toast(res.action === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích', res.action === 'added' ? 'success' : 'info');
+  }
+}
+
+async function addToCart(productId, btn) {
+  const user = getUser();
+  if (!user) { window.location.href = '/login.html'; return; }
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '...';
+  const res = await api.post('/api/cart', { product_id: productId, quantity: 1 });
+  btn.disabled = false; btn.textContent = orig;
+  if (res && res.success) {
+    toast('Đã thêm vào giỏ hàng', 'success');
+    updateCartBadge();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+</script>
+</body>
+</html>

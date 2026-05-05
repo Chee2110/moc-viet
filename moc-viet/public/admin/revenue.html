@@ -1,0 +1,315 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Doanh thu — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Quản trị viên</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html" class="active"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Doanh thu hệ thống</div>
+        <div class="dash-subtitle">Thống kê toàn bộ hiệu quả kinh doanh của nền tảng</div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-outline" onclick="openBroadcast()">Gửi thông báo</button>
+        <button class="btn btn-primary" onclick="exportExcel()"><img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px" alt=""> Xuất báo cáo Excel</button>
+      </div>
+    </div>
+
+    <!-- Period selector -->
+    <div class="filter-bar mb-4">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setPeriod('monthly',this)">Theo tháng</button>
+        <button class="filter-tab" onclick="setPeriod('quarterly',this)">Theo quý</button>
+        <button class="filter-tab" onclick="setPeriod('yearly',this)">Theo năm</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="year-wrap" style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:14px;color:var(--text-muted);white-space:nowrap">Năm:</label>
+          <select id="year-sel" class="form-control" style="width:100px" onchange="loadRevenue()"></select>
+        </div>
+        <select id="shop-filter" class="form-control" style="width:180px" onchange="loadRevenue()">
+          <option value="">Tất cả shop</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid mb-4" id="stats-grid">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title" id="chart-title">Biểu đồ doanh thu hệ thống</span>
+      </div>
+      <div class="card-body">
+        <div style="position:relative;height:320px">
+          <canvas id="revenue-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="bottom-grid">
+      <!-- Period table -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Chi tiết theo kỳ</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th id="period-col-header">Tháng</th>
+              <th>Đơn</th>
+              <th>Doanh thu</th>
+            </tr></thead>
+            <tbody id="revenue-tbody">
+              <tr><td colspan="3" style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top shops -->
+      <div class="card" id="shops-card">
+        <div class="card-header"><span class="card-title">Top Shop doanh thu</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Shop</th><th>Đơn</th><th>Doanh thu</th></tr></thead>
+            <tbody id="shops-tbody">
+              <tr><td colspan="3" style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Broadcast Modal -->
+<div class="modal-overlay" id="broadcast-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Gửi thông báo toàn hệ thống</div>
+      <button class="modal-close" onclick="closeBroadcast()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Đối tượng nhận</label>
+        <select id="bc-target" class="form-control">
+          <option value="all">Tất cả người dùng</option>
+          <option value="sellers">Chỉ Seller</option>
+          <option value="buyers">Chỉ Người mua</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nội dung thông báo <span class="req">*</span></label>
+        <textarea id="bc-message" class="form-control" rows="4" placeholder="Nhập nội dung thông báo..."></textarea>
+      </div>
+      <div id="bc-result" class="alert alert-success" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeBroadcast()">Huỷ</button>
+      <button class="btn btn-primary" onclick="sendBroadcast()" id="bc-btn">Gửi thông báo</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+const user = getUser();
+document.getElementById('sidebar-email').textContent = user.email;
+initDashNotif();
+
+let currentPeriod = 'monthly';
+let revenueChart  = null;
+
+const thisYear = new Date().getFullYear();
+const yearSel  = document.getElementById('year-sel');
+for (let y = thisYear; y >= thisYear - 5; y--) {
+  const o = document.createElement('option');
+  o.value = y; o.textContent = y;
+  yearSel.appendChild(o);
+}
+
+// Load shops for filter
+api.get('/api/admin/shops?status=approved').then(shops => {
+  if (!shops) return;
+  const sel = document.getElementById('shop-filter');
+  shops.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+});
+
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('year-wrap').style.display = period === 'yearly' ? 'none' : 'flex';
+  const headers = { monthly:'Tháng', quarterly:'Quý', yearly:'Năm' };
+  document.getElementById('period-col-header').textContent = headers[period];
+  loadRevenue();
+}
+
+async function loadRevenue() {
+  const year    = yearSel.value;
+  const shop_id = document.getElementById('shop-filter').value;
+  const data    = await api.get(`/api/admin/revenue?period=${currentPeriod}&year=${year}${shop_id?'&shop_id='+shop_id:''}`);
+  if (!data) return;
+
+  const s = data.summary;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card green"><div class="stat-icon"><img src="/icons/total_revenue.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng doanh thu</div><div class="stat-value" style="font-size:1.2rem">${fmtPrice(s.total_revenue||0)}</div></div>
+    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/cart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">${s.total_orders||0}</div></div>
+    <div class="stat-card"><div class="stat-icon"><img src="/icons/chart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Trung bình/đơn</div><div class="stat-value" style="font-size:1.1rem">${fmtPrice(Math.round(s.avg_order||0))}</div></div>`;
+
+  const labels = buildLabels(data.data);
+  const values = buildValues(data.data);
+  document.getElementById('chart-title').textContent = `Biểu đồ doanh thu ${currentPeriod === 'yearly' ? 'các năm' : 'năm ' + year}`;
+  renderChart(labels, values);
+
+  const tbody = document.getElementById('revenue-tbody');
+  tbody.innerHTML = data.data.length
+    ? data.data.map(r => `<tr>
+        <td><strong>${formatPeriodKey(r.period_key)}</strong></td>
+        <td>${r.orders}</td>
+        <td style="color:var(--secondary);font-weight:700">${fmtPrice(Number(r.revenue))}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">Chưa có dữ liệu</td></tr>';
+
+  const shopsTbody = document.getElementById('shops-tbody');
+  document.getElementById('shops-card').style.display = shop_id ? 'none' : '';
+  if (data.by_shop?.length) {
+    shopsTbody.innerHTML = data.by_shop.map((s,i) => `<tr>
+      <td><span style="color:var(--text-muted);font-size:12px">${i+1}.</span> ${s.shop_name}</td>
+      <td>${s.orders}</td>
+      <td style="color:var(--secondary);font-weight:700">${fmtPrice(Number(s.revenue))}</td>
+    </tr>`).join('');
+  } else {
+    shopsTbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">Chưa có dữ liệu</td></tr>';
+  }
+}
+
+function buildLabels(data) {
+  if (currentPeriod === 'monthly')   return Array.from({length:12}, (_,i) => `T${i+1}`);
+  if (currentPeriod === 'quarterly') return ['Quý 1','Quý 2','Quý 3','Quý 4'];
+  return data.map(r => 'Năm ' + r.period_key);
+}
+function buildValues(data) {
+  if (currentPeriod === 'monthly')   { const a=new Array(12).fill(0); data.forEach(r => a[r.period_key-1]=Number(r.revenue)); return a; }
+  if (currentPeriod === 'quarterly') { const a=new Array(4).fill(0);  data.forEach(r => a[r.period_key-1]=Number(r.revenue)); return a; }
+  return data.map(r => Number(r.revenue));
+}
+function formatPeriodKey(key) {
+  if (currentPeriod === 'monthly')   return 'Tháng ' + key;
+  if (currentPeriod === 'quarterly') return 'Quý ' + key;
+  return 'Năm ' + key;
+}
+
+function renderChart(labels, values) {
+  const ctx = document.getElementById('revenue-chart').getContext('2d');
+  if (revenueChart) revenueChart.destroy();
+  revenueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Doanh thu (đ)',
+        data: values,
+        backgroundColor: values.map(v => v > 0 ? 'rgba(212,168,83,0.8)' : 'rgba(200,200,200,0.3)'),
+        borderColor: '#D4A853',
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ' ' + fmtPrice(ctx.parsed.y) } } },
+      scales: {
+        y: { beginAtZero:true, ticks:{ callback: v => fmtPrice(v) }, grid:{ color:'rgba(0,0,0,0.05)' } },
+        x: { grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function exportExcel() {
+  const year = yearSel.value;
+  const token = localStorage.getItem('mv_token');
+  if (!token) return toast('Vui lòng đăng nhập lại', 'error');
+  
+  const exportUrl = `/api/admin/revenue/export?year=${year}&token=${token}`;
+  toast('Đang tải báo cáo hệ thống...', 'info');
+  
+  const a = document.createElement('a');
+  a.href = exportUrl;
+  a.download = `doanh-thu-he-thong-${year}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function openBroadcast() {
+  document.getElementById('bc-message').value = '';
+  document.getElementById('bc-result').style.display = 'none';
+  document.getElementById('broadcast-modal').classList.add('open');
+}
+function closeBroadcast() {
+  document.getElementById('broadcast-modal').classList.remove('open');
+}
+async function sendBroadcast() {
+  const message = document.getElementById('bc-message').value.trim();
+  const target  = document.getElementById('bc-target').value;
+  if (!message) { toast('Vui lòng nhập nội dung', 'error'); return; }
+  const btn = document.getElementById('bc-btn');
+  btn.disabled = true; btn.textContent = 'Đang gửi...';
+  const res = await api.post('/api/admin/notifications/broadcast', { message, target });
+  btn.disabled = false; btn.textContent = 'Gửi thông báo';
+  if (res?.success) {
+    document.getElementById('bc-result').style.display = 'block';
+    document.getElementById('bc-result').textContent = `Đã gửi tới ${res.sent_to} người dùng`;
+    document.getElementById('bc-message').value = '';
+    toast(`Đã gửi thông báo tới ${res.sent_to} người dùng`, 'success');
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+window.onload = () => loadRevenue();
+</script>
+</body>
+</html>

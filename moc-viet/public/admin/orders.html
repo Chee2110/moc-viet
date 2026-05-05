@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quản lý Đơn hàng — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Hệ thống Quản trị</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/orders.html" class="active"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="opacity:.9" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block" style="color:rgba(255,255,255,0.7)">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <h2 class="dash-title">Quản lý Đơn hàng</h2>
+        <p class="dash-subtitle" id="order-count">Đang tải danh sách đơn hàng...</p>
+      </div>
+      <div style="position:relative">
+        <button class="navbar-icon-btn" id="notif-toggle" onclick="toggleNotif()">
+          <img src="/icons/notification.png" alt="">
+          <span class="notif-badge" id="notif-badge"></span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            <span>Thông báo</span>
+            <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Đọc tất cả</button>
+          </div>
+          <div class="notif-list" id="notif-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid mb-4" id="revenue-stats"></div>
+
+    <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px">
+      <div class="filter-tabs" style="margin:0">
+        <button class="filter-tab active" onclick="setStatus('all',this)">Tất cả</button>
+        <button class="filter-tab" onclick="setStatus('pending',this)">Chờ xác nhận</button>
+        <button class="filter-tab" onclick="setStatus('approved',this)">Đã duyệt</button>
+        <button class="filter-tab" onclick="setStatus('shipping',this)">Đang giao</button>
+        <button class="filter-tab" onclick="setStatus('completed',this)">Hoàn thành</button>
+        <button class="filter-tab" onclick="setStatus('rejected',this)">Từ chối</button>
+      </div>
+      <div style="position:relative; width:100%; max-width:300px">
+        <input type="text" id="search" class="form-control" placeholder="Tìm tên khách, SĐT..." oninput="filterOrders()">
+      </div>
+    </div>
+
+    <div class="table-wrap" id="orders-wrap">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-title">Chi tiết đơn hàng</span>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDetail()">Đóng</button></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
+
+function startScroll(el) {
+  const t = el.querySelector('.scroll-text');
+  if (t && t.scrollWidth > el.clientWidth) t.classList.add('scrolling');
+}
+function stopScroll(el) {
+  const t = el.querySelector('.scroll-text');
+  if (t) t.classList.remove('scrolling');
+}
+
+let orders = [];
+let currentStatus = 'all';
+
+window.onload = async () => {
+  const stats = await api.get('/api/admin/stats');
+  document.getElementById('revenue-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon"><img src="/icons/cart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div>
+      <div>
+        <div class="stat-label">Tổng đơn hàng</div>
+        <div class="stat-value">${stats.total_orders}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><img src="/icons/wait_confirmation.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div>
+      <div>
+        <div class="stat-label">Đang chờ xử lý</div>
+        <div class="stat-value">${stats.pending_orders}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><img src="/icons/total_revenue.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div>
+      <div>
+        <div class="stat-label">Tổng doanh thu</div>
+        <div class="stat-value" style="font-size:24px">${fmtPrice(stats.total_revenue)}</div>
+      </div>
+    </div>`;
+  loadOrders();
+};
+
+function setStatus(s, el) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadOrders();
+}
+
+async function loadOrders() {
+  document.getElementById('orders-wrap').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const url = currentStatus === 'all' ? '/api/admin/orders' : `/api/admin/orders?status=${currentStatus}`;
+  orders = await api.get(url);
+  document.getElementById('order-count').textContent = `${orders.length} đơn hàng`;
+  filterOrders();
+}
+
+function filterOrders() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = orders.filter(o => !q || o.full_name.toLowerCase().includes(q) || o.phone.includes(q));
+  renderOrders(filtered);
+}
+
+function renderOrders(list) {
+  const wrap = document.getElementById('orders-wrap');
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty-state"><p>Không có đơn hàng nào</p></div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Sản phẩm</th><th>Shop</th><th>Khách hàng</th><th>SL</th><th>Tổng</th><th>Trạng thái</th><th>Ngày đặt</th><th></th></tr></thead>
+    <tbody>${list.map(o => `
+      <tr>
+        <td><strong>#${o.id}</strong></td>
+        <td><div class="td-clip" title="${o.product_name}"><span class="td-clip-inner"><strong>${o.product_name}</strong></span></div></td>
+        <td><span class="badge badge-primary">${o.shop_name}</span></td>
+        <td>
+          <div class="td-name-scroll" onmouseenter="startScroll(this)" onmouseleave="stopScroll(this)" title="${o.full_name}">
+            <span class="scroll-text">${o.full_name}</span>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted)">${o.phone}</span>
+        </td>
+        <td>${o.quantity}</td>
+        <td><strong style="color:var(--primary)">${fmtPrice(o.total_price)}</strong></td>
+        <td>${statusBadge(o.status)}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(o.created_at)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="showDetail(${o.id})">Chi tiết</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function showDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detail-title').textContent = `Đơn hàng #${o.id}`;
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SẢN PHẨM</div><strong>${o.product_name}</strong></div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SHOP</div><strong>${o.shop_name}</strong></div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">TRẠNG THÁI</div>${statusBadge(o.status)}</div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">NGÀY ĐẶT</div>${fmtDate(o.created_at)}</div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KHÁCH HÀNG</div><strong>${o.full_name}</strong></div>
+      <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SĐT</div><strong>${o.phone}</strong></div>
+      <div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">ĐỊA CHỈ</div>${o.address}</div>
+      ${o.note?`<div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">GHI CHÚ</div>${o.note}</div>`:''}
+    </div>
+    <div style="background:var(--primary-pale);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+      <span>${o.quantity} × ${fmtPrice(o.unit_price)}</span>
+      <span style="font-size:1.2rem;font-weight:800;color:var(--primary)">${fmtPrice(o.total_price)}</span>
+    </div>`;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+</script>
+</body>
+</html>
+
+

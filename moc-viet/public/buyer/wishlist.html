@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Yêu thích — Mộc Việt</title>
+  <link rel="stylesheet" href="/css/modern.css">
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-name" class="dash-user-email">...</div>
+      <div class="dash-user-role">Người mua</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/buyer/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="opacity:.9" alt=""></span>Đơn hàng của tôi</a>
+      <a href="/buyer/cart.html"><span class="nav-icon"><img src="/icons/cart.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Giỏ hàng</a>
+      <a href="/buyer/wishlist.html" class="active"><span class="nav-icon"><img src="/icons/wishlist.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Yêu thích</a>
+      <a href="/buyer/track.html"><span class="nav-icon"><img src="/icons/clock.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Tra cứu đơn</a>
+      <div class="dash-nav-label" style="margin-top:16px">Khác</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/home.png" class="icon-img-sm" style="filter:brightness(10);opacity:.8" alt=""></span>Trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Sản phẩm yêu thích</div>
+        <div class="dash-subtitle">Những sản phẩm bạn đã lưu lại</div>
+      </div>
+    </div>
+
+    <div id="wishlist-content">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('buyer');
+const user = getUser();
+document.getElementById('sidebar-name').textContent = user.full_name || user.email;
+
+let favorites = [];
+
+window.onload = () => loadWishlist();
+
+async function loadWishlist() {
+  const el = document.getElementById('wishlist-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  favorites = await api.get('/api/favorites') || [];
+  renderWishlist();
+}
+
+function renderWishlist() {
+  const el = document.getElementById('wishlist-content');
+  if (!favorites.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon"><img src="/icons/wishlist.png" style="width:56px;height:56px;object-fit:contain;opacity:.4" alt=""></div>
+      <p>Chưa có sản phẩm yêu thích nào</p>
+      <a href="/" class="btn btn-primary mt-4">Khám phá sản phẩm</a>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="product-grid">${favorites.map(p => wishCard(p)).join('')}</div>`;
+}
+
+function wishCard(p) {
+  const ep = p.discounted_price || p.price;
+  const imgHtml = p.image_url
+    ? `<img src="${p.image_url}" alt="${p.name}" class="product-img" onerror="this.style.display='none'">`
+    : `<div class="product-img-placeholder"></div>`;
+  const flashStrip = p.discount_percent ? `<div class="product-flash-strip">Flash Sale · -${p.discount_percent}%</div>` : '';
+  const priceHtml = p.discount_percent
+    ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+         <span class="product-price" style="color:#ff4d4f">${fmtPrice(ep)}</span>
+         <span class="flash-pct-badge">-${p.discount_percent}%</span>
+       </div>
+       <div><span class="product-price-original">${fmtPrice(p.price)}</span></div>`
+    : `<span class="product-price">${fmtPrice(p.price)}</span>`;
+  const stockBadge = p.stock_quantity === 0 ? `<span class="stock-out">Hết hàng</span>`
+    : p.stock_quantity <= 5 ? `<span class="stock-low">Còn ${p.stock_quantity}</span>` : '';
+
+  return `<div class="product-card">
+    <div class="product-img-wrap" onclick="window.location.href='/product.html?id=${p.id}'" style="cursor:pointer">
+      ${imgHtml}
+      <button class="wishlist-btn active" onclick="event.stopPropagation();removeWishlist(${p.id},this)" title="Xoá khỏi yêu thích"><img src="/icons/wishlist.png" alt="♥"></button>
+      ${flashStrip}
+    </div>
+    <div class="product-body">
+      <div class="product-shop">${p.shop_name}</div>
+      <div class="product-name" onclick="window.location.href='/product.html?id=${p.id}'" style="cursor:pointer">${p.name}</div>
+      <div class="product-price-wrap">${priceHtml}${stockBadge}</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="addToCart(${p.id},this)" ${p.stock_quantity===0?'disabled':''}>
+          Thêm vào giỏ
+        </button>
+        <a href="/product.html?id=${p.id}" class="btn btn-ghost btn-sm">Xem</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function removeWishlist(productId, btn) {
+  btn.disabled = true;
+  const res = await api.post('/api/favorites/' + productId);
+  if (res && res.success && res.action === 'removed') {
+    favorites = favorites.filter(p => p.id !== productId);
+    renderWishlist();
+    toast('Đã xoá khỏi yêu thích', 'info');
+  } else {
+    btn.disabled = false;
+  }
+}
+
+async function addToCart(productId, btn) {
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '...';
+  const res = await api.post('/api/cart', { product_id: productId, quantity: 1 });
+  btn.disabled = false; btn.textContent = orig;
+  if (res && res.success) {
+    toast('Đã thêm vào giỏ hàng', 'success');
+    updateCartBadge();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+</script>
+</body>
+</html>
