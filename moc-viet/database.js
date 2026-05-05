@@ -4,8 +4,9 @@ const bcrypt          = require('bcryptjs');
 const fs              = require('fs');
 const path            = require('path');
 
-// Parse TIMESTAMPTZ (1184) always as UTC so Node.js local timezone doesn't shift values
+// Parse TIMESTAMPTZ (1184) and TIMESTAMP (1114) always as UTC
 types.setTypeParser(1184, str => new Date(str));
+types.setTypeParser(1114, str => new Date(str + 'Z'));
 
 const pool = new Pool({
   host:     process.env.DB_HOST     || 'localhost',
