@@ -93,7 +93,7 @@ function initNavbar() {
     dashBtn +
     `<div style="position:relative">
       <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" title="Thông báo">
-        <img src="/icons/notification.png" class="icon-img" style="filter:brightness(0) invert(.4)" alt="thông báo">
+        <img src="/icons/notification.png" class="icon-img" style="mix-blend-mode:multiply;opacity:0.72" alt="thông báo">
         <span class="notif-badge" id="notif-badge" style="display:none"></span>
       </button>
       <div class="notif-dropdown" id="notif-dropdown">
