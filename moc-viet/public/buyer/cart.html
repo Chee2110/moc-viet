@@ -34,6 +34,21 @@
         <div class="dash-title">Giỏ hàng</div>
         <div class="dash-subtitle">Xem lại sản phẩm trước khi đặt hàng</div>
       </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="position:relative">
+          <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" title="Thông báo">
+            <img src="/icons/notification.png" class="icon-img" style="mix-blend-mode:multiply;opacity:0.72" alt="thông báo">
+            <span class="notif-badge" id="notif-badge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span>Thông báo</span>
+              <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:600">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="cart-content">
@@ -115,6 +130,7 @@
 requireRole('buyer');
 const user = getUser();
 document.getElementById('sidebar-name').textContent = user.full_name || user.email;
+initDashNotif();
 
 let cartItems = [];
 
