@@ -150,7 +150,7 @@ async function loadRevenue() {
   const s = data.summary;
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card green"><div class="stat-icon"><img src="/icons/total_revenue.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng doanh thu</div><div class="stat-value" style="font-size:1.2rem">${fmtPrice(s.total_revenue||0)}</div></div>
-    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/total_order.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">${s.total_orders||0}</div></div>
+    <div class="stat-card accent"><div class="stat-icon"><img src="/icons/Total_order.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Tổng đơn hàng</div><div class="stat-value">${s.total_orders||0}</div></div>
     <div class="stat-card"><div class="stat-icon"><img src="/icons/chart.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div><div class="stat-label">Trung bình/đơn</div><div class="stat-value" style="font-size:1.1rem">${fmtPrice(Math.round(s.avg_order||0))}</div></div>`;
 
   // Chart
