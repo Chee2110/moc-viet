@@ -89,6 +89,42 @@
       font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.9);
       background: rgba(0,0,0,0.35); border-radius: 4px; padding: 1px 4px; pointer-events: none;
     }
+    .img-slot-edit-btn {
+      position: absolute; bottom: 3px; right: 22px;
+      width: 20px; height: 20px; border-radius: 4px;
+      background: rgba(0,0,0,0.6); color: #fff;
+      font-size: 12px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 3; opacity: 0; transition: opacity 0.15s; border: none;
+      pointer-events: all; line-height: 1;
+    }
+    .img-slot:hover .img-slot-edit-btn { opacity: 1; }
+    .img-slots-wrap {
+      border: 2px dashed var(--border-color); border-radius: 14px;
+      padding: 12px 12px 8px; transition: border-color 0.2s, background 0.2s;
+      background: #fafafa;
+    }
+    .img-slots-wrap.drag-over {
+      border-color: var(--primary); background: rgba(var(--primary-rgb), 0.04);
+    }
+    .img-slots-wrap-hint {
+      font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px;
+    }
+    .pos-editor-overlay {
+      display: none; position: fixed; z-index: 10000; inset: 0;
+      background: rgba(0,0,0,0.72); align-items: center; justify-content: center;
+    }
+    .pos-editor-overlay.open { display: flex; }
+    .pos-editor-box {
+      background: #fff; border-radius: 16px; padding: 22px; width: 320px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+    #pos-editor-preview {
+      width: 260px; height: 260px; border-radius: 12px; margin: 0 auto;
+      border: 2px solid var(--border-color);
+      background-size: cover; background-repeat: no-repeat; background-position: 50% 50%;
+      cursor: grab; user-select: none;
+    }
+    #pos-editor-preview.grabbing { cursor: grabbing; }
   </style>
 </head>
 <body>
@@ -197,8 +233,11 @@
 
           <div class="form-group">
             <label class="form-label">Ảnh sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tối đa 5 — ảnh đầu là ảnh đại diện)</span></label>
-            <div class="img-slots" id="img-slots"></div>
-            <input type="file" id="p-img-input" accept="image/*" style="display:none" onchange="handleSlotFile(event)">
+            <div class="img-slots-wrap" id="img-slots-wrap">
+              <div class="img-slots" id="img-slots"></div>
+              <div class="img-slots-wrap-hint">Kéo ảnh vào đây hoặc nhấn <strong>+</strong> để chọn &nbsp;·&nbsp; Nhấn <strong>✥</strong> để căn chỉnh khung</div>
+            </div>
+            <input type="file" id="p-img-input" accept="image/*" multiple style="display:none" onchange="handleSlotFile(event)">
           </div>
 
           <div class="form-group">
@@ -254,6 +293,27 @@
         <button class="btn btn-ghost" onclick="closeDeleteConfirm()">Hủy</button>
         <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteProduct()">Xác nhận xóa</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Position Editor -->
+<div class="pos-editor-overlay" id="pos-editor-overlay">
+  <div class="pos-editor-box">
+    <div style="font-weight:700;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span>✥</span> Căn chỉnh ảnh trong khung
+    </div>
+    <div id="pos-editor-preview"></div>
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Kéo ảnh để căn vị trí</label>
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Thu phóng</label>
+      </div>
+      <input type="range" id="pos-zoom" min="100" max="280" value="100" oninput="onZoomChange(this.value)" style="width:100%">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="cancelPosEditor()">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmPosEditor()">Xong ✓</button>
     </div>
   </div>
 </div>
@@ -426,9 +486,12 @@ function openModal(id = null) {
     document.getElementById('p-status').value   = p.is_hidden ? 'hidden' : 'visible';
     document.getElementById('p-desc').value     = p.description || '';
 
-    // Load existing images into slots
-    const existingImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
-    productImages = existingImgs.map(url => ({ _file: null, _preview: url, _url: url }));
+    // Load existing images into slots (handle both string[] and {url,pos,zoom}[] formats)
+    const rawImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
+    productImages = rawImgs.map(item => {
+      if (typeof item === 'string') return { _file: null, _preview: item, _url: item, _pos: '50% 50%', _zoom: 100 };
+      return { _file: null, _preview: item.url || item, _url: item.url || item, _pos: item.pos || '50% 50%', _zoom: item.zoom || 100 };
+    });
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
     if (vars.length > 0) {
@@ -442,11 +505,12 @@ function openModal(id = null) {
     document.getElementById('p-status').value   = 'visible';
     document.getElementById('p-desc').value     = '';
     productImages = [];
-    variantList = [{ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null }];
+    variantList = [{ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null, _pos: '50% 50%', _zoom: 100 }];
   }
 
   renderVariants();
   renderImgSlots();
+  initImgDropZone();
   updateLivePreview();
   document.getElementById('product-modal').classList.add('open');
 }
@@ -463,15 +527,17 @@ function renderImgSlots() {
   for (let i = 0; i < 5; i++) {
     const img = productImages[i];
     const src = img?._preview || img?._url || '';
+    const pos = img?._pos || '50% 50%';
     if (src) {
       slots.push(`
-        <div class="img-slot has-img" onclick="openSlot(${i})">
-          <img src="${src}" alt="">
+        <div class="img-slot has-img" onclick="openSlot(${i})" title="Nhấn để thay ảnh">
+          <img src="${src}" alt="" style="object-position:${pos}">
           <button class="img-slot-del" onclick="removeSlot(${i},event)" title="Xóa">×</button>
+          <button class="img-slot-edit-btn" onclick="openPosEditor(${i},event)" title="Căn chỉnh ảnh">✥</button>
           ${i === 0 ? '<span class="img-slot-badge">Chính</span>' : ''}
         </div>`);
     } else if (i === 0 || productImages[i-1]) {
-      slots.push(`<div class="img-slot" onclick="openSlot(${i})" title="Thêm ảnh ${i+1}">+</div>`);
+      slots.push(`<div class="img-slot" onclick="openSlot(${i})" title="Thêm ảnh ${i+1}"><span style="pointer-events:none">+</span></div>`);
     }
   }
   container.innerHTML = slots.join('');
@@ -481,22 +547,36 @@ function openSlot(idx) {
   activeSlotIdx = idx;
   const inp = document.getElementById('p-img-input');
   inp.value = '';
+  // Allow multiple only when clicking an empty "+" slot
+  const isEmpty = !productImages[idx]?._preview && !productImages[idx]?._url;
+  inp.multiple = isEmpty;
   inp.click();
 }
 
 function handleSlotFile(e) {
-  const file = e.target.files[0];
-  if (!file || activeSlotIdx < 0) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    if (!productImages[activeSlotIdx]) productImages[activeSlotIdx] = {};
-    productImages[activeSlotIdx]._file    = file;
-    productImages[activeSlotIdx]._preview = ev.target.result;
-    productImages[activeSlotIdx]._url     = '';
-    renderImgSlots();
-    updateLivePreview();
-  };
-  reader.readAsDataURL(file);
+  const files = Array.from(e.target.files);
+  if (!files.length || activeSlotIdx < 0) return;
+  let idx = activeSlotIdx;
+  let loaded = 0;
+  files.forEach(file => {
+    if (idx >= 5) return;
+    const capturedIdx = idx;
+    if (!productImages[capturedIdx]) productImages[capturedIdx] = {};
+    productImages[capturedIdx]._file    = file;
+    productImages[capturedIdx]._url     = '';
+    productImages[capturedIdx]._pos     = productImages[capturedIdx]._pos || '50% 50%';
+    productImages[capturedIdx]._zoom    = productImages[capturedIdx]._zoom || 100;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      productImages[capturedIdx]._preview = ev.target.result;
+      loaded++;
+      if (loaded === Math.min(files.length, 5 - activeSlotIdx)) {
+        renderImgSlots(); updateLivePreview();
+      }
+    };
+    reader.readAsDataURL(file);
+    idx++;
+  });
 }
 
 function removeSlot(idx, event) {
@@ -505,6 +585,123 @@ function removeSlot(idx, event) {
   renderImgSlots();
   updateLivePreview();
 }
+
+// ── Drag-drop file zone ──────────────────────────────
+function initImgDropZone() {
+  const wrap = document.getElementById('img-slots-wrap');
+  if (!wrap || wrap._ddInit) return;
+  wrap._ddInit = true;
+  wrap.addEventListener('dragover', e => { e.preventDefault(); wrap.classList.add('drag-over'); });
+  wrap.addEventListener('dragleave', e => { if (!wrap.contains(e.relatedTarget)) wrap.classList.remove('drag-over'); });
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    wrap.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    const startIdx = productImages.filter(Boolean).length;
+    const available = 5 - startIdx;
+    if (available <= 0) { toast('Đã đạt tối đa 5 ảnh', 'error'); return; }
+    const toAdd = files.slice(0, available);
+    let loaded = 0;
+    toAdd.forEach((file, i) => {
+      const idx = startIdx + i;
+      productImages[idx] = { _file: file, _preview: null, _url: '', _pos: '50% 50%', _zoom: 100 };
+      const reader = new FileReader();
+      reader.onload = ev => {
+        productImages[idx]._preview = ev.target.result;
+        loaded++;
+        if (loaded === toAdd.length) { renderImgSlots(); updateLivePreview(); }
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+// ── Image position editor ────────────────────────────
+let posEditorIdx = -1;
+let posEditorState = { x: 50, y: 50, zoom: 100 };
+let posEditorDragging = false;
+let posEditorDragStart = {};
+
+function openPosEditor(idx, event) {
+  event.stopPropagation();
+  const img = productImages[idx];
+  if (!img) return;
+  posEditorIdx = idx;
+  const parts = (img._pos || '50% 50%').split(' ');
+  posEditorState = { x: parseFloat(parts[0]) || 50, y: parseFloat(parts[1]) || 50, zoom: img._zoom || 100 };
+  const src = img._preview || img._url || '';
+  const el = document.getElementById('pos-editor-preview');
+  el.style.backgroundImage = `url('${CSS.escape ? src : src.replace(/'/g, "\\'")}')`;
+  document.getElementById('pos-zoom').value = posEditorState.zoom;
+  updatePosEditorPreview();
+  document.getElementById('pos-editor-overlay').classList.add('open');
+}
+
+function updatePosEditorPreview() {
+  const el = document.getElementById('pos-editor-preview');
+  const z = posEditorState.zoom;
+  el.style.backgroundPosition = `${posEditorState.x}% ${posEditorState.y}%`;
+  el.style.backgroundSize = z <= 100 ? 'cover' : `${z}% ${z}%`;
+}
+
+function onZoomChange(v) {
+  posEditorState.zoom = parseInt(v);
+  updatePosEditorPreview();
+}
+
+function cancelPosEditor() {
+  document.getElementById('pos-editor-overlay').classList.remove('open');
+  posEditorIdx = -1;
+}
+
+function confirmPosEditor() {
+  if (posEditorIdx >= 0 && productImages[posEditorIdx]) {
+    productImages[posEditorIdx]._pos  = `${posEditorState.x.toFixed(1)}% ${posEditorState.y.toFixed(1)}%`;
+    productImages[posEditorIdx]._zoom = posEditorState.zoom;
+    renderImgSlots(); updateLivePreview();
+  }
+  document.getElementById('pos-editor-overlay').classList.remove('open');
+  posEditorIdx = -1;
+}
+
+// Pos editor drag (mouse + touch)
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('pos-editor-preview');
+  if (!el) return;
+  el.addEventListener('mousedown', e => {
+    posEditorDragging = true;
+    posEditorDragStart = { mx: e.clientX, my: e.clientY, ox: posEditorState.x, oy: posEditorState.y };
+    el.classList.add('grabbing'); e.preventDefault();
+  });
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    posEditorDragging = true;
+    posEditorDragStart = { mx: t.clientX, my: t.clientY, ox: posEditorState.x, oy: posEditorState.y };
+    e.preventDefault();
+  }, { passive: false });
+});
+document.addEventListener('mousemove', e => {
+  if (!posEditorDragging) return;
+  const dx = e.clientX - posEditorDragStart.mx;
+  const dy = e.clientY - posEditorDragStart.my;
+  posEditorState.x = Math.max(0, Math.min(100, posEditorDragStart.ox - dx * 0.3));
+  posEditorState.y = Math.max(0, Math.min(100, posEditorDragStart.oy - dy * 0.3));
+  updatePosEditorPreview();
+});
+document.addEventListener('touchmove', e => {
+  if (!posEditorDragging) return;
+  const t = e.touches[0];
+  posEditorState.x = Math.max(0, Math.min(100, posEditorDragStart.ox - (t.clientX - posEditorDragStart.mx) * 0.3));
+  posEditorState.y = Math.max(0, Math.min(100, posEditorDragStart.oy - (t.clientY - posEditorDragStart.my) * 0.3));
+  updatePosEditorPreview(); e.preventDefault();
+}, { passive: false });
+document.addEventListener('mouseup', () => {
+  if (!posEditorDragging) return;
+  posEditorDragging = false;
+  document.getElementById('pos-editor-preview')?.classList.remove('grabbing');
+});
+document.addEventListener('touchend', () => { posEditorDragging = false; });
 
 function updateLivePreview() {
   const name   = document.getElementById('p-name')?.value || 'Tên sản phẩm';
@@ -555,7 +752,13 @@ async function saveProduct() {
   const variantsPayload = variantList.map(({ name, price, quantity, image_url }) => ({ name, price, quantity, image_url }));
   fd.append('variants', JSON.stringify(variantsPayload));
 
-  // Attach up to 5 product images
+  // Attach up to 5 product images + position/zoom metadata
+  const imageMeta = productImages.map(img => ({
+    pos: img._pos || '50% 50%',
+    zoom: img._zoom || 100,
+    existing_url: img._url || ''
+  }));
+  fd.append('image_positions', JSON.stringify(imageMeta));
   productImages.forEach((img, i) => {
     if (img._file) fd.append(`product_image_${i}`, img._file);
   });

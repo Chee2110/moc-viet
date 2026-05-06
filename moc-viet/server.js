@@ -464,16 +464,19 @@ app.post('/api/seller/products', sellerAuth, upload.any(), async (req, res) => {
     try { variants = JSON.parse(req.body.variants || '[]'); } catch(e) {}
 
     const files = req.files || [];
-    // Collect up to 5 product images (product_image_0..4), fallback to legacy 'image' field
-    const imgArr = [];
+    let imageMeta = [];
+    try { imageMeta = JSON.parse(req.body.image_positions || '[]'); } catch(e) {}
+    const images = [];
     for (let i = 0; i < 5; i++) {
       const f = files.find(f => f.fieldname === `product_image_${i}`);
-      if (f) imgArr[i] = '/uploads/' + f.filename;
+      const meta = imageMeta[i] || { pos: '50% 50%', zoom: 100 };
+      if (f) images.push({ url: '/uploads/' + f.filename, pos: meta.pos, zoom: meta.zoom });
     }
-    const legacyFile = files.find(f => f.fieldname === 'image');
-    if (legacyFile && !imgArr[0]) imgArr[0] = '/uploads/' + legacyFile.filename;
-    const images = imgArr.filter(Boolean);
-    const imageUrl = images[0] || null;
+    if (!images.length) {
+      const legacyFile = files.find(f => f.fieldname === 'image');
+      if (legacyFile) images.push({ url: '/uploads/' + legacyFile.filename, pos: '50% 50%', zoom: 100 });
+    }
+    const imageUrl = images[0]?.url || null;
 
     for (const file of files) {
       if (file.fieldname.startsWith('variant_image_')) {
@@ -511,18 +514,28 @@ app.put('/api/seller/products/:id', sellerAuth, upload.any(), async (req, res) =
     try { variants = JSON.parse(req.body.variants || '[]'); } catch(e) {}
 
     const files = req.files || [];
-    // Collect up to 5 product images; if none uploaded, keep existing
-    const imgArr = [];
+    let imageMeta = [];
+    try { imageMeta = JSON.parse(req.body.image_positions || '[]'); } catch(e) {}
+    const images = [];
     for (let i = 0; i < 5; i++) {
       const f = files.find(f => f.fieldname === `product_image_${i}`);
-      if (f) imgArr[i] = '/uploads/' + f.filename;
+      const meta = imageMeta[i] || { pos: '50% 50%', zoom: 100, existing_url: '' };
+      if (f) {
+        images.push({ url: '/uploads/' + f.filename, pos: meta.pos, zoom: meta.zoom });
+      } else if (meta.existing_url) {
+        images.push({ url: meta.existing_url, pos: meta.pos, zoom: meta.zoom });
+      }
     }
-    const legacyFile = files.find(f => f.fieldname === 'image');
-    if (legacyFile && !imgArr[0]) imgArr[0] = '/uploads/' + legacyFile.filename;
-    const newImages = imgArr.filter(Boolean);
-    const existingImages = Array.isArray(product.images) ? product.images : (product.image_url ? [product.image_url] : []);
-    const images = newImages.length > 0 ? newImages : existingImages;
-    const imageUrl = images[0] || product.image_url;
+    if (!images.length) {
+      const legacyFile = files.find(f => f.fieldname === 'image');
+      if (legacyFile) {
+        images.push({ url: '/uploads/' + legacyFile.filename, pos: '50% 50%', zoom: 100 });
+      } else {
+        const existing = Array.isArray(product.images) ? product.images : (product.image_url ? [product.image_url] : []);
+        existing.forEach(item => images.push(typeof item === 'string' ? { url: item, pos: '50% 50%', zoom: 100 } : item));
+      }
+    }
+    const imageUrl = images[0]?.url || product.image_url;
 
     for (const file of files) {
       if (file.fieldname.startsWith('variant_image_')) {

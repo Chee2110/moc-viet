@@ -612,13 +612,17 @@ function renderProduct() {
   const deliveryDays = product.delivery_days || '2-4';
 
   /* ── Image carousel ── */
-  allImages = (Array.isArray(product.images) && product.images.length > 0)
+  const rawImagesArr = (Array.isArray(product.images) && product.images.length > 0)
     ? product.images
     : (product.image_url ? [product.image_url] : []);
+  // Normalize to {url, pos} objects (handle legacy string[] format)
+  allImages = rawImagesArr.map(item =>
+    typeof item === 'string' ? { url: item, pos: '50% 50%' } : { url: item.url || item, pos: item.pos || '50% 50%' }
+  );
   currentImgIdx = 0;
 
   const mainImgHtml = allImages.length
-    ? `<img id="main-img" src="${allImages[0]}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none'">`
+    ? `<img id="main-img" src="${allImages[0].url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;object-position:${allImages[0].pos};display:block" onerror="this.style.display='none'">`
     : `<div class="lp-img-placeholder">🪵</div>`;
   const arrowsHtml = allImages.length > 1
     ? `<button class="lp-arr lp-arr-l" onclick="prevImg()" title="Trước"><img src="/icons/arrow-left.png" alt="‹"></button>
@@ -885,7 +889,10 @@ function showImg(idx) {
   if (!allImages.length) return;
   currentImgIdx = (idx + allImages.length) % allImages.length;
   const img = document.getElementById('main-img');
-  if (img) img.src = allImages[currentImgIdx];
+  if (img) {
+    img.src = allImages[currentImgIdx].url;
+    img.style.objectPosition = allImages[currentImgIdx].pos;
+  }
   document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === currentImgIdx));
 }
 function prevImg() { showImg(currentImgIdx - 1); }
@@ -903,9 +910,12 @@ function selectChip(el, idx) {
   // Switch image to variant's image if available
   if (v.image_url) {
     const img = document.getElementById('main-img');
-    if (img) img.src = v.image_url;
-    const inAllImages = allImages.indexOf(v.image_url);
-    document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === inAllImages));
+    const foundIdx = allImages.findIndex(item => item.url === v.image_url);
+    if (img) {
+      img.src = v.image_url;
+      img.style.objectPosition = foundIdx >= 0 ? allImages[foundIdx].pos : '50% 50%';
+    }
+    document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === foundIdx));
   }
 
   // Update price display
