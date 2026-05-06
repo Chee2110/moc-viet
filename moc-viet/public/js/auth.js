@@ -56,7 +56,7 @@ function initNavbar() {
     const hl = document.createElement('span');
     hl.className = 'navbar-hotline';
     hl.innerHTML =
-      '<img src="/icons/hotline.png" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;margin-right:4px;opacity:.8" alt="">0393 950 301';
+      '<img src="/icons/hotline.png" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;margin-right:4px;opacity:.8" alt="">0766 088 886';
     if (bt.nextSibling) navInner.insertBefore(hl, bt.nextSibling);
     else navInner.appendChild(hl);
   }

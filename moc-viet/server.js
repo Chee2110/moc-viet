@@ -215,19 +215,19 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, full_name, phone, role, shop_name, shop_description } = req.body;
-    const userRole = role === 'seller' ? 'seller' : 'buyer';
+    const requestSeller = role === 'seller';
     if (!email || !password) return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin' });
-    if (userRole === 'seller' && !shop_name) return res.status(400).json({ message: 'Vui lòng nhập tên shop' });
+    if (requestSeller && !shop_name) return res.status(400).json({ message: 'Vui lòng nhập tên shop' });
     if (await queryOne('SELECT id FROM users WHERE email=$1', [email]))
       return res.status(400).json({ message: 'Email đã được sử dụng' });
     const hashed = bcrypt.hashSync(password, 10);
     const user = await queryOne(
-      'INSERT INTO users(email,password,role,full_name,phone) VALUES($1,$2,$3,$4,$5) RETURNING id',
-      [email, hashed, userRole, full_name||null, phone||null]);
-    if (userRole === 'seller') {
+      "INSERT INTO users(email,password,role,full_name,phone) VALUES($1,$2,'buyer',$3,$4) RETURNING id",
+      [email, hashed, full_name||null, phone||null]);
+    if (requestSeller) {
       await query('INSERT INTO shops(user_id,name,description,status) VALUES($1,$2,$3,$4)',
         [user.id, shop_name, shop_description||'', 'pending']);
-      return res.json({ success: true, message: 'Đăng ký thành công! Vui lòng chờ Admin duyệt shop.' });
+      return res.json({ success: true, message: 'Đăng ký thành công! Đơn đăng ký Người bán đang chờ Admin duyệt. Bạn sẽ nhận thông báo khi được phê duyệt.' });
     }
     res.json({ success: true, message: 'Đăng ký thành công! Bạn có thể đăng nhập ngay.' });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -917,7 +917,8 @@ app.patch('/api/admin/shops/:id/approve', adminAuth, async (req, res) => {
     const shop = await queryOne('SELECT * FROM shops WHERE id=$1', [req.params.id]);
     if (!shop) return res.status(404).json({ message: 'Shop không tồn tại' });
     await query("UPDATE shops SET status='approved' WHERE id=$1", [req.params.id]);
-    const msg = `🎉 Shop "${shop.name}" của bạn đã được Admin duyệt! Hãy bắt đầu đăng sản phẩm.`;
+    await query("UPDATE users SET role='seller' WHERE id=$1 AND role='buyer'", [shop.user_id]);
+    const msg = `🎉 Shop "${shop.name}" đã được duyệt! Vui lòng đăng xuất và đăng nhập lại để truy cập giao diện Người bán.`;
     const nr = await queryOne('INSERT INTO notifications(user_id,message) VALUES($1,$2) RETURNING id,created_at', [shop.user_id, msg]);
     notifyUser(shop.user_id, { id: nr.id, message: msg, is_read: false, created_at: nr.created_at });
     res.json({ success: true });
@@ -929,10 +930,20 @@ app.patch('/api/admin/shops/:id/reject', adminAuth, async (req, res) => {
     const shop = await queryOne('SELECT * FROM shops WHERE id=$1', [req.params.id]);
     if (!shop) return res.status(404).json({ message: 'Shop không tồn tại' });
     await query("UPDATE shops SET status='rejected' WHERE id=$1", [req.params.id]);
-    const msg = `❌ Shop "${shop.name}" của bạn đã bị từ chối. Bạn có thể đăng ký shop mới.`;
+    const msg = `❌ Shop "${shop.name}" đã bị từ chối. Vui lòng liên hệ Admin để biết thêm chi tiết.`;
     const nr = await queryOne('INSERT INTO notifications(user_id,message) VALUES($1,$2) RETURNING id,created_at', [shop.user_id, msg]);
     notifyUser(shop.user_id, { id: nr.id, message: msg, is_read: false, created_at: nr.created_at });
     res.json({ success: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ── Buyer: check seller registration status
+app.get('/api/buyer/shop-status', auth, async (req, res) => {
+  try {
+    const shop = await queryOne(
+      'SELECT id, name, status FROM shops WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1',
+      [req.user.id]);
+    res.json(shop || null);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

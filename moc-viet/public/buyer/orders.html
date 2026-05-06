@@ -51,6 +51,8 @@
       </div>
     </div>
 
+    <div id="seller-request-banner"></div>
+
     <div class="filter-bar mb-4">
       <div class="filter-tabs">
         <button class="filter-tab active" onclick="setStatus('',this)">Tất cả</button>
@@ -93,7 +95,32 @@ initDashNotif();
 let allOrders = [];
 let currentStatus = '';
 
-window.onload = () => loadOrders();
+window.onload = () => { loadOrders(); checkSellerRequest(); };
+
+async function checkSellerRequest() {
+  const shop = await api.get('/api/buyer/shop-status');
+  const banner = document.getElementById('seller-request-banner');
+  if (!shop) return;
+  if (shop.status === 'pending') {
+    banner.innerHTML = `<div class="alert alert-info" style="margin-bottom:20px;display:flex;align-items:center;gap:12px;padding:14px 16px">
+      <span style="font-size:20px">⏳</span>
+      <div><strong>Đơn đăng ký Người bán đang chờ Admin duyệt.</strong><br>
+      <span style="font-size:13px">Shop: <strong>${shop.name}</strong> — Bạn sẽ nhận thông báo khi được phê duyệt.</span></div>
+    </div>`;
+  } else if (shop.status === 'rejected') {
+    banner.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:14px 16px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:20px">❌</span>
+      <div><strong>Đơn đăng ký Người bán đã bị từ chối.</strong><br>
+      <span style="font-size:13px">Shop: <strong>${shop.name}</strong> — Vui lòng liên hệ Admin để biết thêm chi tiết.</span></div>
+    </div>`;
+  } else if (shop.status === 'approved') {
+    banner.innerHTML = `<div style="background:#f0fdf4;border:1px solid #86efac;color:#16a34a;padding:14px 16px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:20px">🎉</span>
+      <div><strong>Shop của bạn đã được duyệt!</strong><br>
+      <span style="font-size:13px">Vui lòng <a href="#" onclick="logout()" style="color:#16a34a;font-weight:700;text-decoration:underline">đăng xuất và đăng nhập lại</a> để truy cập giao diện Người bán.</span></div>
+    </div>`;
+  }
+}
 
 async function loadOrders() {
   const el = document.getElementById('orders-container');
