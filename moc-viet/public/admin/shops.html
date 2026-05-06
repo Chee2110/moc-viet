@@ -85,6 +85,13 @@ window.onload = async () => {
   const stats = await api.get('/api/admin/stats');
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card">
+      <div class="stat-icon"><img src="/icons/duyetShop.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div>
+      <div>
+        <div class="stat-label">Tổng gian hàng</div>
+        <div class="stat-value">${stats.total_shops||0}</div>
+      </div>
+    </div>
+    <div class="stat-card">
       <div class="stat-icon"><img src="/icons/home.png" style="width:26px;height:26px;object-fit:contain;opacity:.75" alt=""></div>
       <div>
         <div class="stat-label">Shop hoạt động</div>

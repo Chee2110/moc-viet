@@ -1209,10 +1209,12 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
     const om = Object.fromEntries(o.map(r => [r.status, r.c]));
     const sm = Object.fromEntries(s.map(r => [r.status, r.c]));
     const sellers = await queryOne("SELECT COUNT(*)::int AS c FROM users WHERE role='seller'");
+    const total_shops = (sm.pending||0) + (sm.approved||0) + (sm.rejected||0);
     res.json({
       total_orders: Object.values(om).reduce((a,b)=>a+b,0), pending_orders: om.pending||0,
       completed_orders: om.completed||0, total_products: p.c,
       pending_shops: sm.pending||0, approved_shops: sm.approved||0,
+      total_shops,
       total_revenue: Number(rev.s), total_users: u.c, total_buyers: ub.c,
       total_sellers: sellers.c, active_users: u.c,
     });
