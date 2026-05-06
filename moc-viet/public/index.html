@@ -276,10 +276,10 @@ async function toggleWishlist(event, productId) {
 async function addToCart(productId, btn) {
   const user = getUser();
   if (!user) { window.location.href = '/login.html'; return; }
-  const orig = btn.textContent;
-  btn.disabled = true; btn.textContent = '...';
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span style="font-size:13px;font-weight:700">...</span>';
   const res = await api.post('/api/cart', { product_id: productId, quantity: 1 });
-  btn.disabled = false; btn.textContent = orig;
+  btn.disabled = false; btn.innerHTML = orig;
   if (res && res.success) {
     toast('Đã thêm vào giỏ hàng', 'success');
     updateCartBadge();
