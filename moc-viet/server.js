@@ -810,7 +810,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
     }
 
     const rows = await query(
-      'SELECT o.id, o.created_at, o.full_name, o.phone, o.address, p.name AS product_name, ' +
+      'SELECT o.id, o.created_at, o.full_name, o.phone, o.address, o.product_id, p.name AS product_name, ' +
       'o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
       'FROM orders o JOIN products p ON o.product_id=p.id ' +
       'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
@@ -825,6 +825,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
       { header: 'Khách hàng',   key: 'full_name',     width: 22 },
       { header: 'SĐT',          key: 'phone',         width: 14 },
       { header: 'Địa chỉ',      key: 'address',       width: 35 },
+      { header: 'Mã SP',             key: 'product_code',  width: 12 },
       { header: 'Sản phẩm',          key: 'product_name',  width: 30 },
       { header: 'Kích thước / Loại', key: 'variant_name',  width: 20 },
       { header: 'SL',               key: 'quantity',      width: 6  },
@@ -843,6 +844,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
         id: r.id,
         date: new Date(r.created_at).toLocaleString('vi-VN'),
         full_name: r.full_name, phone: r.phone, address: r.address,
+        product_code: 'MV-' + String(r.product_id).padStart(4, '0'),
         product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity,
         unit_price: Number(r.unit_price), total_price: Number(r.total_price),
         status_vi: STATUS_VI[r.status] || r.status,
@@ -850,7 +852,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
       });
     });
     const grandTotal = rows.reduce((s, r) => s + Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id:'', date:'', full_name:'', phone:'', address:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
+    const totalRow = ws.addRow({ id:'', date:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
     totalRow.font = { bold: true };
     totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
@@ -894,7 +896,7 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
 
     const rows = await query(
       'SELECT o.id, o.created_at, s.name AS shop_name, o.full_name, o.phone, o.address, ' +
-      'p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
+      'o.product_id, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
       'FROM orders o JOIN products p ON o.product_id=p.id JOIN shops s ON o.shop_id=s.id ' +
       'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
 
@@ -909,6 +911,7 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
       { header: 'Khách hàng',        key: 'full_name',    width: 22 },
       { header: 'SĐT',               key: 'phone',        width: 14 },
       { header: 'Địa chỉ',           key: 'address',      width: 35 },
+      { header: 'Mã SP',             key: 'product_code', width: 12 },
       { header: 'Sản phẩm',          key: 'product_name', width: 30 },
       { header: 'Kích thước / Loại', key: 'variant_name', width: 20 },
       { header: 'SL',                key: 'quantity',     width: 6  },
@@ -928,6 +931,7 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
         date: new Date(r.created_at).toLocaleString('vi-VN'),
         shop_name: r.shop_name,
         full_name: r.full_name, phone: r.phone, address: r.address,
+        product_code: 'MV-' + String(r.product_id).padStart(4, '0'),
         product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity,
         unit_price: Number(r.unit_price), total_price: Number(r.total_price),
         status_vi: STATUS_VI[r.status] || r.status,
@@ -935,7 +939,7 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
       });
     });
     const grandTotal = rows.reduce((s, r) => s + Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', address:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
+    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
     totalRow.font = { bold: true };
     totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
@@ -1296,7 +1300,7 @@ app.get('/api/seller/revenue/export', sellerAuth, async (req, res) => {
     if (!shop) return res.status(404).json({ message: 'Không tìm thấy shop' });
     const { year = new Date().getFullYear() } = req.query;
     const orders = await query(
-      'SELECT o.id, o.created_at, o.full_name, o.phone, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price '+
+      'SELECT o.id, o.created_at, o.full_name, o.phone, o.product_id, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price '+
       'FROM orders o JOIN products p ON o.product_id=p.id '+
       "WHERE o.shop_id=$1 AND o.status='completed' AND EXTRACT(YEAR FROM o.created_at)=$2 ORDER BY o.created_at DESC",
       [shop.id, year]);
@@ -1308,6 +1312,7 @@ app.get('/api/seller/revenue/export', sellerAuth, async (req, res) => {
       { header: 'Ngày đặt', key: 'date', width: 18 },
       { header: 'Khách hàng', key: 'full_name', width: 22 },
       { header: 'SĐT', key: 'phone', width: 14 },
+      { header: 'Mã SP', key: 'product_code', width: 12 },
       { header: 'Sản phẩm', key: 'product_name', width: 30 },
       { header: 'Kích thước / Loại', key: 'variant_name', width: 20 },
       { header: 'SL', key: 'quantity', width: 6 },
@@ -1320,12 +1325,12 @@ app.get('/api/seller/revenue/export', sellerAuth, async (req, res) => {
     hdr.alignment = { horizontal: 'center', vertical: 'middle' };
     hdr.height = 20;
     orders.forEach(r => {
-      ws.addRow({ id: r.id, date: new Date(r.created_at).toLocaleDateString('vi-VN'), full_name: r.full_name, phone: r.phone, product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity, unit_price: Number(r.unit_price), total_price: Number(r.total_price) });
+      ws.addRow({ id: r.id, date: new Date(r.created_at).toLocaleDateString('vi-VN'), full_name: r.full_name, phone: r.phone, product_code: 'MV-' + String(r.product_id).padStart(4, '0'), product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity, unit_price: Number(r.unit_price), total_price: Number(r.total_price) });
     });
     const grandTotal = orders.reduce((s,r) => s+Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id: '', date: '', full_name: '', phone: '', product_name: 'TỔNG DOANH THU', variant_name: '', quantity: '', unit_price: '', total_price: grandTotal });
+    const totalRow = ws.addRow({ id: '', date: '', full_name: '', phone: '', product_code: '', product_name: 'TỔNG DOANH THU', variant_name: '', quantity: '', unit_price: '', total_price: grandTotal });
     totalRow.font = { bold: true };
-    totalRow.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
+    totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="doanh-thu-${year}.xlsx"`);
@@ -1337,7 +1342,7 @@ app.get('/api/admin/revenue/export', adminAuth, async (req, res) => {
   try {
     const { year = new Date().getFullYear() } = req.query;
     const orders = await query(
-      'SELECT o.id, o.created_at, s.name AS shop_name, o.full_name, o.phone, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price '+
+      'SELECT o.id, o.created_at, s.name AS shop_name, o.full_name, o.phone, o.product_id, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price '+
       'FROM orders o JOIN products p ON o.product_id=p.id JOIN shops s ON o.shop_id=s.id '+
       "WHERE o.status='completed' AND EXTRACT(YEAR FROM o.created_at)=$1 ORDER BY o.created_at DESC",
       [year]);
@@ -1350,6 +1355,7 @@ app.get('/api/admin/revenue/export', adminAuth, async (req, res) => {
       { header: 'Shop', key: 'shop_name', width: 22 },
       { header: 'Khách hàng', key: 'full_name', width: 22 },
       { header: 'SĐT', key: 'phone', width: 14 },
+      { header: 'Mã SP', key: 'product_code', width: 12 },
       { header: 'Sản phẩm', key: 'product_name', width: 30 },
       { header: 'Kích thước / Loại', key: 'variant_name', width: 20 },
       { header: 'SL', key: 'quantity', width: 6 },
@@ -1362,10 +1368,10 @@ app.get('/api/admin/revenue/export', adminAuth, async (req, res) => {
     hdr.alignment = { horizontal: 'center', vertical: 'middle' };
     hdr.height = 20;
     orders.forEach(r => {
-      ws.addRow({ id: r.id, date: new Date(r.created_at).toLocaleDateString('vi-VN'), shop_name: r.shop_name, full_name: r.full_name, phone: r.phone, product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity, unit_price: Number(r.unit_price), total_price: Number(r.total_price) });
+      ws.addRow({ id: r.id, date: new Date(r.created_at).toLocaleDateString('vi-VN'), shop_name: r.shop_name, full_name: r.full_name, phone: r.phone, product_code: 'MV-' + String(r.product_id).padStart(4, '0'), product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity, unit_price: Number(r.unit_price), total_price: Number(r.total_price) });
     });
     const grandTotal = orders.reduce((s,r) => s+Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', product_name:'TỔNG DOANH THU HỆ THỐNG', variant_name:'', quantity:'', unit_price:'', total_price: grandTotal });
+    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', product_code:'', product_name:'TỔNG DOANH THU HỆ THỐNG', variant_name:'', quantity:'', unit_price:'', total_price: grandTotal });
     totalRow.font = { bold: true };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

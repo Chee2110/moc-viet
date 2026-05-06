@@ -169,12 +169,14 @@ function productCard(p, user) {
   const cartBtn = user && user.role === 'buyer'
     ? `<button class="btn btn-primary btn-sm btn-block mt-2" onclick="event.stopPropagation();addToCart(${p.id},this)" ${p.stock_quantity === 0 ? 'disabled' : ''}>Thêm vào giỏ</button>`
     : '';
-  return `<div class="product-card" onclick="window.location.href='${productUrl(p.id, p.name)}'">
+  const pUrl = productUrl(p.id, p.name);
+  const buyNowBtn = `<a class="btn-buy-now" href="${pUrl}" onclick="event.stopPropagation()">Mua ngay</a>`;
+  return `<div class="product-card" onclick="window.location.href='${pUrl}'">
     <div class="product-img-wrap">${imgHtml}${heartBtn}${flashStrip}</div>
     <div class="product-body">
       <div class="product-shop">${p.shop_name}</div>
       <div class="product-name">${p.name}</div>
-      <div class="product-price-wrap">${priceHtml}${stockBadge}</div>
+      <div class="product-price-wrap"><div style="flex:1;min-width:0">${priceHtml}${stockBadge}</div>${buyNowBtn}</div>
       ${cartBtn}
     </div></div>`;
 }

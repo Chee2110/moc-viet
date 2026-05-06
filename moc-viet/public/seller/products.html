@@ -8,7 +8,7 @@
   <style>
     .variant-table-head {
       display: grid;
-      grid-template-columns: 1fr 120px 90px 44px 34px;
+      grid-template-columns: 1fr 110px 120px 90px 44px 34px;
       gap: 12px;
       padding: 10px 0;
       font-size: 11px;
@@ -21,7 +21,7 @@
     }
     .variant-row {
       display: grid;
-      grid-template-columns: 1fr 120px 90px 44px 34px;
+      grid-template-columns: 1fr 110px 120px 90px 44px 34px;
       gap: 12px;
       align-items: center;
       margin-bottom: 12px;
@@ -249,6 +249,7 @@
 
           <div class="variant-table-head">
             <span>Tên phân loại</span>
+            <span>Mã phân loại</span>
             <span>Giá (đ)</span>
             <span>Số lượng</span>
             <span style="text-align:center">Ảnh</span>
@@ -378,18 +379,20 @@ function renderTable(list = products) {
     return;
   }
   wrap.innerHTML = `<table>
-    <thead><tr><th>Ảnh</th><th>Tên sản phẩm</th><th>Giá</th><th>Phân loại</th><th>Trạng thái</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
+    <thead><tr><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá</th><th>Phân loại</th><th>Trạng thái</th><th>Ngày tạo</th><th>Hành động</th></tr></thead>
     <tbody>${list.map(p => {
       const vars = Array.isArray(p.variants) ? p.variants : [];
       const varInfo = vars.length > 0
         ? `<span style="font-size:12px;color:var(--text-muted)">${vars.length} phân loại</span>`
         : `<span style="font-size:12px;color:var(--text-muted)">—</span>`;
+      const sku = 'MV-' + String(p.id).padStart(4, '0');
       return `
       <tr style="${p.is_hidden?'opacity:.6':''}">
         <td>${p.image_url
           ? `<img src="${p.image_url}" style="width:50px;height:50px;border-radius:8px;object-fit:cover" onerror="this.style.display='none'">`
           : `<div style="width:50px;height:50px;border-radius:8px;background:linear-gradient(135deg,#C4956A,#8B5E3C);display:flex;align-items:center;justify-content:center"><img src="/icons/product.png" style="width:26px;height:26px;object-fit:contain;filter:brightness(10);opacity:.8" alt=""></div>`}
         </td>
+        <td><span style="font-size:12px;font-weight:700;color:var(--primary);letter-spacing:.5px">${sku}</span></td>
         <td><div class="td-product-text" title="${p.name}${p.description?' — '+p.description:''}"><span class="td-product-name">${p.name}</span></div></td>
         <td><strong>${fmtPrice(p.price)}</strong></td>
         <td>${varInfo}</td>
@@ -410,6 +413,7 @@ function syncVariantsFromDOM() {
   document.querySelectorAll('.variant-row').forEach((row, i) => {
     if (!variantList[i]) return;
     variantList[i].name     = row.querySelector('.v-name').value;
+    variantList[i].sku      = row.querySelector('.v-sku').value;
     variantList[i].price    = row.querySelector('.v-price').value;
     variantList[i].quantity = parseInt(row.querySelector('.v-qty').value) || 0;
   });
@@ -417,7 +421,7 @@ function syncVariantsFromDOM() {
 
 function addVariant() {
   syncVariantsFromDOM();
-  variantList.push({ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null });
+  variantList.push({ name: '', sku: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null });
   renderVariants();
 }
 
@@ -434,6 +438,7 @@ function renderVariants() {
   container.innerHTML = variantList.map((v, i) => `
     <div class="variant-row">
       <input class="form-control v-name" placeholder="VD: Màu xanh, Size M" value="${escHtml(v.name)}" oninput="updateLivePreview()">
+      <input class="form-control v-sku" placeholder="VD: MV-XL-01" value="${escHtml(v.sku||'')}">
       <div style="position:relative">
         <input class="form-control v-price" type="number" placeholder="Giá" min="1000" value="${v.price}" oninput="updateLivePreview()" style="padding-right:24px">
         <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);pointer-events:none">đ</span>
@@ -495,9 +500,9 @@ function openModal(id = null) {
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
     if (vars.length > 0) {
-      variantList = vars.map(v => ({ name: v.name||'', price: v.price||'', quantity: v.quantity||0, image_url: v.image_url||'', _file: null, _preview: v.image_url||null }));
+      variantList = vars.map(v => ({ name: v.name||'', sku: v.sku||'', price: v.price||'', quantity: v.quantity||0, image_url: v.image_url||'', _file: null, _preview: v.image_url||null }));
     } else {
-      variantList = [{ name: '', price: String(p.price||''), quantity: p.stock_quantity||1, image_url: '', _file: null, _preview: null }];
+      variantList = [{ name: '', sku: '', price: String(p.price||''), quantity: p.stock_quantity||1, image_url: '', _file: null, _preview: null }];
     }
   } else {
     document.getElementById('p-name').value = '';
@@ -505,7 +510,7 @@ function openModal(id = null) {
     document.getElementById('p-status').value   = 'visible';
     document.getElementById('p-desc').value     = '';
     productImages = [];
-    variantList = [{ name: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null, _pos: '50% 50%', _zoom: 100 }];
+    variantList = [{ name: '', sku: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null, _pos: '50% 50%', _zoom: 100 }];
   }
 
   renderVariants();
@@ -749,7 +754,7 @@ async function saveProduct() {
   fd.append('description', document.getElementById('p-desc').value.trim());
   fd.append('is_hidden',   document.getElementById('p-status').value === 'hidden' ? '1' : '0');
 
-  const variantsPayload = variantList.map(({ name, price, quantity, image_url }) => ({ name, price, quantity, image_url }));
+  const variantsPayload = variantList.map(({ name, sku, price, quantity, image_url }) => ({ name, sku: sku||'', price, quantity, image_url }));
   fd.append('variants', JSON.stringify(variantsPayload));
 
   // Attach up to 5 product images + position/zoom metadata
