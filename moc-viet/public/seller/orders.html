@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Quản lý Đơn hàng — Mộc Việt Seller</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -61,7 +61,9 @@
         <button class="filter-tab" data-status="approved"  onclick="setStatus('approved',this)">Đã duyệt</button>
         <button class="filter-tab" data-status="shipping"  onclick="setStatus('shipping',this)">Đang giao</button>
         <button class="filter-tab" data-status="completed" onclick="setStatus('completed',this)">Hoàn thành</button>
+        <button class="filter-tab" data-status="returned"  onclick="setStatus('returned',this)">Hoàn hàng</button>
         <button class="filter-tab" data-status="rejected"  onclick="setStatus('rejected',this)">Từ chối</button>
+        <button class="filter-tab" data-status="cancelled" onclick="setStatus('cancelled',this)">Đã huỷ</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
         <input type="text" id="search" placeholder="Tìm khách hàng, SĐT..." oninput="filterOrders()" style="min-width:200px">
@@ -179,7 +181,9 @@ function renderOrders(list) {
     { v:'approved',  l:'Đã duyệt' },
     { v:'shipping',  l:'Đang giao' },
     { v:'completed', l:'Hoàn thành' },
+    { v:'returned',  l:'Hoàn hàng' },
     { v:'rejected',  l:'Từ chối' },
+    { v:'cancelled', l:'Đã huỷ' },
   ];
 
   const NEXT_BTN_STYLE = {
@@ -187,6 +191,8 @@ function renderOrders(list) {
     rejected:  'btn-danger',
     shipping:  'btn-primary',
     completed: 'btn-success',
+    cancelled: 'btn-danger',
+    returned:  'btn-warning',
   };
 
   wrap.innerHTML = `<table>
@@ -246,6 +252,7 @@ function showDetail(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SẢN PHẨM</div><strong>${o.product_name}</strong></div>
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">TRẠNG THÁI</div>${statusBadge(o.status)}</div>
+      ${o.variant_name ? `<div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KÍCH THƯỚC / PHÂN LOẠI</div><strong>${o.variant_name}</strong></div>` : ''}
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KHÁCH HÀNG</div><strong>${o.full_name}</strong></div>
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SĐT</div><strong>${o.phone}</strong></div>
       <div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">ĐỊA CHỈ</div>${o.address}</div>
@@ -257,9 +264,10 @@ function showDetail(id) {
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Đặt lúc: ${fmtDate(o.created_at)}</div>`;
   const footer = document.getElementById('detail-footer');
-  const actions = (NEXT_STATUS[o.status]||[]).map(ns =>
-    `<button class="btn btn-sm ${ns==='rejected'?'btn-danger':ns==='completed'?'btn-success':'btn-primary'}" onclick="updateStatusFromDetail(${o.id},'${ns}')">${NEXT_LABEL[ns]}</button>`
-  ).join('');
+  const actions = (NEXT_STATUS[o.status]||[]).map(ns => {
+    const cls = (ns==='rejected'||ns==='cancelled') ? 'btn-danger' : ns==='returned' ? 'btn-warning' : ns==='completed'||ns==='approved' ? 'btn-success' : 'btn-primary';
+    return `<button class="btn btn-sm ${cls}" onclick="updateStatusFromDetail(${o.id},'${ns}')">${NEXT_LABEL[ns]}</button>`;
+  }).join('');
   footer.innerHTML = `<button class="btn btn-ghost" onclick="closeDetail()">Đóng</button>${actions}`;
   document.getElementById('detail-modal').classList.add('open');
 }

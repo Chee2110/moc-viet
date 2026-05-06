@@ -116,6 +116,7 @@ const PORT    = process.env.PORT       || 3000;
 const JWT_SEC = process.env.JWT_SECRET || 'mocviet_jwt_secret_2026';
 
 app.use(cors()); app.use(express.json());
+app.get('/san-pham/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'product.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/icons', express.static(path.join(__dirname, 'icons')));
 
@@ -814,7 +815,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
       'FROM orders o JOIN products p ON o.product_id=p.id ' +
       'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
 
-    const STATUS_VI = { pending:'Chờ xác nhận', approved:'Đã duyệt', shipping:'Đang giao', completed:'Hoàn thành', rejected:'Từ chối' };
+    const STATUS_VI = { pending:'Chờ xác nhận', approved:'Đã duyệt', shipping:'Đang giao', completed:'Hoàn thành', rejected:'Từ chối', cancelled:'Đã huỷ', returned:'Hoàn hàng' };
     const wb = new ExcelJS.Workbook(); wb.creator = 'Mộc Việt';
     const statusLabel = status && status !== 'all' ? `${STATUS_VI[status]||status} - ` : '';
     const ws = wb.addWorksheet(`${statusLabel}${periodSheetLabel}`.slice(0,31));
@@ -872,7 +873,87 @@ app.get('/api/admin/orders', adminAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-const VALID_TRANSITIONS = { pending:['approved','rejected'], approved:['shipping'], shipping:['completed'], rejected:[], completed:[] };
+app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
+  try {
+    const { status, period } = req.query;
+    const params = []; let where = '1=1';
+    if (status && status !== 'all') { params.push(status); where += ' AND o.status=$' + params.length; }
+
+    let periodLabel = 'tat-ca';
+    let periodSheetLabel = 'Tất cả thời gian';
+    if (period === 'week') {
+      where += ` AND o.created_at >= NOW() - INTERVAL '7 days'`;
+      periodLabel = '7-ngay-qua'; periodSheetLabel = '7 ngày qua';
+    } else if (period === 'month') {
+      where += ` AND DATE_TRUNC('month', o.created_at) = DATE_TRUNC('month', NOW())`;
+      periodLabel = 'thang-nay'; periodSheetLabel = 'Tháng này';
+    } else if (period === 'quarter') {
+      where += ` AND DATE_TRUNC('quarter', o.created_at) = DATE_TRUNC('quarter', NOW())`;
+      periodLabel = 'quy-nay'; periodSheetLabel = 'Quý này';
+    }
+
+    const rows = await query(
+      'SELECT o.id, o.created_at, s.name AS shop_name, o.full_name, o.phone, o.address, ' +
+      'p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
+      'FROM orders o JOIN products p ON o.product_id=p.id JOIN shops s ON o.shop_id=s.id ' +
+      'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
+
+    const STATUS_VI = { pending:'Chờ xác nhận', approved:'Đã duyệt', shipping:'Đang giao', completed:'Hoàn thành', rejected:'Từ chối', cancelled:'Đã huỷ', returned:'Hoàn hàng' };
+    const wb = new ExcelJS.Workbook(); wb.creator = 'Mộc Việt Admin';
+    const statusLabel = status && status !== 'all' ? `${STATUS_VI[status]||status} - ` : '';
+    const ws = wb.addWorksheet(`${statusLabel}${periodSheetLabel}`.slice(0, 31));
+    ws.columns = [
+      { header: 'Mã đơn',            key: 'id',           width: 10 },
+      { header: 'Ngày đặt',          key: 'date',         width: 20 },
+      { header: 'Shop',              key: 'shop_name',    width: 22 },
+      { header: 'Khách hàng',        key: 'full_name',    width: 22 },
+      { header: 'SĐT',               key: 'phone',        width: 14 },
+      { header: 'Địa chỉ',           key: 'address',      width: 35 },
+      { header: 'Sản phẩm',          key: 'product_name', width: 30 },
+      { header: 'Kích thước / Loại', key: 'variant_name', width: 20 },
+      { header: 'SL',                key: 'quantity',     width: 6  },
+      { header: 'Đơn giá (đ)',       key: 'unit_price',   width: 16 },
+      { header: 'Tổng tiền (đ)',     key: 'total_price',  width: 16 },
+      { header: 'Trạng thái',        key: 'status_vi',    width: 16 },
+      { header: 'Ghi chú',           key: 'note',         width: 25 },
+    ];
+    const hdr = ws.getRow(1);
+    hdr.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    hdr.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5E3C' } };
+    hdr.alignment = { horizontal: 'center', vertical: 'middle' };
+    hdr.height = 22;
+    rows.forEach(r => {
+      ws.addRow({
+        id: r.id,
+        date: new Date(r.created_at).toLocaleString('vi-VN'),
+        shop_name: r.shop_name,
+        full_name: r.full_name, phone: r.phone, address: r.address,
+        product_name: r.product_name, variant_name: r.variant_name || '', quantity: r.quantity,
+        unit_price: Number(r.unit_price), total_price: Number(r.total_price),
+        status_vi: STATUS_VI[r.status] || r.status,
+        note: r.note || '',
+      });
+    });
+    const grandTotal = rows.reduce((s, r) => s + Number(r.total_price), 0);
+    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', address:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
+    totalRow.font = { bold: true };
+    totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
+    ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
+    const statusSlug = status && status !== 'all' ? status : 'tat-ca';
+    const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''don-hang-admin-${statusSlug}-${periodLabel}-${dateStr}.xlsx`);
+    await wb.xlsx.write(res);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+const VALID_TRANSITIONS = {
+  pending:   ['approved', 'rejected', 'cancelled'],
+  approved:  ['shipping', 'cancelled'],
+  shipping:  ['completed'],
+  completed: ['returned'],
+  rejected:  [], cancelled: [], returned: []
+};
 
 app.patch('/api/orders/:id/status', auth, async (req, res) => {
   try {
@@ -881,7 +962,7 @@ app.patch('/api/orders/:id/status', auth, async (req, res) => {
     if (!order) return res.status(404).json({ message: 'Đơn hàng không tồn tại' });
     if (!(VALID_TRANSITIONS[order.status]||[]).includes(new_status))
       return res.status(400).json({ message: 'Không thể chuyển trạng thái này' });
-    if (new_status === 'rejected')
+    if (new_status === 'rejected' || new_status === 'cancelled')
       await query('UPDATE products SET stock_quantity=stock_quantity+$1 WHERE id=$2', [order.quantity, order.product_id]);
     await query('UPDATE orders SET status=$1,updated_at=NOW() WHERE id=$2', [new_status, order.id]);
     if (order.user_id) {
@@ -889,7 +970,9 @@ app.patch('/api/orders/:id/status', auth, async (req, res) => {
         approved:  `✅ Đơn hàng #${order.id} đã được xác nhận!`,
         rejected:  `❌ Đơn hàng #${order.id} đã bị từ chối.`,
         shipping:  `🚚 Đơn hàng #${order.id} đang được giao hàng!`,
-        completed: `🎉 Đơn hàng #${order.id} đã hoàn thành!`
+        completed: `🎉 Đơn hàng #${order.id} đã hoàn thành!`,
+        cancelled: `🚫 Đơn hàng #${order.id} đã bị huỷ.`,
+        returned:  `↩️ Đơn hàng #${order.id} đã được hoàn hàng.`
       };
       if (msgs[new_status]) {
         const notifRow = await queryOne(
@@ -1283,6 +1366,28 @@ app.get('/api/admin/revenue/export', adminAuth, async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="doanh-thu-he-thong-${year}.xlsx"`);
     await wb.xlsx.write(res);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ── Site settings
+app.get('/api/settings', async (req, res) => {
+  try {
+    const rows = await query('SELECT key, value FROM settings');
+    const obj = {};
+    rows.forEach(r => { obj[r.key] = r.value; });
+    res.json(obj);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/admin/banner', adminAuth, upload.single('banner'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Chưa chọn ảnh banner' });
+    const url = '/uploads/' + req.file.filename;
+    await query(
+      "INSERT INTO settings(key,value) VALUES('banner_url',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
+      [url]
+    );
+    res.json({ url });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Quản lý Đơn hàng — Mộc Việt Admin</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -22,6 +22,7 @@
       <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="opacity:.9" alt=""></span> Người dùng</a>
       <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
       <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <a href="/admin/settings.html"><span class="nav-icon"><img src="/icons/camera.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Cài đặt</a>
       <div class="dash-nav-label">Tài khoản</div>
       <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
       <div class="dash-nav-label">Ứng dụng</div>
@@ -62,10 +63,15 @@
         <button class="filter-tab" onclick="setStatus('approved',this)">Đã duyệt</button>
         <button class="filter-tab" onclick="setStatus('shipping',this)">Đang giao</button>
         <button class="filter-tab" onclick="setStatus('completed',this)">Hoàn thành</button>
+        <button class="filter-tab" onclick="setStatus('returned',this)">Hoàn hàng</button>
         <button class="filter-tab" onclick="setStatus('rejected',this)">Từ chối</button>
+        <button class="filter-tab" onclick="setStatus('cancelled',this)">Đã huỷ</button>
       </div>
-      <div style="position:relative; width:100%; max-width:300px">
-        <input type="text" id="search" class="form-control" placeholder="Tìm tên khách, SĐT..." oninput="filterOrders()">
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <input type="text" id="search" class="form-control" placeholder="Tìm tên khách, SĐT..." oninput="filterOrders()" style="width:220px">
+        <button id="export-btn" class="btn btn-primary btn-sm" onclick="openExportModal()" style="white-space:nowrap;display:flex;align-items:center;gap:6px">
+          <img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain" alt=""> Xuất Excel
+        </button>
       </div>
     </div>
 
@@ -73,6 +79,29 @@
       <div class="loading"><div class="spinner"></div></div>
     </div>
   </main>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Xuất Excel đơn hàng</span>
+      <button class="modal-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);margin-bottom:16px;font-size:14px">
+        Xuất toàn bộ đơn hàng của tất cả shop theo kỳ thời gian.
+        Trạng thái hiện tại: <strong id="export-status-label">Tất cả</strong>
+      </p>
+      <div style="display:grid;gap:10px">
+        <button class="btn btn-primary btn-block" onclick="doExport('')">Tất cả thời gian</button>
+        <button class="btn btn-ghost btn-block" onclick="doExport('week')">7 ngày qua</button>
+        <button class="btn btn-ghost btn-block" onclick="doExport('month')">Tháng này</button>
+        <button class="btn btn-ghost btn-block" onclick="doExport('quarter')">Quý này</button>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeExportModal()">Huỷ</button></div>
+  </div>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -83,7 +112,7 @@
       <button class="modal-close" onclick="closeDetail()">✕</button>
     </div>
     <div class="modal-body" id="detail-body"></div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeDetail()">Đóng</button></div>
+    <div class="modal-footer" id="detail-footer"><button class="btn btn-ghost" onclick="closeDetail()">Đóng</button></div>
   </div>
 </div>
 
@@ -190,6 +219,7 @@ function showDetail(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SẢN PHẨM</div><strong>${o.product_name}</strong></div>
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">SHOP</div><strong>${o.shop_name}</strong></div>
+      ${o.variant_name ? `<div style="grid-column:span 2"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KÍCH THƯỚC / PHÂN LOẠI</div><strong>${o.variant_name}</strong></div>` : ''}
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">TRẠNG THÁI</div>${statusBadge(o.status)}</div>
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">NGÀY ĐẶT</div>${fmtDate(o.created_at)}</div>
       <div><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">KHÁCH HÀNG</div><strong>${o.full_name}</strong></div>
@@ -201,9 +231,57 @@ function showDetail(id) {
       <span>${o.quantity} × ${fmtPrice(o.unit_price)}</span>
       <span style="font-size:1.2rem;font-weight:800;color:var(--primary)">${fmtPrice(o.total_price)}</span>
     </div>`;
+  const actions = (NEXT_STATUS[o.status]||[]).map(ns => {
+    const cls = (ns==='rejected'||ns==='cancelled') ? 'btn-danger' : ns==='returned' ? 'btn-warning' : ns==='completed'||ns==='approved' ? 'btn-success' : 'btn-primary';
+    return `<button class="btn btn-sm ${cls}" onclick="updateStatusFromDetail(${o.id},'${ns}')">${NEXT_LABEL[ns]}</button>`;
+  }).join('');
+  document.getElementById('detail-footer').innerHTML = `<button class="btn btn-ghost" onclick="closeDetail()">Đóng</button>${actions}`;
   document.getElementById('detail-modal').classList.add('open');
 }
 function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+async function updateStatusFromDetail(id, status) {
+  const res = await api.patch(`/api/orders/${id}/status`, { new_status: status });
+  if (res.success) { toast('Đã cập nhật trạng thái đơn hàng'); closeDetail(); loadOrders(); }
+  else toast(res.message, 'error');
+}
+
+function openExportModal() {
+  const STATUS_VI = { all:'Tất cả', pending:'Chờ xác nhận', approved:'Đã duyệt', shipping:'Đang giao', completed:'Hoàn thành', returned:'Hoàn hàng', rejected:'Từ chối', cancelled:'Đã huỷ' };
+  document.getElementById('export-status-label').textContent = STATUS_VI[currentStatus] || currentStatus;
+  document.getElementById('export-modal').classList.add('open');
+}
+function closeExportModal() { document.getElementById('export-modal').classList.remove('open'); }
+
+async function doExport(period) {
+  closeExportModal();
+  const btn = document.getElementById('export-btn');
+  btn.disabled = true; btn.textContent = 'Đang tải...';
+  try {
+    const token = localStorage.getItem('mv_token');
+    const params = new URLSearchParams();
+    if (currentStatus !== 'all') params.set('status', currentStatus);
+    if (period) params.set('period', period);
+    const qs = params.toString() ? '?' + params.toString() : '';
+    const res = await fetch(`/api/admin/orders/export${qs}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { const e = await res.json(); toast(e.message || 'Xuất thất bại', 'error'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const STATUS_SLUG = { all:'tat-ca', pending:'cho-xac-nhan', approved:'da-duyet', shipping:'dang-giao', completed:'hoan-thanh', rejected:'tu-choi' };
+    const PERIOD_SLUG = { week:'7-ngay', month:'thang-nay', quarter:'quy-nay', '':'tat-ca-tg' };
+    a.href = url;
+    a.download = `don-hang-admin-${STATUS_SLUG[currentStatus]||currentStatus}-${PERIOD_SLUG[period]||period}-${new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Đã xuất file Excel thành công!');
+  } catch (err) {
+    toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '&#128202; Xuất Excel';
+  }
+}
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Mộc Việt — Thủ công mỹ nghệ Việt Nam</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -94,6 +94,10 @@ let currentPage = 1;
 
 window.onload = async () => {
   initNavbar();
+  fetch('/api/settings').then(r => r.json()).then(s => {
+    if (s.banner_url) document.querySelector('.hero-bg').style.backgroundImage = `url('${s.banner_url}')`;
+  }).catch(() => {});
+
   const q = new URLSearchParams(location.search).get('q');
   if (q) {
     searchQuery = q;
@@ -165,7 +169,7 @@ function productCard(p, user) {
   const cartBtn = user && user.role === 'buyer'
     ? `<button class="btn btn-primary btn-sm btn-block mt-2" onclick="event.stopPropagation();addToCart(${p.id},this)" ${p.stock_quantity === 0 ? 'disabled' : ''}>Thêm vào giỏ</button>`
     : '';
-  return `<div class="product-card" onclick="window.location.href='/product.html?id=${p.id}'">
+  return `<div class="product-card" onclick="window.location.href='${productUrl(p.id, p.name)}'">
     <div class="product-img-wrap">${imgHtml}${heartBtn}${flashStrip}</div>
     <div class="product-body">
       <div class="product-shop">${p.shop_name}</div>
@@ -227,7 +231,7 @@ function heroSuggest(val) {
       drop.innerHTML = '<div class="suggest-empty">Không tìm thấy sản phẩm phù hợp</div>';
     } else {
       drop.innerHTML = list.map(p => `
-        <div class="suggest-item" onclick="window.location.href='/product.html?id=${p.id}'">
+        <div class="suggest-item" onclick="window.location.href='${productUrl(p.id, p.name)}'">
           ${p.image_url
             ? `<img src="${p.image_url}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'suggest-item-placeholder'}))">`
             : `<div class="suggest-item-placeholder"></div>`}

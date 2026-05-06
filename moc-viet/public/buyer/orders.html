@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Đơn hàng — Mộc Việt</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -60,7 +60,9 @@
         <button class="filter-tab" onclick="setStatus('approved',this)">Đã duyệt</button>
         <button class="filter-tab" onclick="setStatus('shipping',this)">Đang giao</button>
         <button class="filter-tab" onclick="setStatus('completed',this)">Hoàn thành</button>
-        <button class="filter-tab" onclick="setStatus('rejected',this)">Đã huỷ</button>
+        <button class="filter-tab" onclick="setStatus('returned',this)">Hoàn hàng</button>
+        <button class="filter-tab" onclick="setStatus('rejected',this)">Từ chối</button>
+        <button class="filter-tab" onclick="setStatus('cancelled',this)">Đã huỷ</button>
       </div>
     </div>
 
@@ -192,6 +194,7 @@ function showDetail(orderId) {
       ${imgHtml}
       <div style="flex:1">
         <div style="font-weight:700;font-size:15px;margin-bottom:4px">${o.product_name}</div>
+        ${o.variant_name ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:2px">📐 ${o.variant_name}</div>` : ''}
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">${o.shop_name}</div>
         <div style="margin-top:6px">${statusBadge(o.status)}</div>
       </div>

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Giỏ hàng — Mộc Việt</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -198,7 +198,7 @@ function cartItemHtml(item) {
   return `<div class="cart-item" id="cart-item-${item.id}">
     ${imgHtml}
     <div class="cart-item-info">
-      <div class="cart-item-name"><a href="/product.html?id=${item.product_id}" style="color:inherit">${item.name}</a></div>
+      <div class="cart-item-name"><a href="${productUrl(item.product_id, item.name)}" style="color:inherit">${item.name}</a></div>
       <div class="cart-item-shop">${item.shop_name}</div>
       <div class="cart-item-price">${fmtPrice(ep)}${dealBadge}
         ${item.discount_percent ? `<span style="font-size:11px;color:var(--text-muted);text-decoration:line-through;margin-left:6px">${fmtPrice(item.price)}</span>` : ''}</div>

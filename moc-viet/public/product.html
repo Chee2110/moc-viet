@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sản phẩm — Mộc Việt</title>
   <link rel="stylesheet" href="/css/modern.css">
@@ -581,7 +581,11 @@ function reviewStarsHtml(r) {
 // ── Init ───────────────────────────────────────────────
 async function init() {
   initNavbar();
-  const id = new URLSearchParams(window.location.search).get('id');
+  // Support /san-pham/slug-{id} and legacy /product.html?id=
+  let id = null;
+  const pathMatch = window.location.pathname.match(/\/san-pham\/.*?-?(\d+)$/);
+  if (pathMatch) id = pathMatch[1];
+  if (!id) id = new URLSearchParams(window.location.search).get('id');
   if (!id) return window.location.href = '/';
 
   const data = await api.get('/api/products/' + id);
@@ -759,7 +763,7 @@ function renderProduct() {
             ${ratingBarHtml}
             <h1 class="lp-product-name">${product.name}</h1>
             <div class="lp-meta">
-              <span>SKU: <strong>P-${product.id.toString().padStart(4,'0')}</strong></span>
+              <span>SKU: <strong>MV-${product.id.toString().padStart(4,'0')}</strong></span>
               <span>Kho: <strong class="${product.stock_quantity > 0 ? 'in-stock' : 'out-stock'}">
                 ${product.stock_quantity > 0 ? `Còn ${product.stock_quantity} sản phẩm` : 'Hết hàng'}
               </strong></span>

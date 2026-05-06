@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Yêu thích — Mộc Việt</title>
   <link rel="stylesheet" href="/css/modern.css">
 </head>
@@ -106,20 +106,20 @@ function wishCard(p) {
     : p.stock_quantity <= 5 ? `<span class="stock-low">Còn ${p.stock_quantity}</span>` : '';
 
   return `<div class="product-card">
-    <div class="product-img-wrap" onclick="window.location.href='/product.html?id=${p.id}'" style="cursor:pointer">
+    <div class="product-img-wrap" onclick="window.location.href='${productUrl(p.id, p.name)}'" style="cursor:pointer">
       ${imgHtml}
       <button class="wishlist-btn active" onclick="event.stopPropagation();removeWishlist(${p.id},this)" title="Xoá khỏi yêu thích"><img src="/icons/wishlist.png" alt="♥"></button>
       ${flashStrip}
     </div>
     <div class="product-body">
       <div class="product-shop">${p.shop_name}</div>
-      <div class="product-name" onclick="window.location.href='/product.html?id=${p.id}'" style="cursor:pointer">${p.name}</div>
+      <div class="product-name" onclick="window.location.href='${productUrl(p.id, p.name)}'" style="cursor:pointer">${p.name}</div>
       <div class="product-price-wrap">${priceHtml}${stockBadge}</div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-primary btn-sm" style="flex:1" onclick="addToCart(${p.id},this)" ${p.stock_quantity===0?'disabled':''}>
           Thêm vào giỏ
         </button>
-        <a href="/product.html?id=${p.id}" class="btn btn-ghost btn-sm">Xem</a>
+        <a href="${productUrl(p.id, p.name)}" class="btn btn-ghost btn-sm">Xem</a>
       </div>
     </div>
   </div>`;
