@@ -61,9 +61,9 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <div class="footer-brand" style="display:flex;flex-direction:column;align-items:flex-start;gap:10px">
-          <img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img" style="height:120px;width:auto">
-          <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:1px">MỘC VIỆT</span>
+        <div class="footer-brand">
+          <img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img" style="height:140px;width:auto">
+          <span style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;letter-spacing:2px">MỘC VIỆT</span>
         </div>
       </div>
       <div class="footer-col">
@@ -78,10 +78,13 @@
         <a href="#">Chính sách đổi trả</a>
         <a href="#">Bảo mật thông tin</a>
       </div>
-      <div class="footer-col">
+      <div class="footer-col" id="footer-contact-col">
         <h4>Liên hệ</h4>
-        <p>Email: mocviet66@gmail.com</p>
-        <p>Hotline: 0766088886</p>
+        <p id="footer-company" style="display:none;font-weight:600;color:rgba(255,255,255,0.85)"></p>
+        <p id="footer-address" style="display:none"></p>
+        <p id="footer-email">Email: mocviet66@gmail.com</p>
+        <p id="footer-phone">Hotline: 0766088886</p>
+        <p id="footer-zalo" style="display:none"></p>
       </div>
     </div>
 
@@ -99,10 +102,16 @@ window.onload = async () => {
   initNavbar();
   fetch('/api/settings').then(r => r.json()).then(s => {
     if (s.banner_url) document.querySelector('.hero-bg').style.backgroundImage = `url('${s.banner_url}')`;
-    if (s.banner_title) document.getElementById('hero-title').textContent = s.banner_title;
-    if (s.banner_subtitle) document.getElementById('hero-subtitle').textContent = s.banner_subtitle;
+    if (s.banner_title) document.getElementById('hero-title').innerHTML = s.banner_title;
+    if (s.banner_subtitle) document.getElementById('hero-subtitle').innerHTML = s.banner_subtitle;
     const phoneEl = document.getElementById('hero-phone');
     if (s.support_phone) { phoneEl.textContent = 'Hỗ trợ mua hàng: ' + s.support_phone; phoneEl.style.display = 'block'; }
+    // Footer contact info
+    if (s.contact_company) { const el = document.getElementById('footer-company'); el.textContent = s.contact_company; el.style.display = 'block'; }
+    if (s.contact_address) { const el = document.getElementById('footer-address'); el.textContent = 'Địa chỉ: ' + s.contact_address; el.style.display = 'block'; }
+    if (s.contact_email) document.getElementById('footer-email').textContent = 'Email: ' + s.contact_email;
+    if (s.contact_phone) document.getElementById('footer-phone').textContent = 'Hotline: ' + s.contact_phone;
+    if (s.contact_zalo) { const el = document.getElementById('footer-zalo'); el.textContent = 'Zalo: ' + s.contact_zalo; el.style.display = 'block'; }
   }).catch(() => {});
 
   const q = new URLSearchParams(location.search).get('q');

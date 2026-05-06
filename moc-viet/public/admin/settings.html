@@ -95,26 +95,93 @@
     </div>
 
     <div class="card" style="max-width:720px;margin-top:24px">
-      <div class="card-header" style="padding:20px 24px;border-bottom:1px solid var(--border)">
+      <div class="card-header" style="padding:20px 24px;border-bottom:1px solid var(--border-color)">
         <h3 style="margin:0;font-size:1.05rem;font-weight:700">Nội dung chữ banner</h3>
         <p style="margin:6px 0 0;font-size:13px;color:var(--text-muted)">Tiêu đề và mô tả hiển thị ở góc trái phía dưới banner trang chủ.</p>
       </div>
       <div style="padding:24px;display:flex;flex-direction:column;gap:16px">
         <div>
-          <label class="form-label">Tiêu đề banner</label>
-          <input type="text" id="banner-title-input" class="form-control" placeholder="Ví dụ: Thủ công mỹ nghệ Tinh hoa Việt Nam">
+          <label class="form-label">Tiêu đề banner <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng trên — chữ to nhất)</span></label>
+          <div class="rte-wrap">
+            <div class="rte-toolbar">
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','bold')" title="In đậm"><b>B</b></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','italic')" title="In nghiêng"><i>I</i></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','underline')" title="Gạch chân"><u>U</u></button>
+              <select onchange="rteFontSize('banner-title-editor', this.value); this.value=''" title="Cỡ chữ">
+                <option value="">Cỡ chữ</option>
+                <option value="1">Nhỏ</option>
+                <option value="2">Nhỏ vừa</option>
+                <option value="3">Vừa</option>
+                <option value="4">Lớn</option>
+                <option value="5">Rất lớn</option>
+                <option value="6">To</option>
+                <option value="7">Rất to</option>
+              </select>
+            </div>
+            <div contenteditable="true" id="banner-title-editor" class="rte-editor" data-placeholder="Ví dụ: Thủ công mỹ nghệ Tinh hoa Việt Nam"></div>
+          </div>
         </div>
         <div>
-          <label class="form-label">Mô tả ngắn</label>
-          <textarea id="banner-subtitle-input" class="form-control" rows="3" placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></textarea>
+          <label class="form-label">Mô tả ngắn <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng giữa — chữ vừa)</span></label>
+          <div class="rte-wrap">
+            <div class="rte-toolbar">
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','bold')" title="In đậm"><b>B</b></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','italic')" title="In nghiêng"><i>I</i></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','underline')" title="Gạch chân"><u>U</u></button>
+              <select onchange="rteFontSize('banner-subtitle-editor', this.value); this.value=''" title="Cỡ chữ">
+                <option value="">Cỡ chữ</option>
+                <option value="1">Nhỏ</option>
+                <option value="2">Nhỏ vừa</option>
+                <option value="3">Vừa</option>
+                <option value="4">Lớn</option>
+                <option value="5">Rất lớn</option>
+                <option value="6">To</option>
+                <option value="7">Rất to</option>
+              </select>
+            </div>
+            <div contenteditable="true" id="banner-subtitle-editor" class="rte-editor" style="min-height:80px" data-placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></div>
+          </div>
         </div>
         <div>
-          <label class="form-label">Số điện thoại hỗ trợ mua hàng</label>
+          <label class="form-label">Số điện thoại hỗ trợ mua hàng <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng dưới — giữ nguyên)</span></label>
           <input type="text" id="banner-phone-input" class="form-control" placeholder="Ví dụ: 0766088886">
         </div>
         <div style="display:flex;gap:10px;align-items:center">
           <button id="save-text-btn" class="btn btn-primary" onclick="saveBannerText()">Lưu nội dung</button>
           <span id="save-text-status" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:720px;margin-top:24px">
+      <div class="card-header" style="padding:20px 24px;border-bottom:1px solid var(--border-color)">
+        <h3 style="margin:0;font-size:1.05rem;font-weight:700">Thông tin liên hệ</h3>
+        <p style="margin:6px 0 0;font-size:13px;color:var(--text-muted)">Thông tin hiển thị ở phần footer trang chủ.</p>
+      </div>
+      <div style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div>
+          <label class="form-label">Tên công ty</label>
+          <input type="text" id="contact-company" class="form-control" placeholder="Ví dụ: Công ty TNHH Mộc Việt">
+        </div>
+        <div>
+          <label class="form-label">Địa chỉ</label>
+          <input type="text" id="contact-address" class="form-control" placeholder="Ví dụ: 123 Đường ABC, Quận 1, TP.HCM">
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input type="email" id="contact-email" class="form-control" placeholder="Ví dụ: mocviet66@gmail.com">
+        </div>
+        <div>
+          <label class="form-label">Số điện thoại</label>
+          <input type="text" id="contact-phone" class="form-control" placeholder="Ví dụ: 0766088886">
+        </div>
+        <div>
+          <label class="form-label">Zalo</label>
+          <input type="text" id="contact-zalo" class="form-control" placeholder="Ví dụ: 0766088886">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" onclick="saveContact(this)">Lưu thông tin liên hệ</button>
+          <span id="save-contact-status" style="font-size:13px;color:var(--text-muted)"></span>
         </div>
       </div>
     </div>
@@ -210,11 +277,26 @@ async function saveBanner() {
   }
 }
 
+function rteCmd(editorId, cmd) {
+  document.getElementById(editorId).focus();
+  document.execCommand(cmd, false, null);
+}
+function rteFontSize(editorId, size) {
+  if (!size) return;
+  document.getElementById(editorId).focus();
+  document.execCommand('fontSize', false, size);
+}
+
 async function loadBannerText() {
   const s = await api.get('/api/settings');
-  if (s?.banner_title) document.getElementById('banner-title-input').value = s.banner_title;
-  if (s?.banner_subtitle) document.getElementById('banner-subtitle-input').value = s.banner_subtitle;
+  if (s?.banner_title) document.getElementById('banner-title-editor').innerHTML = s.banner_title;
+  if (s?.banner_subtitle) document.getElementById('banner-subtitle-editor').innerHTML = s.banner_subtitle;
   if (s?.support_phone) document.getElementById('banner-phone-input').value = s.support_phone;
+  if (s?.contact_company) document.getElementById('contact-company').value = s.contact_company;
+  if (s?.contact_address) document.getElementById('contact-address').value = s.contact_address;
+  if (s?.contact_email) document.getElementById('contact-email').value = s.contact_email;
+  if (s?.contact_phone) document.getElementById('contact-phone').value = s.contact_phone;
+  if (s?.contact_zalo) document.getElementById('contact-zalo').value = s.contact_zalo;
 }
 
 async function saveBannerText() {
@@ -223,8 +305,8 @@ async function saveBannerText() {
   btn.disabled = true; btn.textContent = 'Đang lưu...'; status.textContent = '';
   try {
     const res = await api.post('/api/admin/banner-text', {
-      banner_title: document.getElementById('banner-title-input').value.trim(),
-      banner_subtitle: document.getElementById('banner-subtitle-input').value.trim(),
+      banner_title: document.getElementById('banner-title-editor').innerHTML.trim(),
+      banner_subtitle: document.getElementById('banner-subtitle-editor').innerHTML.trim(),
       support_phone: document.getElementById('banner-phone-input').value.trim()
     });
     if (res?.success) {
@@ -238,6 +320,31 @@ async function saveBannerText() {
     status.textContent = '✗ ' + err.message; status.style.color = 'var(--danger)';
   } finally {
     btn.disabled = false; btn.textContent = 'Lưu nội dung';
+  }
+}
+
+async function saveContact(btn) {
+  const status = document.getElementById('save-contact-status');
+  btn.disabled = true; btn.textContent = 'Đang lưu...'; status.textContent = '';
+  try {
+    const res = await api.post('/api/admin/contact', {
+      contact_company: document.getElementById('contact-company').value.trim(),
+      contact_address: document.getElementById('contact-address').value.trim(),
+      contact_email: document.getElementById('contact-email').value.trim(),
+      contact_phone: document.getElementById('contact-phone').value.trim(),
+      contact_zalo: document.getElementById('contact-zalo').value.trim()
+    });
+    if (res?.success) {
+      toast('Đã cập nhật thông tin liên hệ!');
+      status.textContent = '✓ Đã lưu'; status.style.color = 'var(--success)';
+    } else {
+      throw new Error(res?.message || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    toast(err.message, 'error');
+    status.textContent = '✗ ' + err.message; status.style.color = 'var(--danger)';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Lưu thông tin liên hệ';
   }
 }
 

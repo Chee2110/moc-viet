@@ -1427,6 +1427,21 @@ app.post('/api/admin/banner-text', adminAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+app.post('/api/admin/contact', adminAuth, async (req, res) => {
+  try {
+    const fields = ['contact_company', 'contact_address', 'contact_email', 'contact_phone', 'contact_zalo'];
+    for (const key of fields) {
+      if (req.body[key] !== undefined) {
+        await query(
+          "INSERT INTO settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2",
+          [key, req.body[key]]
+        );
+      }
+    }
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 async function purgeExpiredDeletedProducts() {
   try {
     const expired = await query(
