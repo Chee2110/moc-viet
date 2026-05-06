@@ -266,11 +266,18 @@ function openCheckout() {
   initVietnamLoc('co-province', 'co-district');
 
   /* Summary */
-  document.getElementById('co-summary').innerHTML = cartItems.map(i =>
-    `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">
-      <span>${i.name} × ${i.quantity}</span>
-      <span>${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
-    </div>`).join('');
+  document.getElementById('co-summary').innerHTML =
+    `<div style="display:grid;grid-template-columns:1fr 44px auto;gap:8px;padding:4px 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border-color);margin-bottom:4px">
+      <span>Sản phẩm</span>
+      <span style="text-align:center">Số lượng</span>
+      <span style="text-align:right">Thành tiền</span>
+    </div>` +
+    cartItems.map(i =>
+      `<div style="display:grid;grid-template-columns:1fr 44px auto;gap:8px;padding:6px 0;font-size:13px;align-items:center;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.name}</span>
+        <span style="text-align:center;font-weight:700;color:var(--primary)">${i.quantity}</span>
+        <span style="font-weight:600;white-space:nowrap;text-align:right">${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
+      </div>`).join('');
   document.getElementById('co-total').textContent = fmtPrice(calcTotal());
 
   document.getElementById('checkout-modal').classList.add('open');
