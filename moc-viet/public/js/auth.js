@@ -41,24 +41,12 @@ function initNavbar() {
       '<img src="/img/logo.png" alt="Mộc Việt" style="width:46px;height:46px;border-radius:50%;object-fit:cover;display:block">';
   }
 
-  // ── Remove navbar search bar if present
-  document.querySelector('.navbar-search')?.remove();
-
-  // ── Brand text "MỘC VIỆT" (10px from logo) + hotline (20px from brand text)
-  const navInner = document.querySelector('.navbar-inner');
-  if (navInner && !navInner.querySelector('.navbar-hotline')) {
+  // ── Brand text "MỘC VIỆT" — inside .navbar-brand for tight pairing
+  if (brand && !brand.querySelector('.navbar-brand-text')) {
     const bt = document.createElement('span');
     bt.className = 'navbar-brand-text';
     bt.innerHTML = 'MỘC <span>VIỆT</span>';
-    if (brand && brand.nextSibling) navInner.insertBefore(bt, brand.nextSibling);
-    else if (brand) navInner.appendChild(bt);
-
-    const hl = document.createElement('span');
-    hl.className = 'navbar-hotline';
-    hl.innerHTML =
-      '<img src="/icons/hotline.png" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;margin-right:4px;opacity:.8" alt="">0766 088 886';
-    if (bt.nextSibling) navInner.insertBefore(hl, bt.nextSibling);
-    else navInner.appendChild(hl);
+    brand.appendChild(bt);
   }
 
   const user    = getUser();

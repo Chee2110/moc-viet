@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -10,23 +10,24 @@
 <nav class="navbar">
   <div class="navbar-inner">
     <a href="/" class="navbar-brand"><img src="/img/logo.png" alt="Mộc Việt" class="brand-logo"></a>
+    <div class="navbar-search">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Tìm kiếm sản phẩm..."
+             oninput="navSuggest(this.value)" onkeydown="navKey(event)" autocomplete="off">
+      <div id="search-suggest" class="search-suggest-drop"></div>
+    </div>
     <div class="navbar-right" id="navbar-right"></div>
   </div>
 </nav>
 
 <section class="hero">
   <div class="hero-bg"></div>
-  <div class="hero-content">
-    <h1>Thủ công mỹ nghệ<br><span>Tinh hoa</span> Việt Nam</h1>
-    <p>Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công được chế tác tỉ mỉ từ những đôi tay nghệ nhân Việt.</p>
-    <div class="hero-search-wrap">
-      <div class="hero-search">
-        <input type="text" id="hero-search" placeholder="Tìm kiếm sản phẩm..."
-               oninput="heroSuggest(this.value)" onkeydown="heroKey(event)" autocomplete="off">
-        <button onclick="doHeroSearch()">Tìm kiếm</button>
-      </div>
-      <div id="search-suggest" class="search-suggest-drop"></div>
-    </div>
+  <div class="hero-text-overlay">
+    <h1 id="hero-title">Thủ công mỹ nghệ<br><span>Tinh hoa</span> Việt Nam</h1>
+    <p id="hero-subtitle">Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công được chế tác tỉ mỉ từ những đôi tay nghệ nhân Việt.</p>
+    <p id="hero-phone" style="display:none;font-size:0.92rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:1px;background:#e02020;padding:7px 16px;border-radius:4px;margin-top:-16px;margin-bottom:0;width:fit-content"></p>
   </div>
 </section>
 
@@ -60,8 +61,10 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <div class="footer-brand"><img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img"></div>
-        <p class="footer-desc">Nơi lưu giữ và lan toả giá trị thủ công mỹ nghệ truyền thống Việt Nam. Mỗi sản phẩm là một câu chuyện về tâm huyết và đôi bàn tay khéo léo.</p>
+        <div class="footer-brand" style="display:flex;flex-direction:column;align-items:flex-start;gap:10px">
+          <img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img" style="height:120px;width:auto">
+          <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:1px">MỘC VIỆT</span>
+        </div>
       </div>
       <div class="footer-col">
         <h4>Khám phá</h4>
@@ -96,13 +99,16 @@ window.onload = async () => {
   initNavbar();
   fetch('/api/settings').then(r => r.json()).then(s => {
     if (s.banner_url) document.querySelector('.hero-bg').style.backgroundImage = `url('${s.banner_url}')`;
+    if (s.banner_title) document.getElementById('hero-title').textContent = s.banner_title;
+    if (s.banner_subtitle) document.getElementById('hero-subtitle').textContent = s.banner_subtitle;
+    const phoneEl = document.getElementById('hero-phone');
+    if (s.support_phone) { phoneEl.textContent = 'Hỗ trợ mua hàng: ' + s.support_phone; phoneEl.style.display = 'block'; }
   }).catch(() => {});
 
   const q = new URLSearchParams(location.search).get('q');
   if (q) {
     searchQuery = q;
     document.getElementById('search-input').value = q;
-    document.getElementById('hero-search').value = q;
   }
   // Load categories dynamically
   const cats = await api.get('/api/categories');
@@ -205,18 +211,9 @@ function selectCat(btn, cat) {
   loadProducts();
 }
 
-function onSearch(e) {
-  if (e.key === 'Enter') {
-    searchQuery = e.target.value.trim();
-    document.getElementById('hero-search').value = searchQuery;
-    currentPage = 1; loadProducts();
-  }
-}
-function doHeroSearch() {
+function doNavSearch() {
   closeSuggest();
-  searchQuery = document.getElementById('hero-search').value.trim();
-  const si = document.getElementById('search-input');
-  if (si) si.value = searchQuery;
+  searchQuery = document.getElementById('search-input').value.trim();
   currentPage = 1; loadProducts();
   document.querySelector('.section-padding')?.scrollIntoView({ behavior:'smooth' });
 }
@@ -224,7 +221,7 @@ function doHeroSearch() {
 // ── Autocomplete suggest ───────────────────────────────
 let _suggestTimer = null;
 
-function heroSuggest(val) {
+function navSuggest(val) {
   clearTimeout(_suggestTimer);
   const drop = document.getElementById('search-suggest');
   if (!val || !val.trim()) { closeSuggest(); return; }
@@ -249,8 +246,8 @@ function heroSuggest(val) {
   }, 220);
 }
 
-function heroKey(e) {
-  if (e.key === 'Enter')  { closeSuggest(); doHeroSearch(); }
+function navKey(e) {
+  if (e.key === 'Enter')  { closeSuggest(); doNavSearch(); }
   if (e.key === 'Escape') { closeSuggest(); }
 }
 
@@ -259,7 +256,7 @@ function closeSuggest() {
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.hero-search-wrap')) closeSuggest();
+  if (!e.target.closest('.navbar-search')) closeSuggest();
 });
 
 async function toggleWishlist(event, productId) {

@@ -93,6 +93,31 @@
         </div>
       </div>
     </div>
+
+    <div class="card" style="max-width:720px;margin-top:24px">
+      <div class="card-header" style="padding:20px 24px;border-bottom:1px solid var(--border)">
+        <h3 style="margin:0;font-size:1.05rem;font-weight:700">Nội dung chữ banner</h3>
+        <p style="margin:6px 0 0;font-size:13px;color:var(--text-muted)">Tiêu đề và mô tả hiển thị ở góc trái phía dưới banner trang chủ.</p>
+      </div>
+      <div style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div>
+          <label class="form-label">Tiêu đề banner</label>
+          <input type="text" id="banner-title-input" class="form-control" placeholder="Ví dụ: Thủ công mỹ nghệ Tinh hoa Việt Nam">
+        </div>
+        <div>
+          <label class="form-label">Mô tả ngắn</label>
+          <textarea id="banner-subtitle-input" class="form-control" rows="3" placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></textarea>
+        </div>
+        <div>
+          <label class="form-label">Số điện thoại hỗ trợ mua hàng</label>
+          <input type="text" id="banner-phone-input" class="form-control" placeholder="Ví dụ: 0766088886">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button id="save-text-btn" class="btn btn-primary" onclick="saveBannerText()">Lưu nội dung</button>
+          <span id="save-text-status" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -185,7 +210,39 @@ async function saveBanner() {
   }
 }
 
+async function loadBannerText() {
+  const s = await api.get('/api/settings');
+  if (s?.banner_title) document.getElementById('banner-title-input').value = s.banner_title;
+  if (s?.banner_subtitle) document.getElementById('banner-subtitle-input').value = s.banner_subtitle;
+  if (s?.support_phone) document.getElementById('banner-phone-input').value = s.support_phone;
+}
+
+async function saveBannerText() {
+  const btn = document.getElementById('save-text-btn');
+  const status = document.getElementById('save-text-status');
+  btn.disabled = true; btn.textContent = 'Đang lưu...'; status.textContent = '';
+  try {
+    const res = await api.post('/api/admin/banner-text', {
+      banner_title: document.getElementById('banner-title-input').value.trim(),
+      banner_subtitle: document.getElementById('banner-subtitle-input').value.trim(),
+      support_phone: document.getElementById('banner-phone-input').value.trim()
+    });
+    if (res?.success) {
+      toast('Đã cập nhật nội dung banner!');
+      status.textContent = '✓ Đã lưu'; status.style.color = 'var(--success)';
+    } else {
+      throw new Error(res?.message || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    toast(err.message, 'error');
+    status.textContent = '✗ ' + err.message; status.style.color = 'var(--danger)';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Lưu nội dung';
+  }
+}
+
 loadCurrentBanner();
+loadBannerText();
 </script>
 </body>
 </html>

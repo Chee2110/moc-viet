@@ -1402,6 +1402,31 @@ app.post('/api/admin/banner', adminAuth, upload.single('banner'), async (req, re
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+app.post('/api/admin/banner-text', adminAuth, async (req, res) => {
+  try {
+    const { banner_title, banner_subtitle, support_phone } = req.body;
+    if (banner_title !== undefined) {
+      await query(
+        "INSERT INTO settings(key,value) VALUES('banner_title',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
+        [banner_title]
+      );
+    }
+    if (banner_subtitle !== undefined) {
+      await query(
+        "INSERT INTO settings(key,value) VALUES('banner_subtitle',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
+        [banner_subtitle]
+      );
+    }
+    if (support_phone !== undefined) {
+      await query(
+        "INSERT INTO settings(key,value) VALUES('support_phone',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
+        [support_phone]
+      );
+    }
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 async function purgeExpiredDeletedProducts() {
   try {
     const expired = await query(
