@@ -166,18 +166,20 @@ function productCard(p, user) {
   const stockBadge = p.stock_quantity <= 5 && p.stock_quantity > 0
     ? `<span class="stock-low">Còn ${p.stock_quantity}</span>`
     : p.stock_quantity === 0 ? `<span class="stock-out">Hết hàng</span>` : '';
-  const cartBtn = user && user.role === 'buyer'
-    ? `<button class="btn btn-primary btn-sm btn-block mt-2" onclick="event.stopPropagation();addToCart(${p.id},this)" ${p.stock_quantity === 0 ? 'disabled' : ''}>Thêm vào giỏ</button>`
-    : '';
   const pUrl = productUrl(p.id, p.name);
+  const cartIconBtn = user && user.role === 'buyer'
+    ? `<button class="btn-cart-icon" onclick="event.stopPropagation();addToCart(${p.id},this)" ${p.stock_quantity === 0 ? 'disabled' : ''} title="Thêm vào giỏ hàng"><img src="/icons/cart.png" alt="Giỏ"></button>`
+    : '';
   const buyNowBtn = `<a class="btn-buy-now" href="${pUrl}" onclick="event.stopPropagation()">Mua ngay</a>`;
   return `<div class="product-card" onclick="window.location.href='${pUrl}'">
     <div class="product-img-wrap">${imgHtml}${heartBtn}${flashStrip}</div>
     <div class="product-body">
       <div class="product-shop">${p.shop_name}</div>
       <div class="product-name">${p.name}</div>
-      <div class="product-price-wrap"><div style="flex:1;min-width:0">${priceHtml}${stockBadge}</div>${buyNowBtn}</div>
-      ${cartBtn}
+      <div class="product-price-wrap">
+        <div class="product-price-left">${priceHtml}${stockBadge}</div>
+        <div class="product-card-actions">${cartIconBtn}${buyNowBtn}</div>
+      </div>
     </div></div>`;
 }
 
