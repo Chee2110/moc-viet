@@ -101,7 +101,7 @@
       </div>
       <div style="padding:24px;display:flex;flex-direction:column;gap:16px">
         <div>
-          <label class="form-label">Tiêu đề banner <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng trên — chữ to nhất)</span></label>
+          <label class="form-label">Tiêu đề <span style="font-size:11px;color:var(--text-muted);font-weight:400">(phần 1 — chữ to nhất)</span></label>
           <div class="rte-wrap">
             <div class="rte-toolbar">
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','bold')" title="In đậm"><b>B</b></button>
@@ -122,7 +122,7 @@
           </div>
         </div>
         <div>
-          <label class="form-label">Mô tả ngắn <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng giữa — chữ vừa)</span></label>
+          <label class="form-label">Mô tả tiêu đề <span style="font-size:11px;color:var(--text-muted);font-weight:400">(phần 2 — chữ vừa)</span></label>
           <div class="rte-wrap">
             <div class="rte-toolbar">
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','bold')" title="In đậm"><b>B</b></button>
@@ -139,11 +139,32 @@
                 <option value="7">Rất to</option>
               </select>
             </div>
-            <div contenteditable="true" id="banner-subtitle-editor" class="rte-editor" style="min-height:80px" data-placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></div>
+            <div contenteditable="true" id="banner-subtitle-editor" class="rte-editor" style="min-height:60px" data-placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></div>
           </div>
         </div>
         <div>
-          <label class="form-label">Số điện thoại hỗ trợ mua hàng <span style="font-size:11px;color:var(--text-muted);font-weight:400">(hàng dưới — giữ nguyên)</span></label>
+          <label class="form-label">Nội dung <span style="font-size:11px;color:var(--text-muted);font-weight:400">(phần 3 — chữ nhỏ hơn)</span></label>
+          <div class="rte-wrap">
+            <div class="rte-toolbar">
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','bold')" title="In đậm"><b>B</b></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','italic')" title="In nghiêng"><i>I</i></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','underline')" title="Gạch chân"><u>U</u></button>
+              <select onchange="rteFontSize('banner-content-editor', this.value); this.value=''" title="Cỡ chữ">
+                <option value="">Cỡ chữ</option>
+                <option value="1">Nhỏ</option>
+                <option value="2">Nhỏ vừa</option>
+                <option value="3">Vừa</option>
+                <option value="4">Lớn</option>
+                <option value="5">Rất lớn</option>
+                <option value="6">To</option>
+                <option value="7">Rất to</option>
+              </select>
+            </div>
+            <div contenteditable="true" id="banner-content-editor" class="rte-editor" style="min-height:80px" data-placeholder="Nội dung chi tiết hiển thị bên dưới mô tả..."></div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Số điện thoại hỗ trợ mua hàng <span style="font-size:11px;color:var(--text-muted);font-weight:400">(phần 4 — giữ nguyên)</span></label>
           <input type="text" id="banner-phone-input" class="form-control" placeholder="Ví dụ: 0766088886">
         </div>
         <div style="display:flex;gap:10px;align-items:center">
@@ -291,6 +312,7 @@ async function loadBannerText() {
   const s = await api.get('/api/settings');
   if (s?.banner_title) document.getElementById('banner-title-editor').innerHTML = s.banner_title;
   if (s?.banner_subtitle) document.getElementById('banner-subtitle-editor').innerHTML = s.banner_subtitle;
+  if (s?.banner_content) document.getElementById('banner-content-editor').innerHTML = s.banner_content;
   if (s?.support_phone) document.getElementById('banner-phone-input').value = s.support_phone;
   if (s?.contact_company) document.getElementById('contact-company').value = s.contact_company;
   if (s?.contact_address) document.getElementById('contact-address').value = s.contact_address;
@@ -307,6 +329,7 @@ async function saveBannerText() {
     const res = await api.post('/api/admin/banner-text', {
       banner_title: document.getElementById('banner-title-editor').innerHTML.trim(),
       banner_subtitle: document.getElementById('banner-subtitle-editor').innerHTML.trim(),
+      banner_content: document.getElementById('banner-content-editor').innerHTML.trim(),
       support_phone: document.getElementById('banner-phone-input').value.trim()
     });
     if (res?.success) {

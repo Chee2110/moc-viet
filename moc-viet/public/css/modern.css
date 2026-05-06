@@ -280,9 +280,16 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 .hero h1 span { color: var(--accent-light); font-style: italic; }
 .hero p {
-  font-size: 1.1rem; font-weight: 300; margin-bottom: 36px;
+  font-size: 1.05rem; font-weight: 300; margin-bottom: 14px;
   opacity: 0.88; line-height: 1.7;
   animation: fadeInUp 0.9s ease-out 0.15s backwards;
+}
+/* 4-level banner hierarchy */
+.hero .hero-subtitle {
+  font-size: 1.25rem; font-weight: 400; opacity: 0.95; margin-bottom: 10px;
+}
+.hero .hero-content {
+  font-size: 0.97rem; font-weight: 300; opacity: 0.78; margin-bottom: 18px; line-height: 1.65;
 }
 .hero-search-wrap { position: relative; max-width: 540px; width: 100%; margin: 0 auto; }
 .hero-search {

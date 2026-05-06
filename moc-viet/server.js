@@ -1404,24 +1404,15 @@ app.post('/api/admin/banner', adminAuth, upload.single('banner'), async (req, re
 
 app.post('/api/admin/banner-text', adminAuth, async (req, res) => {
   try {
-    const { banner_title, banner_subtitle, support_phone } = req.body;
-    if (banner_title !== undefined) {
-      await query(
-        "INSERT INTO settings(key,value) VALUES('banner_title',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
-        [banner_title]
-      );
-    }
-    if (banner_subtitle !== undefined) {
-      await query(
-        "INSERT INTO settings(key,value) VALUES('banner_subtitle',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
-        [banner_subtitle]
-      );
-    }
-    if (support_phone !== undefined) {
-      await query(
-        "INSERT INTO settings(key,value) VALUES('support_phone',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
-        [support_phone]
-      );
+    const { banner_title, banner_subtitle, banner_content, support_phone } = req.body;
+    const fields = { banner_title, banner_subtitle, banner_content, support_phone };
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        await query(
+          "INSERT INTO settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2",
+          [key, value]
+        );
+      }
     }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }

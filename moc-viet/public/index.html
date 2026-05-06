@@ -26,8 +26,9 @@
   <div class="hero-bg"></div>
   <div class="hero-text-overlay">
     <h1 id="hero-title">Thủ công mỹ nghệ<br><span>Tinh hoa</span> Việt Nam</h1>
-    <p id="hero-subtitle">Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công được chế tác tỉ mỉ từ những đôi tay nghệ nhân Việt.</p>
-    <p id="hero-phone" style="display:none;font-size:0.92rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:1px;background:#e02020;padding:7px 16px;border-radius:4px;margin-top:-16px;margin-bottom:0;width:fit-content"></p>
+    <p id="hero-subtitle" class="hero-subtitle">Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công được chế tác tỉ mỉ từ những đôi tay nghệ nhân Việt.</p>
+    <p id="hero-content" class="hero-content" style="display:none"></p>
+    <p id="hero-phone" style="display:none;font-size:0.92rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:1px;background:#e02020;padding:7px 16px;border-radius:4px;margin-bottom:0;width:fit-content"></p>
   </div>
 </section>
 
@@ -104,6 +105,8 @@ window.onload = async () => {
     if (s.banner_url) document.querySelector('.hero-bg').style.backgroundImage = `url('${s.banner_url}')`;
     if (s.banner_title) document.getElementById('hero-title').innerHTML = s.banner_title;
     if (s.banner_subtitle) document.getElementById('hero-subtitle').innerHTML = s.banner_subtitle;
+    const contentEl = document.getElementById('hero-content');
+    if (s.banner_content) { contentEl.innerHTML = s.banner_content; contentEl.style.display = 'block'; }
     const phoneEl = document.getElementById('hero-phone');
     if (s.support_phone) { phoneEl.textContent = 'Hỗ trợ mua hàng: ' + s.support_phone; phoneEl.style.display = 'block'; }
     // Footer contact info
