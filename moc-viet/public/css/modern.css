@@ -842,7 +842,8 @@ select.form-control { cursor: pointer; }
   font-size: 11px; letter-spacing: 0.3px;
   color: var(--accent-light); margin-top: 3px; font-weight: 600;
 }
-.dash-nav { padding: 10px 12px; flex: 1; overflow-y: auto; overflow-x: hidden; }
+.dash-nav { padding: 10px 12px; flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.dash-nav::-webkit-scrollbar { display: none; }
 .dash-nav-label {
   font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
   color: rgba(255,255,255,0.32); margin: 12px 0 6px 10px; font-weight: 700;
