@@ -1006,9 +1006,15 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .cart-summary h3 { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
 .summary-row {
-  display: flex; justify-content: space-between;
+  display: grid; grid-template-columns: 1fr 36px auto;
+  gap: 8px; align-items: center;
   padding: 9px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;
 }
+.summary-row-qty {
+  text-align: center; font-weight: 700;
+  color: var(--primary); white-space: nowrap;
+}
+.summary-row-price { font-weight: 600; white-space: nowrap; text-align: right; }
 .summary-total {
   display: flex; justify-content: space-between; padding: 18px 0;
   font-size: 1.3rem; font-weight: 800; color: var(--primary);

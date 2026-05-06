@@ -172,10 +172,14 @@ function renderCart() {
       </div>
       <div class="cart-summary">
         <h3>Tóm tắt đơn hàng</h3>
+        <div class="summary-row" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border-color);padding-bottom:8px;margin-bottom:2px">
+          <span>Sản phẩm</span><span style="text-align:center">SL</span><span style="text-align:right">Tiền</span>
+        </div>
         ${cartItems.map(i => `
           <div class="summary-row">
-            <span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.name} x${i.quantity}</span>
-            <span style="font-weight:600">${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.name}</span>
+            <span class="summary-row-qty">${i.quantity}</span>
+            <span class="summary-row-price">${fmtPrice((i.discounted_price||i.price)*i.quantity)}</span>
           </div>`).join('')}
         <div class="summary-total">
           <span>Tổng cộng</span>
