@@ -1082,6 +1082,9 @@ app.patch('/api/admin/users/:id/role', adminAuth, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Người dùng không tồn tại' });
     if (user.id === req.user.id) return res.status(400).json({ message: 'Không thể thay đổi vai trò của chính mình' });
     await query('UPDATE users SET role=$1 WHERE id=$2', [new_role, req.params.id]);
+    if (new_role === 'seller') {
+      await query("UPDATE shops SET status='approved' WHERE user_id=$1 AND status='pending'", [req.params.id]);
+    }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
