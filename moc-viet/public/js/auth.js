@@ -62,8 +62,9 @@ function initNavbar() {
   }
 
   const initials = (user.full_name || user.email).charAt(0).toUpperCase();
+  const fallbackDiv = `Object.assign(document.createElement('div'),{className:'avatar',textContent:'${initials}'})`;
   const avatarHtml = user.avatar_url
-    ? `<img src="${user.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover" onerror="this.outerHTML='<div class=\\"avatar\\">${initials}</div>'">`
+    ? `<img src="${user.avatar_url}" style="width:32px;height:32px;border-radius:50%;object-fit:cover" onerror="this.replaceWith(${fallbackDiv})">`
     : `<div class="avatar">${initials}</div>`;
 
   let dashLink = '/seller/dashboard.html';
