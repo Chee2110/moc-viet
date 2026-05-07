@@ -74,19 +74,23 @@ async function ensureSystemAccounts() {
   const ADMIN_EMAIL = 'dinhhchi2110@gmail.com';
   const NEW_PWD     = 'Dhc2110@';
 
-  const admin = await queryOne("SELECT id, email FROM users WHERE role='admin' LIMIT 1");
-  if (admin && admin.email !== ADMIN_EMAIL) {
-    const hashed = bcrypt.hashSync(NEW_PWD, 10);
-    await query('UPDATE users SET email=$1, password=$2 WHERE id=$3', [ADMIN_EMAIL, hashed, admin.id]);
-    console.log(`  ✅ Admin cập nhật → ${ADMIN_EMAIL}`);
-  } else if (!admin) {
-    const hashed = bcrypt.hashSync(NEW_PWD, 10);
-    await queryOne(
-      "INSERT INTO users(email,password,role,full_name) VALUES($1,$2,'admin','Quản trị viên') RETURNING id",
-      [ADMIN_EMAIL, hashed]
-    );
-    console.log(`  ✅ Admin tạo mới → ${ADMIN_EMAIL}`);
+  // Check by email first to avoid duplicate key errors
+  const existing = await queryOne('SELECT id, role FROM users WHERE email=$1', [ADMIN_EMAIL]);
+  if (existing) {
+    if (existing.role !== 'admin') {
+      await query("UPDATE users SET role='admin' WHERE id=$1", [existing.id]);
+      console.log(`  ✅ Admin role đã cập nhật → ${ADMIN_EMAIL}`);
+    }
+    return;
   }
+
+  // No user with that email — create new admin
+  const hashed = bcrypt.hashSync(NEW_PWD, 10);
+  await query(
+    "INSERT INTO users(email,password,role,full_name) VALUES($1,$2,'admin','Quản trị viên') ON CONFLICT (email) DO NOTHING",
+    [ADMIN_EMAIL, hashed]
+  );
+  console.log(`  ✅ Admin tạo mới → ${ADMIN_EMAIL}`);
 }
 
 async function seedData() {
