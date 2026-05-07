@@ -295,6 +295,15 @@ app.put('/api/auth/profile', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+app.post('/api/auth/avatar', auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Chưa chọn ảnh' });
+    const url = '/uploads/' + req.file.filename;
+    await query('UPDATE users SET avatar_url=$1 WHERE id=$2', [url, req.user.id]);
+    res.json({ success: true, avatar_url: url });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // ── Categories (dynamic, DB-backed)
 app.get('/api/categories', async (req, res) => {
   try {

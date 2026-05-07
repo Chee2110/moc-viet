@@ -48,11 +48,20 @@
 
           <!-- Avatar -->
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border-color)">
-            <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;font-family:'Playfair Display',serif;flex-shrink:0"></div>
+            <div style="position:relative;flex-shrink:0">
+              <div id="avatar-preview" onclick="document.getElementById('avatar-file').click()" title="Đổi ảnh đại diện"
+                style="width:80px;height:80px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;font-family:'Playfair Display',serif;overflow:hidden;cursor:pointer"></div>
+              <button onclick="document.getElementById('avatar-file').click()" title="Đổi ảnh"
+                style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;cursor:pointer;padding:0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+              <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])">
+            </div>
             <div>
               <div id="profile-name" style="font-weight:700;font-size:16px;margin-bottom:2px"></div>
               <div id="profile-role" style="font-size:13px;color:var(--text-muted)"></div>
               <div id="profile-email-sm" style="font-size:13px;color:var(--text-muted)"></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Nhấn vào ảnh để thay đổi</div>
             </div>
           </div>
 
@@ -104,6 +113,15 @@ requireRole('seller');
 const user = getUser();
 document.getElementById('sidebar-email').textContent = user.email;
 
+function setAvatarPreview(avatarUrl, initials) {
+  const el = document.getElementById('avatar-preview');
+  if (avatarUrl) {
+    el.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+  } else {
+    el.textContent = initials;
+  }
+}
+
 async function loadProfile() {
   const data = await api.get('/api/auth/me');
   if (!data) return;
@@ -113,8 +131,8 @@ async function loadProfile() {
   document.getElementById('p-email').value    = u.email     || '';
 
   const initials = (u.full_name || u.email).charAt(0).toUpperCase();
-  document.getElementById('avatar-preview').textContent = initials;
-  document.getElementById('profile-name').textContent   = u.full_name || u.email;
+  setAvatarPreview(u.avatar_url, initials);
+  document.getElementById('profile-name').textContent     = u.full_name || u.email;
   document.getElementById('profile-email-sm').textContent = u.email;
   const roleMap = { admin: 'Quản trị viên', seller: 'Người bán', buyer: 'Khách hàng' };
   document.getElementById('profile-role').textContent = roleMap[u.role] || u.role;
@@ -132,10 +150,30 @@ async function saveInfo() {
     const stored = JSON.parse(localStorage.getItem('mv_user') || '{}');
     localStorage.setItem('mv_user', JSON.stringify({ ...stored, full_name, email }));
     document.getElementById('profile-name').textContent = full_name;
-    document.getElementById('avatar-preview').textContent = full_name.charAt(0).toUpperCase();
+    const el = document.getElementById('avatar-preview');
+    if (!el.querySelector('img')) el.textContent = full_name.charAt(0).toUpperCase();
   } else {
     toast(res?.message || 'Có lỗi xảy ra', 'error');
   }
+}
+
+async function uploadAvatar(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return toast('Vui lòng chọn file ảnh', 'error');
+  if (file.size > 5 * 1024 * 1024) return toast('Ảnh quá lớn (tối đa 5MB)', 'error');
+  const fd = new FormData();
+  fd.append('avatar', file);
+  const token = localStorage.getItem('mv_token');
+  try {
+    const res = await fetch('/api/auth/avatar', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:fd });
+    const data = await res.json();
+    if (!res.ok) return toast(data.message || 'Lỗi upload', 'error');
+    setAvatarPreview(data.avatar_url, '');
+    const stored = JSON.parse(localStorage.getItem('mv_user') || '{}');
+    localStorage.setItem('mv_user', JSON.stringify({ ...stored, avatar_url: data.avatar_url }));
+    toast('Đã cập nhật ảnh đại diện', 'success');
+  } catch { toast('Lỗi kết nối', 'error'); }
+  document.getElementById('avatar-file').value = '';
 }
 
 async function changePassword() {

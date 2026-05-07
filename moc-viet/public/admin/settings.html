@@ -107,15 +107,15 @@
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','bold')" title="In đậm"><b>B</b></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','italic')" title="In nghiêng"><i>I</i></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-title-editor','underline')" title="Gạch chân"><u>U</u></button>
-              <select onchange="rteFontSize('banner-title-editor', this.value); this.value=''" title="Cỡ chữ">
+              <select onmousedown="saveSel('banner-title-editor')" onchange="rteFontSize('banner-title-editor', this.value); this.value=''" title="Cỡ chữ">
                 <option value="">Cỡ chữ</option>
-                <option value="1">Nhỏ</option>
-                <option value="2">Nhỏ vừa</option>
-                <option value="3">Vừa</option>
-                <option value="4">Lớn</option>
-                <option value="5">Rất lớn</option>
-                <option value="6">To</option>
-                <option value="7">Rất to</option>
+                <option value="12">12px</option>
+                <option value="14">14px</option>
+                <option value="16">16px</option>
+                <option value="20">20px</option>
+                <option value="26">26px</option>
+                <option value="34">34px</option>
+                <option value="48">48px</option>
               </select>
             </div>
             <div contenteditable="true" id="banner-title-editor" class="rte-editor" data-placeholder="Ví dụ: Thủ công mỹ nghệ Tinh hoa Việt Nam"></div>
@@ -128,15 +128,15 @@
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','bold')" title="In đậm"><b>B</b></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','italic')" title="In nghiêng"><i>I</i></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-subtitle-editor','underline')" title="Gạch chân"><u>U</u></button>
-              <select onchange="rteFontSize('banner-subtitle-editor', this.value); this.value=''" title="Cỡ chữ">
+              <select onmousedown="saveSel('banner-subtitle-editor')" onchange="rteFontSize('banner-subtitle-editor', this.value); this.value=''" title="Cỡ chữ">
                 <option value="">Cỡ chữ</option>
-                <option value="1">Nhỏ</option>
-                <option value="2">Nhỏ vừa</option>
-                <option value="3">Vừa</option>
-                <option value="4">Lớn</option>
-                <option value="5">Rất lớn</option>
-                <option value="6">To</option>
-                <option value="7">Rất to</option>
+                <option value="12">12px</option>
+                <option value="14">14px</option>
+                <option value="16">16px</option>
+                <option value="20">20px</option>
+                <option value="26">26px</option>
+                <option value="34">34px</option>
+                <option value="48">48px</option>
               </select>
             </div>
             <div contenteditable="true" id="banner-subtitle-editor" class="rte-editor" style="min-height:60px" data-placeholder="Ví dụ: Khám phá bộ sưu tập đồ gỗ, tre và gốm sứ thủ công..."></div>
@@ -149,15 +149,15 @@
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','bold')" title="In đậm"><b>B</b></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','italic')" title="In nghiêng"><i>I</i></button>
               <button type="button" onmousedown="event.preventDefault()" onclick="rteCmd('banner-content-editor','underline')" title="Gạch chân"><u>U</u></button>
-              <select onchange="rteFontSize('banner-content-editor', this.value); this.value=''" title="Cỡ chữ">
+              <select onmousedown="saveSel('banner-content-editor')" onchange="rteFontSize('banner-content-editor', this.value); this.value=''" title="Cỡ chữ">
                 <option value="">Cỡ chữ</option>
-                <option value="1">Nhỏ</option>
-                <option value="2">Nhỏ vừa</option>
-                <option value="3">Vừa</option>
-                <option value="4">Lớn</option>
-                <option value="5">Rất lớn</option>
-                <option value="6">To</option>
-                <option value="7">Rất to</option>
+                <option value="12">12px</option>
+                <option value="14">14px</option>
+                <option value="16">16px</option>
+                <option value="20">20px</option>
+                <option value="26">26px</option>
+                <option value="34">34px</option>
+                <option value="48">48px</option>
               </select>
             </div>
             <div contenteditable="true" id="banner-content-editor" class="rte-editor" style="min-height:80px" data-placeholder="Nội dung chi tiết hiển thị bên dưới mô tả..."></div>
@@ -298,14 +298,47 @@ async function saveBanner() {
   }
 }
 
+let _savedSel = null;
+
+function saveSel(editorId) {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    _savedSel = { id: editorId, range: sel.getRangeAt(0).cloneRange() };
+  }
+}
+
+function restoreSel(editorId) {
+  if (_savedSel && _savedSel.id === editorId) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_savedSel.range);
+    return true;
+  }
+  return false;
+}
+
 function rteCmd(editorId, cmd) {
   document.getElementById(editorId).focus();
   document.execCommand(cmd, false, null);
 }
-function rteFontSize(editorId, size) {
-  if (!size) return;
-  document.getElementById(editorId).focus();
-  document.execCommand('fontSize', false, size);
+
+function rteFontSize(editorId, px) {
+  if (!px) return;
+  restoreSel(editorId) || document.getElementById(editorId).focus();
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+  const contents = range.extractContents();
+  const span = document.createElement('span');
+  span.style.fontSize = px + 'px';
+  span.appendChild(contents);
+  range.insertNode(span);
+  const newRange = document.createRange();
+  newRange.setStartAfter(span);
+  newRange.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(newRange);
 }
 
 async function loadBannerText() {
