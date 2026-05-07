@@ -116,6 +116,20 @@ function initNavbar() {
   });
 }
 
+function updateNavbarAvatar(url) {
+  const userBtn = document.querySelector('.user-btn');
+  if (!userBtn) return;
+  const old = userBtn.querySelector('img, .avatar');
+  if (!old) return;
+  const initials = old.textContent || '?';
+  const fallbackDiv = `Object.assign(document.createElement('div'),{className:'avatar',textContent:'${initials}'})`;
+  const img = document.createElement('img');
+  img.src = url;
+  img.style.cssText = 'width:32px;height:32px;border-radius:50%;object-fit:cover';
+  img.setAttribute('onerror', `this.replaceWith(${fallbackDiv})`);
+  old.replaceWith(img);
+}
+
 function toggleNotif() {
   document.getElementById('notif-dropdown')?.classList.toggle('open');
   document.getElementById('user-dropdown')?.classList.remove('open');

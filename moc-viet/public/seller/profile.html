@@ -171,6 +171,7 @@ async function uploadAvatar(file) {
     setAvatarPreview(data.avatar_url, '');
     const stored = JSON.parse(localStorage.getItem('mv_user') || '{}');
     localStorage.setItem('mv_user', JSON.stringify({ ...stored, avatar_url: data.avatar_url }));
+    updateNavbarAvatar(data.avatar_url);
     toast('Đã cập nhật ảnh đại diện', 'success');
   } catch { toast('Lỗi kết nối', 'error'); }
   document.getElementById('avatar-file').value = '';
