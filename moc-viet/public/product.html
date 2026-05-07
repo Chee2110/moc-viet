@@ -655,7 +655,7 @@ function renderProduct() {
           <span class="lp-price-main">${fmtPrice(ep)}</span>
           <span class="lp-discount-badge">-${product.discount_percent}%</span>
         </div>
-        <div class="lp-price-was">Giá gốc: ${fmtPrice(product.price)}</div>
+        <div class="lp-price-was" id="lp-was-price">Giá gốc: ${fmtPrice(product.price)}</div>
         <div class="lp-flash-row">
           <span class="flash-label-sm">⚡ Flash Sale kết thúc sau:</span>
           <div class="flash-timer-sm">
@@ -684,7 +684,9 @@ function renderProduct() {
   let variantHtml;
   if (hasVariants) {
     const chips = product.variants.map((v, i) => {
-      const vPrice = product.discounted_price || v.price;
+      const vPrice = product.discount_percent
+        ? Math.round(v.price * (1 - product.discount_percent / 100))
+        : v.price;
       return `<button class="size-chip" data-idx="${i}" onclick="selectChip(this,${i})"
                       title="${(parseInt(v.quantity)||0) <= 10 ? 'Chỉ còn '+v.quantity : ''}">
                 ${v.name}
@@ -922,9 +924,14 @@ function selectChip(el, idx) {
     document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === foundIdx));
   }
 
-  // Update price display
+  // Update price display (per-variant discounted price)
+  const vDiscounted = product.discount_percent
+    ? Math.round(v.price * (1 - product.discount_percent / 100))
+    : v.price;
   const priceEl = document.querySelector('.lp-price-main');
-  if (priceEl) priceEl.textContent = fmtPrice(product.discounted_price || v.price);
+  if (priceEl) priceEl.textContent = fmtPrice(vDiscounted);
+  const wasEl = document.getElementById('lp-was-price');
+  if (wasEl) wasEl.textContent = 'Giá gốc: ' + fmtPrice(v.price);
 
   const info = document.getElementById('selected-info');
   if (info) {
@@ -951,7 +958,9 @@ function updateTotal() {
   let unitPrice = ep;
   if (Array.isArray(product.variants) && product.variants.length > 0 && selectedChipIdx >= 0) {
     const v = product.variants[selectedChipIdx];
-    unitPrice = product.discounted_price || v.price;
+    unitPrice = product.discount_percent
+      ? Math.round(v.price * (1 - product.discount_percent / 100))
+      : v.price;
   }
   const total = unitPrice * qty;
   const el = document.getElementById('total-display');

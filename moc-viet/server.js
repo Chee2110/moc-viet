@@ -728,7 +728,7 @@ app.post('/api/orders', optionalAuth, async (req, res) => {
       if (stock < q) throw new Error(`Sản phẩm "${product.name}" (${item.variant_name||''}) chỉ còn ${stock} trong kho`);
 
       const activeDeal = await queryOne('SELECT * FROM deals WHERE product_id=$1 AND start_time<=NOW() AND end_time>=NOW()', [pid]);
-      if (activeDeal) unitPrice = Number(activeDeal.discounted_price);
+      if (activeDeal) unitPrice = Math.round(unitPrice * (1 - Number(activeDeal.discount_percent) / 100));
 
       const totalPrice = unitPrice * q;
       const order = await queryOne(
