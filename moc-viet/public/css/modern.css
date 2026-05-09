@@ -1125,6 +1125,7 @@ tbody tr:last-child td { border-bottom: none; }
 /* ── Tablet (≤ 1024px) ─────────────────────────── */
 @media (max-width: 1024px) {
   .navbar-hotline   { display: none; }
+  .navbar-search    { max-width: 300px; }
   .footer-grid      { grid-template-columns: 1fr 1fr; gap: 32px; }
   .dash-content     { padding: 32px 28px; }
   .stats-grid       { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
@@ -1132,6 +1133,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ── Tablet (≤ 900px) ───────────────────────────── */
 @media (max-width: 900px) {
+  .navbar-search    { max-width: 200px; }
   .dash-sidebar     { width: 220px; }
   .dash-content     { padding: 28px 20px; }
   .stats-grid       { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
@@ -1154,7 +1156,11 @@ tbody tr:last-child td { border-bottom: none; }
   .navbar-brand-text { display: none; }
   .navbar-brand .brand-logo { height: 36px; }
   .navbar-login-btn { padding: 8px 14px; font-size: 13px; }
+  .navbar-search    { max-width: 160px; }
   .track-link       { display: none; }
+
+  /* Forms — prevent iOS auto-zoom on focus */
+  .form-control     { font-size: 16px; }
 
   /* Hero */
   .hero             { height: 72vh; min-height: 360px; }
@@ -1320,6 +1326,13 @@ tbody tr:last-child td { border-bottom: none; }
   .footer-brand .footer-logo-img { height: 40px; }
 
   .auth-card        { padding: 26px 18px; }
+  .auth-logo        { margin-bottom: 20px; }
+  .auth-logo .auth-logo-img { height: 60px; }
+  .auth-title       { font-size: 18px; }
+  .auth-subtitle    { font-size: 13px; margin-bottom: 20px; }
+
+  /* Forms — ensure iOS auto-zoom prevention at small sizes too */
+  .form-control     { font-size: 16px; }
 
   .dash-title       { font-size: 1.25rem; }
   .dash-content     { padding: 66px 14px 20px; }
