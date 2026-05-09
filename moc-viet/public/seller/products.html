@@ -241,6 +241,20 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label">Video sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tùy chọn — tối đa 10 phút)</span></label>
+            <div id="video-upload-area" onclick="clickVideoArea()" style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;position:relative;min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;transition:border-color .2s">
+              <div id="video-placeholder" style="color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="font-size:28px">🎬</div>
+                <div>Nhấn để chọn video <span style="font-size:11px">(MP4, MOV — tối đa 500 MB)</span></div>
+              </div>
+              <video id="video-preview" controls style="display:none;max-width:100%;max-height:220px;border-radius:8px"></video>
+              <div id="video-info" style="display:none;font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+              <button type="button" id="video-remove-btn" onclick="removeVideo(event)" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:16px;line-height:1;display:none;align-items:center;justify-content:center">×</button>
+            </div>
+            <input type="file" id="p-video-input" accept="video/*" style="display:none" onchange="handleVideoFile(event)">
+          </div>
+
+          <div class="form-group">
             <label class="form-label">Mô tả sản phẩm</label>
             <textarea id="p-desc" class="form-control" rows="3" placeholder="Mô tả chất liệu, kích thước, công dụng..."></textarea>
           </div>
@@ -473,6 +487,8 @@ function previewVariantImg(i, input) {
 // ── Multi-image slots (up to 5) ──────────────────
 let productImages = []; // [{_file, _preview, _url}]
 let activeSlotIdx = -1;
+let productVideoFile = null;
+let productVideoUrl = '';
 
 // ── Modal open/close ─────────────────────────────────
 function openModal(id = null) {
@@ -483,6 +499,15 @@ function openModal(id = null) {
   const imgInput = document.getElementById('p-img-input');
   if (imgInput) imgInput.value = '';
   activeSlotIdx = -1;
+  productVideoFile = null;
+  productVideoUrl = '';
+  const vPrev = document.getElementById('video-preview');
+  vPrev.pause(); vPrev.src = ''; vPrev.style.display = 'none';
+  document.getElementById('video-placeholder').style.display = 'flex';
+  document.getElementById('video-info').style.display = 'none';
+  document.getElementById('video-remove-btn').style.display = 'none';
+  document.getElementById('video-upload-area').style.cursor = 'pointer';
+  document.getElementById('p-video-input').value = '';
 
   if (id) {
     const p = products.find(x => x.id === id);
@@ -497,6 +522,11 @@ function openModal(id = null) {
       if (typeof item === 'string') return { _file: null, _preview: item, _url: item, _pos: '50% 50%', _zoom: 100 };
       return { _file: null, _preview: item.url || item, _url: item.url || item, _pos: item.pos || '50% 50%', _zoom: item.zoom || 100 };
     });
+
+    if (p.video_url) {
+      productVideoUrl = p.video_url;
+      showVideoPreview(p.video_url, 'Video hiện tại');
+    }
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
     if (vars.length > 0) {
@@ -589,6 +619,61 @@ function removeSlot(idx, event) {
   productImages.splice(idx, 1);
   renderImgSlots();
   updateLivePreview();
+}
+
+function clickVideoArea() {
+  if (productVideoFile || productVideoUrl) return;
+  document.getElementById('p-video-input').click();
+}
+
+function handleVideoFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const tempVideo = document.createElement('video');
+  tempVideo.preload = 'metadata';
+  const objUrl = URL.createObjectURL(file);
+  tempVideo.src = objUrl;
+  tempVideo.onloadedmetadata = () => {
+    URL.revokeObjectURL(objUrl);
+    if (tempVideo.duration > 600) {
+      toast('Video quá dài — tối đa 10 phút', 'error');
+      e.target.value = '';
+      return;
+    }
+    productVideoFile = file;
+    productVideoUrl = '';
+    const mins = Math.floor(tempVideo.duration / 60);
+    const secs = Math.floor(tempVideo.duration % 60);
+    showVideoPreview(URL.createObjectURL(file), `${file.name} — ${mins}:${secs.toString().padStart(2,'0')}`);
+  };
+}
+
+function showVideoPreview(src, infoText) {
+  const preview = document.getElementById('video-preview');
+  preview.src = src;
+  preview.style.display = 'block';
+  document.getElementById('video-placeholder').style.display = 'none';
+  const info = document.getElementById('video-info');
+  info.textContent = infoText;
+  info.style.display = 'block';
+  const removeBtn = document.getElementById('video-remove-btn');
+  removeBtn.style.display = 'flex';
+  document.getElementById('video-upload-area').style.cursor = 'default';
+}
+
+function removeVideo(e) {
+  e.stopPropagation();
+  productVideoFile = null;
+  productVideoUrl = '';
+  const preview = document.getElementById('video-preview');
+  preview.pause();
+  preview.src = '';
+  preview.style.display = 'none';
+  document.getElementById('video-placeholder').style.display = 'flex';
+  document.getElementById('video-info').style.display = 'none';
+  document.getElementById('video-remove-btn').style.display = 'none';
+  document.getElementById('video-upload-area').style.cursor = 'pointer';
+  document.getElementById('p-video-input').value = '';
 }
 
 // ── Drag-drop file zone ──────────────────────────────
@@ -771,6 +856,12 @@ async function saveProduct() {
   variantList.forEach((v, i) => {
     if (v._file) fd.append(`variant_image_${i}`, v._file);
   });
+
+  if (productVideoFile) {
+    fd.append('product_video', productVideoFile);
+  } else if (productVideoUrl) {
+    fd.append('existing_video_url', productVideoUrl);
+  }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'Đang lưu...';

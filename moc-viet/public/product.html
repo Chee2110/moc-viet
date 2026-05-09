@@ -289,6 +289,39 @@
       font-size: 13px; font-weight: 800;
       color: #374151; margin-bottom: 10px;
     }
+    .lp-size-label.choose-size {
+      font-size: 17px; font-weight: 900;
+      color: #dc2626;
+      animation: sizePulse 1.4s ease-in-out infinite;
+      display: inline-block;
+    }
+    @keyframes sizePulse {
+      0%,100% { text-shadow: 0 0 0px rgba(220,38,38,0); transform: scale(1); }
+      50%      { text-shadow: 0 0 10px rgba(220,38,38,0.45); transform: scale(1.04); }
+    }
+
+    /* ── Mua ngay button ── */
+    .btn-buy-now {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fff; font-size: 15px; font-weight: 900;
+      letter-spacing: 0.4px;
+      border: none; border-radius: 12px;
+      padding: 13px 28px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(220,38,38,0.38);
+      animation: buyNowPulse 1.6s ease-in-out infinite;
+      transition: box-shadow 0.2s;
+    }
+    .btn-buy-now:hover {
+      box-shadow: 0 6px 26px rgba(220,38,38,0.55);
+      animation: none;
+      transform: scale(1.05);
+    }
+    @keyframes buyNowPulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.045); }
+    }
     /* Chip row */
     .size-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .size-chip {
@@ -694,7 +727,7 @@ function renderProduct() {
               </button>`;
     }).join('');
     variantHtml = `
-      <div class="lp-size-label">Chọn kích thước:</div>
+      <div class="lp-size-label choose-size">🎯 Chọn kích thước:</div>
       <div class="size-chips">${chips}</div>
       <div class="lp-qty-row">
         <span class="lp-qty-label">Số lượng:</span>
@@ -704,7 +737,10 @@ function renderProduct() {
           <button class="lp-v-btn" onclick="changeQty(1)">+</button>
         </div>
       </div>
-      <div class="lp-selected-info" id="selected-info">Vui lòng chọn kích thước</div>`;
+      <div class="lp-selected-info" id="selected-info">Vui lòng chọn kích thước</div>
+      <div style="margin-top:14px">
+        <button class="btn-buy-now" onclick="scrollToOrder()">🛒 MUA NGAY</button>
+      </div>`;
   } else {
     variantHtml = `
       <div class="lp-size-label">Số lượng:</div>
@@ -715,6 +751,9 @@ function renderProduct() {
           <input type="number" id="v-qty-main" value="1" class="lp-v-qty" readonly>
           <button class="lp-v-btn" onclick="changeQty(1)">+</button>
         </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn-buy-now" onclick="scrollToOrder()">🛒 MUA NGAY</button>
       </div>`;
   }
 
@@ -755,6 +794,11 @@ function renderProduct() {
               <img src="/icons/wishlist.png" alt="♥">
             </button>
           </div>
+          ${product.video_url ? `
+          <div style="margin-top:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Video sản phẩm</div>
+            <video src="${product.video_url}" controls style="width:100%;border-radius:10px;background:#000;max-height:300px"></video>
+          </div>` : ''}
         </div>
 
         <!-- ═══ RIGHT: All content ═══ -->
@@ -778,15 +822,8 @@ function renderProduct() {
             </div>
           </div>
 
-          <!-- Description -->
-          ${product.description ? `
-          <div class="lp-desc">
-            <div class="lp-desc-title">📋 Mô tả sản phẩm</div>
-            <div class="lp-desc-body">${product.description}</div>
-          </div>` : ''}
-
           <!-- Order form -->
-          <div class="lp-order-box">
+          <div class="lp-order-box" id="order-form-anchor">
             <div class="lp-order-header">
               <div class="lp-order-title"><img src="/icons/cart.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;opacity:.8;margin-right:6px" alt=""> ĐẶT HÀNG TẠI ĐÂY</div>
               ${promoLine}
@@ -852,6 +889,13 @@ function renderProduct() {
               </div>
             </div>
           </div>
+
+          <!-- Description -->
+          ${product.description ? `
+          <div class="lp-desc">
+            <div class="lp-desc-title">📋 Mô tả sản phẩm</div>
+            <div class="lp-desc-body">${product.description}</div>
+          </div>` : ''}
 
         </div><!-- end .lp-right -->
       </div><!-- end .lp-split -->
@@ -943,6 +987,11 @@ function selectChip(el, idx) {
 }
 
 // ── Quantity control ───────────────────────────────────
+function scrollToOrder() {
+  const el = document.getElementById('order-form-anchor');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function changeQty(delta) {
   const el = document.getElementById('v-qty-main');
   if (!el) return;

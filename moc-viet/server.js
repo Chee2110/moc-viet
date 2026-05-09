@@ -130,6 +130,18 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+const uploadProduct = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename:    (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, '_'))
+  }),
+  limits: { fileSize: 500 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file ảnh và video'));
+  }
+});
+
 // ── HTTP server + WebSocket
 const server    = http.createServer(app);
 const wss       = new WebSocket.Server({ server, path: '/ws' });
@@ -463,7 +475,7 @@ app.get('/api/seller/products', sellerAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/seller/products', sellerAuth, upload.any(), async (req, res) => {
+app.post('/api/seller/products', sellerAuth, uploadProduct.any(), async (req, res) => {
   try {
     const shop = await queryOne('SELECT * FROM shops WHERE user_id=$1 AND status=\'approved\' LIMIT 1', [req.user.id]);
     if (!shop) return res.status(403).json({ message: 'Shop chưa được duyệt' });
@@ -495,6 +507,9 @@ app.post('/api/seller/products', sellerAuth, upload.any(), async (req, res) => {
       }
     }
 
+    const videoFile = files.find(f => f.fieldname === 'product_video');
+    const videoUrl = videoFile ? '/uploads/' + videoFile.filename : null;
+
     let price, stock;
     if (variants.length > 0) {
       price = Math.min(...variants.map(v => parseFloat(v.price) || 0));
@@ -507,13 +522,13 @@ app.post('/api/seller/products', sellerAuth, upload.any(), async (req, res) => {
 
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
     const row = await queryOne(
-      'INSERT INTO products(shop_id,name,price,description,image_url,category,stock_quantity,is_hidden,variants,images) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',
-      [shop.id, name, price, description||'', imageUrl, category||'khac', stock, isHidden, JSON.stringify(variants), JSON.stringify(images)]);
+      'INSERT INTO products(shop_id,name,price,description,image_url,category,stock_quantity,is_hidden,variants,images,video_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
+      [shop.id, name, price, description||'', imageUrl, category||'khac', stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl]);
     res.json({ success: true, product: row });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.put('/api/seller/products/:id', sellerAuth, upload.any(), async (req, res) => {
+app.put('/api/seller/products/:id', sellerAuth, uploadProduct.any(), async (req, res) => {
   try {
     const shop = await queryOne('SELECT * FROM shops WHERE user_id=$1', [req.user.id]);
     const product = await queryOne('SELECT * FROM products WHERE id=$1 AND shop_id=$2', [req.params.id, shop?.id]);
@@ -563,11 +578,16 @@ app.put('/api/seller/products/:id', sellerAuth, upload.any(), async (req, res) =
       stock = parseInt(req.body.stock_quantity) || product.stock_quantity;
     }
 
+    const videoFile = files.find(f => f.fieldname === 'product_video');
+    const videoUrl = videoFile
+      ? '/uploads/' + videoFile.filename
+      : (req.body.existing_video_url || product.video_url || null);
+
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
     await query(
-      'UPDATE products SET name=$1,price=$2,description=$3,image_url=$4,category=$5,stock_quantity=$6,is_hidden=$7,variants=$8,images=$9,updated_at=NOW() WHERE id=$10',
+      'UPDATE products SET name=$1,price=$2,description=$3,image_url=$4,category=$5,stock_quantity=$6,is_hidden=$7,variants=$8,images=$9,video_url=$10,updated_at=NOW() WHERE id=$11',
       [name||product.name, price, description??product.description,
-       imageUrl, category||product.category, stock, isHidden, JSON.stringify(variants), JSON.stringify(images), req.params.id]);
+       imageUrl, category||product.category, stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
