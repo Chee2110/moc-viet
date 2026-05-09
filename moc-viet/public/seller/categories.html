@@ -12,6 +12,12 @@
       border-radius: 12px; padding: 20px 0; margin-bottom: 20px;
       align-items: center;
     }
+    @media (max-width: 600px) {
+      .top-bar { grid-template-columns: 1fr; }
+      .top-bar-col + .top-bar-col { border-left: none; border-top: 1px solid var(--border-color); }
+      .cat-list { grid-template-columns: 1fr; }
+      .fi-group input { font-size: 16px; }
+    }
     .top-bar-col {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 6px 28px; gap: 6px;
@@ -150,6 +156,7 @@
 <script>
 requireRole('seller');
 document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
 
 let catData = [];
 

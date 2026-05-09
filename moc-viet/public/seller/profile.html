@@ -112,6 +112,7 @@
 requireRole('seller');
 const user = getUser();
 document.getElementById('sidebar-email').textContent = user.email;
+initDashNotif();
 
 function setAvatarPreview(avatarUrl, initials) {
   const el = document.getElementById('avatar-preview');

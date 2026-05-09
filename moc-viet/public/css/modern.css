@@ -1267,7 +1267,8 @@ tbody tr:last-child td { border-bottom: none; }
   }
   .notif-list { max-height: none; }
 
-  /* Tables */
+  /* Tables — allow horizontal scroll */
+  .table-wrap       { overflow-x: auto; }
   .admin-table-wrap,
   table             { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 

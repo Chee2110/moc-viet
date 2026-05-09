@@ -36,6 +36,12 @@
     .fi-group input:focus { border-color: var(--primary); background: #fff; }
     .hint { font-size: 11px; color: var(--text-muted); }
     .cat-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) {
+      .top-bar { grid-template-columns: 1fr; }
+      .top-bar-col + .top-bar-col { border-left: none; border-top: 1px solid var(--border-color); }
+      .cat-list { grid-template-columns: 1fr; }
+      .fi-group input { font-size: 16px; }
+    }
     .cat-row {
       display: flex; align-items: center; gap: 10px;
       background: #fff; border: 1.5px solid var(--border-color);

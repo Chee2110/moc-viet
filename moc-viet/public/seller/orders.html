@@ -65,8 +65,8 @@
         <button class="filter-tab" data-status="rejected"  onclick="setStatus('rejected',this)">Từ chối</button>
         <button class="filter-tab" data-status="cancelled" onclick="setStatus('cancelled',this)">Đã huỷ</button>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
-        <input type="text" id="search" placeholder="Tìm khách hàng, SĐT..." oninput="filterOrders()" style="min-width:200px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%">
+        <input type="text" id="search" placeholder="Tìm khách hàng, SĐT..." oninput="filterOrders()" style="flex:1;min-width:0" class="form-control">
         <button class="btn btn-primary" onclick="exportOrders()" id="export-btn"><img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px" alt=""> Xuất Excel</button>
       </div>
     </div>
