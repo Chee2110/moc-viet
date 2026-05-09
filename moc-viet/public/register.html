@@ -105,5 +105,47 @@ async function register(e) {
   }
 }
 </script>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <img src="/img/logo.png" alt="Mộc Việt" class="footer-logo-img" style="height:140px;width:auto">
+          <span style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;letter-spacing:2px">MỘC VIỆT</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Khám phá</h4>
+        <a href="/">Trang chủ</a>
+        <a href="/register.html">Trở thành người bán</a>
+        <a href="/login.html">Đăng nhập</a>
+      </div>
+      <div class="footer-col">
+        <h4>Chính sách</h4>
+        <a href="#">Hướng dẫn mua hàng</a>
+        <a href="#">Chính sách đổi trả</a>
+        <a href="#">Bảo mật thông tin</a>
+      </div>
+      <div class="footer-col">
+        <h4>Liên hệ</h4>
+        <p id="footer-company" style="display:none;font-weight:600;color:rgba(255,255,255,0.85)"></p>
+        <p id="footer-address" style="display:none"></p>
+        <p id="footer-email">Email: mocviet66@gmail.com</p>
+        <p id="footer-phone">Hotline: 0766088886</p>
+        <p id="footer-zalo" style="display:none"></p>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>
+fetch('/api/settings').then(r=>r.json()).then(s=>{
+  if(s.contact_company){const el=document.getElementById('footer-company');if(el){el.textContent=s.contact_company;el.style.display='block';}}
+  if(s.contact_address){const el=document.getElementById('footer-address');if(el){el.textContent='Địa chỉ: '+s.contact_address;el.style.display='block';}}
+  if(s.contact_email){const el=document.getElementById('footer-email');if(el)el.textContent='Email: '+s.contact_email;}
+  if(s.contact_phone){const el=document.getElementById('footer-phone');if(el)el.textContent='Hotline: '+s.contact_phone;}
+  if(s.contact_zalo){const el=document.getElementById('footer-zalo');if(el){el.textContent='Zalo: '+s.contact_zalo;el.style.display='block';}}
+}).catch(()=>{});
+</script>
 </body>
 </html>
