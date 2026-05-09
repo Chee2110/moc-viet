@@ -305,22 +305,31 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       background: linear-gradient(135deg, #dc2626, #b91c1c);
       color: #fff; font-size: 15px; font-weight: 900;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.4px; white-space: nowrap;
       border: none; border-radius: 12px;
-      padding: 13px 28px;
+      padding: 10px 22px;
       cursor: pointer;
       box-shadow: 0 4px 18px rgba(220,38,38,0.38);
-      animation: buyNowPulse 1.6s ease-in-out infinite;
-      transition: box-shadow 0.2s;
+      animation: buyNowShake 2.4s ease-in-out infinite;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
     .btn-buy-now:hover {
-      box-shadow: 0 6px 26px rgba(220,38,38,0.55);
       animation: none;
-      transform: scale(1.05);
+      transform: scale(1.1);
+      box-shadow: 0 6px 26px rgba(220,38,38,0.55);
     }
-    @keyframes buyNowPulse {
-      0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.045); }
+    .btn-buy-now:active {
+      animation: none;
+      transform: scale(0.94) translateY(2px);
+      box-shadow: 0 2px 8px rgba(220,38,38,0.3);
+    }
+    @keyframes buyNowShake {
+      0%,100%  { transform: rotate(0deg); }
+      10%      { transform: rotate(-5deg); }
+      20%      { transform: rotate(5deg); }
+      30%      { transform: rotate(-4deg); }
+      40%      { transform: rotate(4deg); }
+      50%      { transform: rotate(0deg); }
     }
     /* Chip row */
     .size-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -736,11 +745,9 @@ function renderProduct() {
           <input type="number" id="v-qty-main" value="1" class="lp-v-qty" readonly>
           <button class="lp-v-btn" onclick="changeQty(1)">+</button>
         </div>
-      </div>
-      <div class="lp-selected-info" id="selected-info">Vui lòng chọn kích thước</div>
-      <div style="margin-top:14px">
         <button class="btn-buy-now" onclick="scrollToOrder()">🛒 MUA NGAY</button>
-      </div>`;
+      </div>
+      <div class="lp-selected-info" id="selected-info">Vui lòng chọn kích thước</div>`;
   } else {
     variantHtml = `
       <div class="lp-size-label">Số lượng:</div>
@@ -751,8 +758,6 @@ function renderProduct() {
           <input type="number" id="v-qty-main" value="1" class="lp-v-qty" readonly>
           <button class="lp-v-btn" onclick="changeQty(1)">+</button>
         </div>
-      </div>
-      <div style="margin-top:14px">
         <button class="btn-buy-now" onclick="scrollToOrder()">🛒 MUA NGAY</button>
       </div>`;
   }
@@ -878,6 +883,13 @@ function renderProduct() {
             </div>
           </div>
 
+          <!-- Description -->
+          ${product.description ? `
+          <div class="lp-desc">
+            <div class="lp-desc-title">📋 Mô tả sản phẩm</div>
+            <div class="lp-desc-body">${product.description}</div>
+          </div>` : ''}
+
           <!-- Hotline + Delivery -->
           <div class="lp-contact-bar">
             ${hotlineHtml}
@@ -889,13 +901,6 @@ function renderProduct() {
               </div>
             </div>
           </div>
-
-          <!-- Description -->
-          ${product.description ? `
-          <div class="lp-desc">
-            <div class="lp-desc-title">📋 Mô tả sản phẩm</div>
-            <div class="lp-desc-body">${product.description}</div>
-          </div>` : ''}
 
         </div><!-- end .lp-right -->
       </div><!-- end .lp-split -->
