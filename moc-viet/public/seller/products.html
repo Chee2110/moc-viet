@@ -472,11 +472,9 @@ function previewVariantImg(i, input) {
 }
 
 // ── Multi-image slots (up to 5) ──────────────────
-let productImages = []; // [{_file, _preview, _url}]
-let activeSlotIdx = -1;
-let productVideoFile = null;
-let productVideoUrl = '';
-let productVideoPreviewUrl = '';
+// Unified media array: {type:'image'|'video', _file, _preview, _url, _pos?, _zoom?}
+let productMedia = [];
+let activeMediaIdx = -1; // index in productMedia being replaced; -1 = adding new
 let dragSrcIdx = null;
 
 // ── Modal open/close ─────────────────────────────────
@@ -484,15 +482,15 @@ function openModal(id = null) {
   editId = id;
   document.getElementById('modal-title').textContent = id ? 'Chỉnh sửa sản phẩm' : 'Đăng Sản Phẩm Mới';
   document.getElementById('save-btn').textContent = id ? 'Lưu thay đổi' : 'Đăng sản phẩm';
-  // Reset file input
+  // Reset inputs
   const imgInput = document.getElementById('p-img-input');
   if (imgInput) imgInput.value = '';
-  activeSlotIdx = -1;
-  productVideoFile = null;
-  productVideoUrl = '';
-  if (productVideoPreviewUrl) { URL.revokeObjectURL(productVideoPreviewUrl); productVideoPreviewUrl = ''; }
   const vi = document.getElementById('p-video-input');
   if (vi) vi.value = '';
+  activeMediaIdx = -1;
+  // Revoke any blob URLs from previous video
+  productMedia.filter(m => m.type === 'video' && m._preview?.startsWith('blob:')).forEach(m => URL.revokeObjectURL(m._preview));
+  productMedia = [];
 
   if (id) {
     const p = products.find(x => x.id === id);
@@ -501,17 +499,14 @@ function openModal(id = null) {
     document.getElementById('p-status').value   = p.is_hidden ? 'hidden' : 'visible';
     document.getElementById('p-desc').value     = p.description || '';
 
-    // Load existing images into slots (handle both string[] and {url,pos,zoom}[] formats)
+    // Load existing images
     const rawImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
-    productImages = rawImgs.map(item => {
-      if (typeof item === 'string') return { _file: null, _preview: item, _url: item, _pos: '50% 50%', _zoom: 100 };
-      return { _file: null, _preview: item.url || item, _url: item.url || item, _pos: item.pos || '50% 50%', _zoom: item.zoom || 100 };
+    rawImgs.forEach(item => {
+      if (typeof item === 'string') productMedia.push({ type:'image', _file:null, _preview:item, _url:item, _pos:'50% 50%', _zoom:100 });
+      else productMedia.push({ type:'image', _file:null, _preview:item.url||item, _url:item.url||item, _pos:item.pos||'50% 50%', _zoom:item.zoom||100 });
     });
-
-    if (p.video_url) {
-      productVideoUrl = p.video_url;
-      productVideoPreviewUrl = '';
-    }
+    // Load existing video (always at end when loaded from server)
+    if (p.video_url) productMedia.push({ type:'video', _file:null, _preview:p.video_url, _url:p.video_url });
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
     if (vars.length > 0) {
@@ -524,7 +519,7 @@ function openModal(id = null) {
     loadCategorySelect(categoryList[0]?.value || 'khac');
     document.getElementById('p-status').value   = 'visible';
     document.getElementById('p-desc').value     = '';
-    productImages = [];
+    productMedia = [];
     variantList = [{ name: '', sku: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null, _pos: '50% 50%', _zoom: 100 }];
   }
 
@@ -544,50 +539,47 @@ function renderImgSlots() {
   const container = document.getElementById('img-slots');
   if (!container) return;
   const slots = [];
-  for (let i = 0; i < 5; i++) {
-    const img = productImages[i];
-    const src = img?._preview || img?._url || '';
-    const pos = img?._pos || '50% 50%';
-    if (src) {
+  const imgCount = productMedia.filter(m => m.type === 'image').length;
+  const hasVideo = productMedia.some(m => m.type === 'video');
+  let firstImage = true;
+
+  productMedia.forEach((item, i) => {
+    const drag = `draggable="true" ondragstart="slotDragStart(event,${i})" ondragover="slotDragOver(event,${i})" ondrop="slotDrop(event,${i})" ondragend="slotDragEnd()"`;
+    if (item.type === 'image') {
+      const src = item._preview || item._url || '';
+      const pos = item._pos || '50% 50%';
+      const badge = firstImage ? '<span class="img-slot-badge">Chính</span>' : '';
+      firstImage = false;
       slots.push(`
-        <div class="img-slot has-img" title="Kéo để sắp xếp"
-          draggable="true"
-          ondragstart="slotDragStart(event,${i})"
-          ondragover="slotDragOver(event,${i})"
-          ondrop="slotDrop(event,${i})"
-          ondragend="slotDragEnd()">
+        <div class="img-slot has-img" title="Kéo để sắp xếp" ${drag}>
           <img src="${src}" alt="" style="object-position:${pos}" onclick="openSlot(${i})">
-          <button class="img-slot-del" onclick="removeSlot(${i},event)" title="Xóa">×</button>
+          <button class="img-slot-del" onclick="removeMediaSlot(${i},event)" title="Xóa">×</button>
           <button class="img-slot-edit-btn" onclick="openPosEditor(${i},event)" title="Căn chỉnh ảnh">✥</button>
-          ${i === 0 ? '<span class="img-slot-badge">Chính</span>' : ''}
+          ${badge}
         </div>`);
-    } else if (i === 0 || productImages[i-1]) {
-      slots.push(`<div class="img-slot" onclick="openSlot(${i})" title="Thêm ảnh ${i+1}"><span style="pointer-events:none">+</span></div>`);
+    } else {
+      const vSrc = item._preview || item._url || '';
+      slots.push(`
+        <div class="img-slot has-img" title="Kéo để sắp xếp" ${drag}>
+          <video src="${vSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></video>
+          <button class="img-slot-del" onclick="removeMediaSlot(${i},event)" title="Xóa video">×</button>
+          <span class="img-slot-badge" style="background:#7c3aed">▶ Video</span>
+        </div>`);
     }
-  }
-  // Video slot
-  const vSrc = productVideoPreviewUrl || productVideoUrl;
-  if (vSrc) {
-    slots.push(`
-      <div class="img-slot has-img" style="cursor:default" title="Video sản phẩm">
-        <video src="${vSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></video>
-        <button class="img-slot-del" onclick="removeVideoSlot(event)" title="Xóa video">×</button>
-        <span class="img-slot-badge" style="background:#7c3aed">▶ Video</span>
-      </div>`);
-  } else {
-    slots.push(`
-      <div class="img-slot" onclick="document.getElementById('p-video-input').click()" title="Thêm video (tối đa 10 phút)" style="flex-direction:column;gap:4px">
-        <span style="font-size:22px;pointer-events:none">🎬</span>
-        <span style="font-size:10px;pointer-events:none;color:var(--text-muted)">+ Video</span>
-      </div>`);
-  }
+  });
+
+  if (imgCount < 5)
+    slots.push(`<div class="img-slot" onclick="addNewImage()" title="Thêm ảnh"><span style="pointer-events:none">+</span></div>`);
+  if (!hasVideo)
+    slots.push(`<div class="img-slot" onclick="document.getElementById('p-video-input').click()" title="Thêm video (tối đa 10 phút)" style="flex-direction:column;gap:4px"><span style="font-size:22px;pointer-events:none">🎬</span><span style="font-size:10px;pointer-events:none;color:var(--text-muted)">+ Video</span></div>`);
+
   container.innerHTML = slots.join('');
 }
 
 function slotDragStart(e, idx) {
   dragSrcIdx = idx;
   e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.style.opacity = '0.5';
+  e.currentTarget.style.opacity = '0.4';
 }
 function slotDragOver(e, idx) {
   e.preventDefault();
@@ -596,56 +588,58 @@ function slotDragOver(e, idx) {
 function slotDrop(e, idx) {
   e.preventDefault();
   if (dragSrcIdx === null || dragSrcIdx === idx) { dragSrcIdx = null; return; }
-  const moved = productImages.splice(dragSrcIdx, 1)[0];
-  productImages.splice(idx, 0, moved);
+  const moved = productMedia.splice(dragSrcIdx, 1)[0];
+  productMedia.splice(idx, 0, moved);
   dragSrcIdx = null;
   renderImgSlots();
   updateLivePreview();
 }
-function slotDragEnd() {
-  dragSrcIdx = null;
-  renderImgSlots();
+function slotDragEnd() { dragSrcIdx = null; renderImgSlots(); }
+
+function addNewImage() {
+  activeMediaIdx = -1;
+  const inp = document.getElementById('p-img-input');
+  inp.value = ''; inp.multiple = true; inp.click();
 }
 
-function openSlot(idx) {
-  activeSlotIdx = idx;
+function openSlot(mediaIdx) {
+  activeMediaIdx = mediaIdx;
   const inp = document.getElementById('p-img-input');
-  inp.value = '';
-  // Allow multiple only when clicking an empty "+" slot
-  const isEmpty = !productImages[idx]?._preview && !productImages[idx]?._url;
-  inp.multiple = isEmpty;
-  inp.click();
+  inp.value = ''; inp.multiple = false; inp.click();
 }
 
 function handleSlotFile(e) {
   const files = Array.from(e.target.files);
-  if (!files.length || activeSlotIdx < 0) return;
-  let idx = activeSlotIdx;
-  let loaded = 0;
-  files.forEach(file => {
-    if (idx >= 5) return;
-    const capturedIdx = idx;
-    if (!productImages[capturedIdx]) productImages[capturedIdx] = {};
-    productImages[capturedIdx]._file    = file;
-    productImages[capturedIdx]._url     = '';
-    productImages[capturedIdx]._pos     = productImages[capturedIdx]._pos || '50% 50%';
-    productImages[capturedIdx]._zoom    = productImages[capturedIdx]._zoom || 100;
+  if (!files.length) return;
+  if (activeMediaIdx >= 0 && productMedia[activeMediaIdx]?.type === 'image') {
+    // Replace existing image
+    const item = productMedia[activeMediaIdx];
+    item._file = files[0]; item._url = '';
     const reader = new FileReader();
-    reader.onload = ev => {
-      productImages[capturedIdx]._preview = ev.target.result;
-      loaded++;
-      if (loaded === Math.min(files.length, 5 - activeSlotIdx)) {
-        renderImgSlots(); updateLivePreview();
-      }
-    };
-    reader.readAsDataURL(file);
-    idx++;
-  });
+    reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
+    reader.readAsDataURL(files[0]);
+  } else {
+    // Add new images
+    const imgCount = productMedia.filter(m => m.type === 'image').length;
+    let added = 0;
+    files.forEach(file => {
+      if (imgCount + added >= 5) return;
+      const item = { type:'image', _file:file, _preview:'', _url:'', _pos:'50% 50%', _zoom:100 };
+      productMedia.push(item);
+      const reader = new FileReader();
+      reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
+      reader.readAsDataURL(file);
+      added++;
+    });
+  }
+  activeMediaIdx = -1;
 }
 
-function removeSlot(idx, event) {
+function removeMediaSlot(mediaIdx, event) {
   event.stopPropagation();
-  productImages.splice(idx, 1);
+  const item = productMedia[mediaIdx];
+  if (item?.type === 'video' && item._preview?.startsWith('blob:')) URL.revokeObjectURL(item._preview);
+  productMedia.splice(mediaIdx, 1);
   renderImgSlots();
   updateLivePreview();
 }
@@ -664,22 +658,16 @@ function handleVideoFile(e) {
       e.target.value = '';
       return;
     }
-    if (productVideoPreviewUrl) URL.revokeObjectURL(productVideoPreviewUrl);
-    productVideoFile = file;
-    productVideoUrl = '';
-    productVideoPreviewUrl = URL.createObjectURL(file);
+    // Remove existing video entry if any
+    const vi = productMedia.findIndex(m => m.type === 'video');
+    if (vi >= 0) {
+      if (productMedia[vi]._preview?.startsWith('blob:')) URL.revokeObjectURL(productMedia[vi]._preview);
+      productMedia.splice(vi, 1);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    productMedia.push({ type:'video', _file:file, _preview:previewUrl, _url:'' });
     renderImgSlots();
   };
-}
-
-function removeVideoSlot(e) {
-  e.stopPropagation();
-  productVideoFile = null;
-  productVideoUrl = '';
-  if (productVideoPreviewUrl) { URL.revokeObjectURL(productVideoPreviewUrl); productVideoPreviewUrl = ''; }
-  const vi = document.getElementById('p-video-input');
-  if (vi) vi.value = '';
-  renderImgSlots();
 }
 
 // ── Drag-drop file zone ──────────────────────────────
@@ -694,20 +682,14 @@ function initImgDropZone() {
     wrap.classList.remove('drag-over');
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     if (!files.length) return;
-    const startIdx = productImages.filter(Boolean).length;
-    const available = 5 - startIdx;
+    const imgCount = productMedia.filter(m => m.type === 'image').length;
+    const available = 5 - imgCount;
     if (available <= 0) { toast('Đã đạt tối đa 5 ảnh', 'error'); return; }
-    const toAdd = files.slice(0, available);
-    let loaded = 0;
-    toAdd.forEach((file, i) => {
-      const idx = startIdx + i;
-      productImages[idx] = { _file: file, _preview: null, _url: '', _pos: '50% 50%', _zoom: 100 };
+    files.slice(0, available).forEach(file => {
+      const item = { type:'image', _file:file, _preview:'', _url:'', _pos:'50% 50%', _zoom:100 };
+      productMedia.push(item);
       const reader = new FileReader();
-      reader.onload = ev => {
-        productImages[idx]._preview = ev.target.result;
-        loaded++;
-        if (loaded === toAdd.length) { renderImgSlots(); updateLivePreview(); }
-      };
+      reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
       reader.readAsDataURL(file);
     });
   });
@@ -721,8 +703,8 @@ let posEditorDragStart = {};
 
 function openPosEditor(idx, event) {
   event.stopPropagation();
-  const img = productImages[idx];
-  if (!img) return;
+  const img = productMedia[idx];
+  if (!img || img.type !== 'image') return;
   posEditorIdx = idx;
   const parts = (img._pos || '50% 50%').split(' ');
   posEditorState = { x: parseFloat(parts[0]) || 50, y: parseFloat(parts[1]) || 50, zoom: img._zoom || 100 };
@@ -752,9 +734,9 @@ function cancelPosEditor() {
 }
 
 function confirmPosEditor() {
-  if (posEditorIdx >= 0 && productImages[posEditorIdx]) {
-    productImages[posEditorIdx]._pos  = `${posEditorState.x.toFixed(1)}% ${posEditorState.y.toFixed(1)}%`;
-    productImages[posEditorIdx]._zoom = posEditorState.zoom;
+  if (posEditorIdx >= 0 && productMedia[posEditorIdx]?.type === 'image') {
+    productMedia[posEditorIdx]._pos  = `${posEditorState.x.toFixed(1)}% ${posEditorState.y.toFixed(1)}%`;
+    productMedia[posEditorIdx]._zoom = posEditorState.zoom;
     renderImgSlots(); updateLivePreview();
   }
   document.getElementById('pos-editor-overlay').classList.remove('open');
@@ -801,7 +783,8 @@ document.addEventListener('touchend', () => { posEditorDragging = false; });
 
 function updateLivePreview() {
   const name   = document.getElementById('p-name')?.value || 'Tên sản phẩm';
-  const imgUrl = productImages[0]?._preview || productImages[0]?._url || '';
+  const firstImg = productMedia.find(m => m.type === 'image');
+  const imgUrl = firstImg?._preview || firstImg?._url || '';
   const shopName = sellerShopName || 'Cửa hàng của bạn';
 
   // Compute min price from variant inputs
@@ -848,14 +831,17 @@ async function saveProduct() {
   const variantsPayload = variantList.map(({ name, sku, price, quantity, image_url }) => ({ name, sku: sku||'', price, quantity, image_url }));
   fd.append('variants', JSON.stringify(variantsPayload));
 
-  // Attach up to 5 product images + position/zoom metadata
-  const imageMeta = productImages.map(img => ({
+  // Extract images and video from unified productMedia
+  const images = productMedia.filter(m => m.type === 'image');
+  const videoItem = productMedia.find(m => m.type === 'video');
+
+  const imageMeta = images.map(img => ({
     pos: img._pos || '50% 50%',
     zoom: img._zoom || 100,
     existing_url: img._url || ''
   }));
   fd.append('image_positions', JSON.stringify(imageMeta));
-  productImages.forEach((img, i) => {
+  images.forEach((img, i) => {
     if (img._file) fd.append(`product_image_${i}`, img._file);
   });
 
@@ -863,10 +849,10 @@ async function saveProduct() {
     if (v._file) fd.append(`variant_image_${i}`, v._file);
   });
 
-  if (productVideoFile) {
-    fd.append('product_video', productVideoFile);
-  } else if (productVideoUrl) {
-    fd.append('existing_video_url', productVideoUrl);
+  if (videoItem?._file) {
+    fd.append('product_video', videoItem._file);
+  } else if (videoItem?._url) {
+    fd.append('existing_video_url', videoItem._url);
   }
 
   const btn = document.getElementById('save-btn');
