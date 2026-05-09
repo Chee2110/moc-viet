@@ -232,25 +232,12 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Ảnh sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tối đa 5 — ảnh đầu là ảnh đại diện)</span></label>
+            <label class="form-label">Ảnh &amp; Video sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tối đa 5 ảnh + 1 video — kéo ảnh để sắp xếp lại)</span></label>
             <div class="img-slots-wrap" id="img-slots-wrap">
               <div class="img-slots" id="img-slots"></div>
-              <div class="img-slots-wrap-hint">Kéo ảnh vào đây hoặc nhấn <strong>+</strong> để chọn &nbsp;·&nbsp; Nhấn <strong>✥</strong> để căn chỉnh khung</div>
+              <div class="img-slots-wrap-hint">Kéo ảnh vào đây hoặc nhấn <strong>+</strong> để chọn &nbsp;·&nbsp; Kéo slot để sắp xếp &nbsp;·&nbsp; Nhấn <strong>✥</strong> để căn chỉnh khung</div>
             </div>
             <input type="file" id="p-img-input" accept="image/*" multiple style="display:none" onchange="handleSlotFile(event)">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Video sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tùy chọn — tối đa 10 phút)</span></label>
-            <div id="video-upload-area" onclick="clickVideoArea()" style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;position:relative;min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;transition:border-color .2s">
-              <div id="video-placeholder" style="color:var(--text-muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="font-size:28px">🎬</div>
-                <div>Nhấn để chọn video <span style="font-size:11px">(MP4, MOV — tối đa 500 MB)</span></div>
-              </div>
-              <video id="video-preview" controls style="display:none;max-width:100%;max-height:220px;border-radius:8px"></video>
-              <div id="video-info" style="display:none;font-size:12px;color:var(--text-muted);margin-top:2px"></div>
-              <button type="button" id="video-remove-btn" onclick="removeVideo(event)" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:16px;line-height:1;display:none;align-items:center;justify-content:center">×</button>
-            </div>
             <input type="file" id="p-video-input" accept="video/*" style="display:none" onchange="handleVideoFile(event)">
           </div>
 
@@ -489,6 +476,8 @@ let productImages = []; // [{_file, _preview, _url}]
 let activeSlotIdx = -1;
 let productVideoFile = null;
 let productVideoUrl = '';
+let productVideoPreviewUrl = '';
+let dragSrcIdx = null;
 
 // ── Modal open/close ─────────────────────────────────
 function openModal(id = null) {
@@ -501,13 +490,9 @@ function openModal(id = null) {
   activeSlotIdx = -1;
   productVideoFile = null;
   productVideoUrl = '';
-  const vPrev = document.getElementById('video-preview');
-  vPrev.pause(); vPrev.src = ''; vPrev.style.display = 'none';
-  document.getElementById('video-placeholder').style.display = 'flex';
-  document.getElementById('video-info').style.display = 'none';
-  document.getElementById('video-remove-btn').style.display = 'none';
-  document.getElementById('video-upload-area').style.cursor = 'pointer';
-  document.getElementById('p-video-input').value = '';
+  if (productVideoPreviewUrl) { URL.revokeObjectURL(productVideoPreviewUrl); productVideoPreviewUrl = ''; }
+  const vi = document.getElementById('p-video-input');
+  if (vi) vi.value = '';
 
   if (id) {
     const p = products.find(x => x.id === id);
@@ -525,7 +510,7 @@ function openModal(id = null) {
 
     if (p.video_url) {
       productVideoUrl = p.video_url;
-      showVideoPreview(p.video_url, 'Video hiện tại');
+      productVideoPreviewUrl = '';
     }
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
@@ -565,8 +550,13 @@ function renderImgSlots() {
     const pos = img?._pos || '50% 50%';
     if (src) {
       slots.push(`
-        <div class="img-slot has-img" onclick="openSlot(${i})" title="Nhấn để thay ảnh">
-          <img src="${src}" alt="" style="object-position:${pos}">
+        <div class="img-slot has-img" title="Kéo để sắp xếp"
+          draggable="true"
+          ondragstart="slotDragStart(event,${i})"
+          ondragover="slotDragOver(event,${i})"
+          ondrop="slotDrop(event,${i})"
+          ondragend="slotDragEnd()">
+          <img src="${src}" alt="" style="object-position:${pos}" onclick="openSlot(${i})">
           <button class="img-slot-del" onclick="removeSlot(${i},event)" title="Xóa">×</button>
           <button class="img-slot-edit-btn" onclick="openPosEditor(${i},event)" title="Căn chỉnh ảnh">✥</button>
           ${i === 0 ? '<span class="img-slot-badge">Chính</span>' : ''}
@@ -575,7 +565,46 @@ function renderImgSlots() {
       slots.push(`<div class="img-slot" onclick="openSlot(${i})" title="Thêm ảnh ${i+1}"><span style="pointer-events:none">+</span></div>`);
     }
   }
+  // Video slot
+  const vSrc = productVideoPreviewUrl || productVideoUrl;
+  if (vSrc) {
+    slots.push(`
+      <div class="img-slot has-img" style="cursor:default" title="Video sản phẩm">
+        <video src="${vSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></video>
+        <button class="img-slot-del" onclick="removeVideoSlot(event)" title="Xóa video">×</button>
+        <span class="img-slot-badge" style="background:#7c3aed">▶ Video</span>
+      </div>`);
+  } else {
+    slots.push(`
+      <div class="img-slot" onclick="document.getElementById('p-video-input').click()" title="Thêm video (tối đa 10 phút)" style="flex-direction:column;gap:4px">
+        <span style="font-size:22px;pointer-events:none">🎬</span>
+        <span style="font-size:10px;pointer-events:none;color:var(--text-muted)">+ Video</span>
+      </div>`);
+  }
   container.innerHTML = slots.join('');
+}
+
+function slotDragStart(e, idx) {
+  dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+}
+function slotDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function slotDrop(e, idx) {
+  e.preventDefault();
+  if (dragSrcIdx === null || dragSrcIdx === idx) { dragSrcIdx = null; return; }
+  const moved = productImages.splice(dragSrcIdx, 1)[0];
+  productImages.splice(idx, 0, moved);
+  dragSrcIdx = null;
+  renderImgSlots();
+  updateLivePreview();
+}
+function slotDragEnd() {
+  dragSrcIdx = null;
+  renderImgSlots();
 }
 
 function openSlot(idx) {
@@ -621,59 +650,36 @@ function removeSlot(idx, event) {
   updateLivePreview();
 }
 
-function clickVideoArea() {
-  if (productVideoFile || productVideoUrl) return;
-  document.getElementById('p-video-input').click();
-}
-
 function handleVideoFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   const tempVideo = document.createElement('video');
   tempVideo.preload = 'metadata';
-  const objUrl = URL.createObjectURL(file);
-  tempVideo.src = objUrl;
+  const checkUrl = URL.createObjectURL(file);
+  tempVideo.src = checkUrl;
   tempVideo.onloadedmetadata = () => {
-    URL.revokeObjectURL(objUrl);
+    URL.revokeObjectURL(checkUrl);
     if (tempVideo.duration > 600) {
       toast('Video quá dài — tối đa 10 phút', 'error');
       e.target.value = '';
       return;
     }
+    if (productVideoPreviewUrl) URL.revokeObjectURL(productVideoPreviewUrl);
     productVideoFile = file;
     productVideoUrl = '';
-    const mins = Math.floor(tempVideo.duration / 60);
-    const secs = Math.floor(tempVideo.duration % 60);
-    showVideoPreview(URL.createObjectURL(file), `${file.name} — ${mins}:${secs.toString().padStart(2,'0')}`);
+    productVideoPreviewUrl = URL.createObjectURL(file);
+    renderImgSlots();
   };
 }
 
-function showVideoPreview(src, infoText) {
-  const preview = document.getElementById('video-preview');
-  preview.src = src;
-  preview.style.display = 'block';
-  document.getElementById('video-placeholder').style.display = 'none';
-  const info = document.getElementById('video-info');
-  info.textContent = infoText;
-  info.style.display = 'block';
-  const removeBtn = document.getElementById('video-remove-btn');
-  removeBtn.style.display = 'flex';
-  document.getElementById('video-upload-area').style.cursor = 'default';
-}
-
-function removeVideo(e) {
+function removeVideoSlot(e) {
   e.stopPropagation();
   productVideoFile = null;
   productVideoUrl = '';
-  const preview = document.getElementById('video-preview');
-  preview.pause();
-  preview.src = '';
-  preview.style.display = 'none';
-  document.getElementById('video-placeholder').style.display = 'flex';
-  document.getElementById('video-info').style.display = 'none';
-  document.getElementById('video-remove-btn').style.display = 'none';
-  document.getElementById('video-upload-area').style.cursor = 'pointer';
-  document.getElementById('p-video-input').value = '';
+  if (productVideoPreviewUrl) { URL.revokeObjectURL(productVideoPreviewUrl); productVideoPreviewUrl = ''; }
+  const vi = document.getElementById('p-video-input');
+  if (vi) vi.value = '';
+  renderImgSlots();
 }
 
 // ── Drag-drop file zone ──────────────────────────────

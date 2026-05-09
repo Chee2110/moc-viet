@@ -310,16 +310,23 @@
       padding: 13px 32px;
       cursor: pointer;
       box-shadow: none;
+      -webkit-tap-highlight-color: transparent;
       animation: buyNowShake 2.4s ease-in-out infinite;
-      transition: transform 0.15s;
+      transition: transform 0.15s, color 0.15s;
     }
-    .btn-buy-now:hover {
+    .btn-buy-now:hover,
+    .btn-buy-now:focus {
       animation: none;
       transform: scale(1.1);
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fbbf24;
+      outline: none;
     }
     .btn-buy-now:active {
       animation: none;
       transform: scale(0.94);
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #fbbf24;
     }
     @keyframes buyNowShake {
       0%,100%  { transform: rotate(0deg); }
