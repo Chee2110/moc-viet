@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -81,6 +81,12 @@ async function doLogin(e) {
     saveAuth(res.token, res.user);
     toast('Đăng nhập thành công!');
     setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      if (redirect) {
+        window.location.href = decodeURIComponent(redirect);
+        return;
+      }
       const r = res.user.role;
       if (r === 'admin') window.location.href = '/admin/shops.html';
       else if (r === 'seller') window.location.href = '/seller/dashboard.html';
@@ -101,6 +107,12 @@ async function handleGoogleCredential(response) {
     saveAuth(res.token, res.user);
     toast('Đăng nhập Google thành công!');
     setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      if (redirect) {
+        window.location.href = decodeURIComponent(redirect);
+        return;
+      }
       const r = res.user.role;
       if (r === 'admin') window.location.href = '/admin/shops.html';
       else if (r === 'seller') window.location.href = '/seller/dashboard.html';
