@@ -1641,20 +1641,15 @@ async function handleCartClick(e) {
     return;
   }
   
-  // If not a buyer (admin or seller), just navigate to cart page to view
   if (user.role !== 'buyer') {
     window.location.href = '/buyer/cart.html';
     return;
   }
 
-  // Add +1 of current product to cart
   const item = { product_id: product.id, quantity: 1 };
-  
-  // Handle variants if any
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     if (selectedChipIdx < 0) {
       toast('Vui lòng chọn kích thước sản phẩm trước', 'info');
-      // Smooth scroll to size selection
       document.querySelector('.lp-size-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -1664,15 +1659,13 @@ async function handleCartClick(e) {
   try {
     const res = await api.post('/api/cart', item);
     if (res && res.success) {
+      toast('Đã thêm 1 sản phẩm vào giỏ hàng', 'success');
       updateCartBadge();
-      window.location.href = '/buyer/cart.html';
     } else {
       toast(res?.message || 'Không thể thêm vào giỏ hàng', 'error');
-      // Still navigate if it was just a minor error (like already in cart but we want to view)
-      setTimeout(() => { window.location.href = '/buyer/cart.html'; }, 1000);
     }
   } catch (err) {
-    window.location.href = '/buyer/cart.html';
+    toast('Lỗi kết nối máy chủ', 'error');
   }
 }
 
