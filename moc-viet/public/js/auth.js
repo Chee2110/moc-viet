@@ -75,11 +75,11 @@ function initNavbar() {
     ? `<a href="/buyer/cart.html" class="cart-btn" title="Giỏ hàng" style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%"><img src="/icons/cart.png" class="icon-img" style="filter:brightness(0) invert(.4)" alt="cart"><span class="notif-badge cart-badge" id="cart-badge" style="display:none"></span></a>`
     : '';
 
-  const dashBtn = `<a href="${dashLink}" class="notif-btn" title="Dashboard / Quản lý" style="display:flex"><img src="/icons/dashboard.png" class="icon-img" style="filter:brightness(0) invert(.4)" alt="dash"></a>`;
+  const homeBtn = `<a href="/" class="notif-btn" title="Trang chủ" style="display:flex"><img src="/icons/home.png" class="icon-img" style="filter:brightness(0) invert(.4)" alt="home"></a>`;
 
   rightEl.innerHTML =
     cartBtn +
-    dashBtn +
+    homeBtn +
     `<div style="position:relative">
       <button class="notif-btn" id="notif-toggle" onclick="toggleNotif()" title="Thông báo">
         <img src="/icons/notification.png" class="icon-img" style="mix-blend-mode:multiply;opacity:0.72" alt="thông báo">
@@ -99,6 +99,8 @@ function initNavbar() {
         <span>${user.full_name || user.email.split('@')[0]}</span> ▾
       </button>
       <div class="user-dropdown" id="user-dropdown">
+        <a href="${dashLink}"><img src="/icons/dashboard.png" class="icon-img-sm" alt=""> Dashboard</a>
+        ${user.role !== 'buyer' ? `<a href="/${user.role}/profile.html"><img src="/icons/profile.png" class="icon-img-sm" alt=""> Trang cá nhân</a>` : ''}
         ${user.role === 'buyer' ? '<a href="/buyer/wishlist.html"><span style="margin-right:8px">❤️</span> Yêu thích</a>' : ''}
         ${user.role === 'buyer' ? '<a href="/buyer/track.html"><img src="/icons/clock.png" class="icon-img-sm" alt=""> Tra cứu đơn</a>' : ''}
         <button onclick="logout()"><img src="/icons/profile.png" class="icon-img-sm" alt=""> Đăng xuất</button>

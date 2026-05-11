@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -499,14 +499,26 @@ function openModal(id = null) {
     document.getElementById('p-status').value   = p.is_hidden ? 'hidden' : 'visible';
     document.getElementById('p-desc').value     = p.description || '';
 
-    // Load existing images
+    // Load existing images and video from unified array
     const rawImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
+    let hasVideoInImages = false;
+    
     rawImgs.forEach(item => {
-      if (typeof item === 'string') productMedia.push({ type:'image', _file:null, _preview:item, _url:item, _pos:'50% 50%', _zoom:100 });
-      else productMedia.push({ type:'image', _file:null, _preview:item.url||item, _url:item.url||item, _pos:item.pos||'50% 50%', _zoom:item.zoom||100 });
+      if (typeof item === 'string') {
+        productMedia.push({ type:'image', _file:null, _preview:item, _url:item, _pos:'50% 50%', _zoom:100 });
+      } else {
+        if (item.type === 'video') {
+          hasVideoInImages = true;
+          productMedia.push({ type:'video', _file:null, _preview:item.url, _url:item.url });
+        } else {
+          productMedia.push({ type:'image', _file:null, _preview:item.url||item, _url:item.url||item, _pos:item.pos||'50% 50%', _zoom:item.zoom||100 });
+        }
+      }
     });
-    // Load existing video (always at end when loaded from server)
-    if (p.video_url) productMedia.push({ type:'video', _file:null, _preview:p.video_url, _url:p.video_url });
+    // Load existing video only if it wasn't already in the images array
+    if (p.video_url && !hasVideoInImages) {
+      productMedia.push({ type:'video', _file:null, _preview:p.video_url, _url:p.video_url });
+    }
 
     const vars = Array.isArray(p.variants) ? p.variants : [];
     if (vars.length > 0) {
@@ -834,6 +846,7 @@ async function saveProduct() {
   // Extract images and video from unified productMedia
   const images = productMedia.filter(m => m.type === 'image');
   const videoItem = productMedia.find(m => m.type === 'video');
+  const videoIndex = productMedia.findIndex(m => m.type === 'video');
 
   const imageMeta = images.map(img => ({
     pos: img._pos || '50% 50%',
@@ -849,10 +862,15 @@ async function saveProduct() {
     if (v._file) fd.append(`variant_image_${i}`, v._file);
   });
 
-  if (videoItem?._file) {
-    fd.append('product_video', videoItem._file);
-  } else if (videoItem?._url) {
-    fd.append('existing_video_url', videoItem._url);
+  if (videoItem) {
+    if (videoItem._file) {
+      fd.append('product_video', videoItem._file);
+    } else if (videoItem._url) {
+      fd.append('existing_video_url', videoItem._url);
+    }
+    if (videoIndex >= 0) {
+      fd.append('video_index', videoIndex);
+    }
   }
 
   const btn = document.getElementById('save-btn');

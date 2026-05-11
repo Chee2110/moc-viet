@@ -520,6 +520,16 @@ app.post('/api/seller/products', sellerAuth, uploadProduct.any(), async (req, re
     }
     if (!price || price < 1) return res.status(400).json({ message: 'Giá sản phẩm không hợp lệ' });
 
+    const videoIndex = parseInt(req.body.video_index);
+    if (videoUrl) {
+      const vidObj = { url: videoUrl, type: 'video' };
+      if (!isNaN(videoIndex) && videoIndex >= 0 && videoIndex <= images.length) {
+        images.splice(videoIndex, 0, vidObj);
+      } else {
+        images.push(vidObj);
+      }
+    }
+
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
     const row = await queryOne(
       'INSERT INTO products(shop_id,name,price,description,image_url,category,stock_quantity,is_hidden,variants,images,video_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
@@ -582,6 +592,16 @@ app.put('/api/seller/products/:id', sellerAuth, uploadProduct.any(), async (req,
     const videoUrl = videoFile
       ? '/uploads/' + videoFile.filename
       : (req.body.existing_video_url || product.video_url || null);
+
+    const videoIndex = parseInt(req.body.video_index);
+    if (videoUrl) {
+      const vidObj = { url: videoUrl, type: 'video' };
+      if (!isNaN(videoIndex) && videoIndex >= 0 && videoIndex <= images.length) {
+        images.splice(videoIndex, 0, vidObj);
+      } else {
+        images.push(vidObj);
+      }
+    }
 
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
     await query(
