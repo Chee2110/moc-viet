@@ -343,7 +343,7 @@ let sellerShopName = 'Cửa hàng của bạn';
 let categoryList = [];
 
 async function loadCategorySelect(selectedValue) {
-  const cats = await api.get('/api/categories');
+  const cats = await api.get('/api/seller/categories');
   categoryList = cats || [];
   const sel = document.getElementById('p-category');
   if (!sel) return;

@@ -163,11 +163,11 @@ let catData = [];
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div></div>';
-  const cats = await api.get('/api/categories');
+  const cats = await api.get('/api/seller/categories');
   catData = cats || [];
   document.getElementById('cat-count').textContent = catData.length;
   if (!catData.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Chưa có danh mục nào</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Chưa có danh mục nào trong shop của bạn</p></div>';
     return;
   }
   grid.innerHTML = catData.map(c => renderRow(c)).join('');

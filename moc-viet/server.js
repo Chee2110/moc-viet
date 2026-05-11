@@ -334,7 +334,12 @@ function categoryPost(auth) {
       const exists = await queryOne('SELECT id FROM categories WHERE value=$1', [slug]);
       if (exists) return res.status(409).json({ message: 'Danh mục đã tồn tại' });
       const maxOrder = await queryOne('SELECT COALESCE(MAX(sort_order),0) AS m FROM categories');
-      const byName = req.user.full_name || req.user.email;
+      let byName = req.user.full_name || req.user.email;
+      if (req.user.role === 'seller') {
+        const shop = await queryOne('SELECT name FROM shops WHERE user_id=$1 AND status=\'approved\' LIMIT 1', [req.user.id]);
+        if (shop) byName = shop.name;
+      }
+
       const row = await queryOne(
         'INSERT INTO categories(value, label, sort_order, created_by_name) VALUES($1,$2,$3,$4) RETURNING *',
         [slug, label.trim(), (maxOrder?.m || 0) + 1, byName]);
@@ -372,6 +377,19 @@ function categoryDelete(auth) {
 app.post('/api/admin/categories',  ...categoryPost(adminAuth));
 app.patch('/api/admin/categories/:id', ...categoryPatch(adminAuth));
 app.delete('/api/admin/categories/:id', ...categoryDelete(adminAuth));
+
+// Filter categories by seller's shop
+app.get('/api/seller/categories', sellerAuth, async (req, res) => {
+  try {
+    if (req.user.role === 'admin') {
+      return res.json(await query('SELECT id, value, label, sort_order, created_by_name FROM categories ORDER BY sort_order ASC, id ASC'));
+    }
+    const shop = await queryOne('SELECT name FROM shops WHERE user_id=$1 AND status=\'approved\' LIMIT 1', [req.user.id]);
+    if (!shop) return res.json([]);
+    const rows = await query('SELECT id, value, label, sort_order, created_by_name FROM categories WHERE created_by_name = $1 ORDER BY sort_order ASC, id ASC', [shop.name]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
 app.post('/api/seller/categories',  ...categoryPost(sellerAuth));
 app.patch('/api/seller/categories/:id', ...categoryPatch(sellerAuth));
