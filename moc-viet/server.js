@@ -137,8 +137,16 @@ const uploadProduct = multer({
   }),
   limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
-    else cb(new Error('Chỉ chấp nhận file ảnh và video'));
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype === 'application/octet-stream') {
+      cb(null, true);
+    } else {
+      const ext = require('path').extname(file.originalname).toLowerCase();
+      if (['.jpg','.jpeg','.png','.webp','.gif','.mp4','.mov','.avi','.mkv','.webm'].includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Chỉ chấp nhận file ảnh và video'));
+      }
+    }
   }
 });
 
@@ -1548,6 +1556,11 @@ async function purgeExpiredDeletedProducts() {
     console.warn('⚠️  Lỗi dọn dẹp sản phẩm hết hạn:', err.message);
   }
 }
+
+app.use((err, req, res, next) => {
+  console.error('Express Error:', err.message);
+  res.status(500).json({ success: false, message: err.message || 'Lỗi hệ thống' });
+});
 
 initDatabase().then(() => {
   purgeExpiredDeletedProducts();
