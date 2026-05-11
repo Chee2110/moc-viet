@@ -386,7 +386,7 @@ app.get('/api/admin/fix-old-categories', adminAuth, async (req, res) => {
       SET created_by_name = s.name
       FROM shops s
       JOIN users u ON s.user_id = u.id
-      WHERE (categories.created_by_name = u.full_name OR categories.created_by_name = u.email)
+      WHERE (LOWER(categories.created_by_name) = LOWER(u.full_name) OR LOWER(categories.created_by_name) = LOWER(u.email))
       AND categories.created_by_name != s.name
     `);
     res.json({ success: true, message: 'Đã cập nhật dữ liệu cũ thành công!' });
