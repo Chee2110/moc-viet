@@ -378,6 +378,21 @@ app.post('/api/admin/categories',  ...categoryPost(adminAuth));
 app.patch('/api/admin/categories/:id', ...categoryPatch(adminAuth));
 app.delete('/api/admin/categories/:id', ...categoryDelete(adminAuth));
 
+// secret route to fix old category ownership
+app.get('/api/admin/fix-old-categories', adminAuth, async (req, res) => {
+  try {
+    const result = await query(`
+      UPDATE categories 
+      SET created_by_name = s.name
+      FROM shops s
+      JOIN users u ON s.user_id = u.id
+      WHERE (categories.created_by_name = u.full_name OR categories.created_by_name = u.email)
+      AND categories.created_by_name != s.name
+    `);
+    res.json({ success: true, message: 'Đã cập nhật dữ liệu cũ thành công!' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // Filter categories by seller's shop
 app.get('/api/seller/categories', sellerAuth, async (req, res) => {
   try {
