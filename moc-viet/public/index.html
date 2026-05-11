@@ -117,11 +117,14 @@ window.onload = async () => {
     if (s.contact_zalo) { const el = document.getElementById('footer-zalo'); el.textContent = 'Zalo: ' + s.contact_zalo; el.style.display = 'block'; }
   }).catch(() => {});
 
-  const q = new URLSearchParams(location.search).get('q');
+  const urlParams = new URLSearchParams(location.search);
+  const q = urlParams.get('q');
   if (q) {
     searchQuery = q;
     document.getElementById('search-input').value = q;
   }
+  const catParam = urlParams.get('cat');
+  
   // Load categories dynamically
   const cats = await api.get('/api/categories');
   if (cats?.length) {
@@ -133,6 +136,11 @@ window.onload = async () => {
       btn.textContent = c.label;
       btn.onclick = () => selectCat(btn, c.value);
       pills.appendChild(btn);
+      
+      // If URL has cat parameter, select it
+      if (catParam === c.value) {
+        selectCat(btn, c.value);
+      }
     });
   }
   await loadProducts();
