@@ -1096,7 +1096,7 @@ function renderProduct() {
       if (s.type === 'video') {
         return `<div class="lp-carousel-slide" data-type="video">
           <div class="lp-slide-video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Video</div>
-          <video src="${s.url}" controls playsinline preload="auto" autoplay muted loop></video>
+          <video src="${s.url}" controls playsinline preload="auto" loop></video>
         </div>`;
       }
       return `<div class="lp-carousel-slide" data-type="image">
@@ -1443,7 +1443,14 @@ function goToSlide(idx) {
     const activeSlide = track.children[currentSlideIdx];
     if (activeSlide && activeSlide.dataset.type === 'video') {
       const vid = activeSlide.querySelector('video');
-      if (vid) vid.play().catch(() => {});
+      if (vid) {
+        vid.muted = false;
+        vid.play().catch(() => {
+          // If unmuted autoplay is blocked, play muted as fallback
+          vid.muted = true;
+          vid.play().catch(() => {});
+        });
+      }
     }
   }
   document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === currentSlideIdx));
@@ -1698,6 +1705,16 @@ function toggleNavExpand(id) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeNavMenu();
 });
+
+// ── Global Unmute on first interaction ──────────────────
+document.addEventListener('click', () => {
+  document.querySelectorAll('video').forEach(v => {
+    if (v.muted) {
+      v.muted = false;
+      if (v.paused) v.play().catch(() => {});
+    }
+  });
+}, { once: true, capture: true });
 
 init();
 </script>
