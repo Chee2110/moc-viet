@@ -1096,7 +1096,7 @@ function renderProduct() {
       if (s.type === 'video') {
         return `<div class="lp-carousel-slide" data-type="video">
           <div class="lp-slide-video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Video</div>
-          <video src="${s.url}" controls playsinline preload="metadata"></video>
+          <video src="${s.url}" controls playsinline preload="auto" autoplay muted loop></video>
         </div>`;
       }
       return `<div class="lp-carousel-slide" data-type="image">
@@ -1396,6 +1396,7 @@ function renderProduct() {
   if (product.discount_percent) startCountdown();
   updateTotal();
   initCarouselSwipe();
+  goToSlide(0);
   if (getUser()) {
     const voBtn = document.getElementById('view-orders-btn');
     if (voBtn) voBtn.style.display = 'inline-flex';
@@ -1428,14 +1429,22 @@ let currentSlideIdx = 0;
 
 function goToSlide(idx) {
   if (!allSlides.length) return;
-  // Pause any playing videos when leaving a video slide
   const track = document.getElementById('carousel-track');
   if (track) {
-    track.querySelectorAll('video').forEach(v => v.pause());
+    track.querySelectorAll('video').forEach(v => {
+      v.pause();
+      v.currentTime = 0; // Reset video when leaving
+    });
   }
   currentSlideIdx = (idx + allSlides.length) % allSlides.length;
   if (track) {
     track.style.transform = `translateX(-${currentSlideIdx * 100}%)`;
+    // Play video if current slide is video
+    const activeSlide = track.children[currentSlideIdx];
+    if (activeSlide && activeSlide.dataset.type === 'video') {
+      const vid = activeSlide.querySelector('video');
+      if (vid) vid.play().catch(() => {});
+    }
   }
   document.querySelectorAll('.img-dot').forEach((d, i) => d.classList.toggle('active', i === currentSlideIdx));
 }
