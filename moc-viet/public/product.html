@@ -1176,8 +1176,10 @@ function renderProduct() {
       const vPrice = product.discount_percent
         ? Math.round(v.price * (1 - product.discount_percent / 100))
         : v.price;
-      const thumbHtml = v.image_url
-        ? `<img class="chip-thumb" src="${v.image_url}" alt="${v.name}">`
+      const fallbackImg = allSlides[0]?.url || '';
+      const thumbSrc = v.image_url || fallbackImg;
+      const thumbHtml = thumbSrc
+        ? `<img class="chip-thumb" src="${thumbSrc}" alt="${v.name}">`
         : '';
       return `<button class="size-chip" data-idx="${i}" onclick="selectChip(this,${i})"
                       title="${(parseInt(v.quantity)||0) <= 10 ? 'Chỉ còn '+v.quantity : ''}">
