@@ -1093,6 +1093,15 @@ function renderProduct() {
     return { url: item.url || item, pos: item.pos || '50% 50%', type: 'image' };
   });
 
+  // Append variant images not already in the carousel
+  if (Array.isArray(product.variants)) {
+    product.variants.forEach(v => {
+      if (v.image_url && !allSlides.some(s => s.url === v.image_url)) {
+        allSlides.push({ url: v.image_url, pos: '50% 50%', type: 'image' });
+      }
+    });
+  }
+
   // Append video as last slide if available but not already in the array
   if (product.video_url && !hasVideoInImages) {
     allSlides.push({ url: product.video_url, type: 'video' });
@@ -1503,12 +1512,11 @@ function selectChip(el, idx) {
   selectedChipIdx = idx;
   const v = product.variants[idx];
 
-  // Switch image to variant's image if available
-  if (v.image_url) {
-    const foundIdx = allSlides.findIndex(item => item.url === v.image_url);
-    if (foundIdx >= 0) {
-      goToSlide(foundIdx);
-    }
+  // Switch carousel to the image shown in this chip's thumbnail
+  const thumbSrc = v.image_url || (allSlides[0]?.url || '');
+  if (thumbSrc) {
+    const foundIdx = allSlides.findIndex(item => item.url === thumbSrc);
+    if (foundIdx >= 0) goToSlide(foundIdx);
   }
 
   // Update price display (per-variant discounted price)
