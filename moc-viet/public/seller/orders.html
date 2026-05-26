@@ -68,6 +68,8 @@
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%">
         <input type="text" id="search" placeholder="Tìm khách hàng, SĐT..." oninput="filterOrders()" style="flex:1;min-width:0" class="form-control">
         <button class="btn btn-primary" onclick="exportOrders()" id="export-btn"><img src="/icons/Excel.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px" alt=""> Xuất Excel</button>
+        <button class="btn btn-ghost" onclick="openExportImagesModal()" id="export-img-btn" style="border:1.5px solid #d97706;color:#92400e;white-space:nowrap">🖼️ Xuất ảnh khắc</button>
+        <button class="btn btn-ghost" onclick="openExportCompositeModal()" id="export-comp-btn" style="border:1.5px solid #059669;color:#065f46;white-space:nowrap">🖼️✨ Xuất ảnh tổng hợp</button>
       </div>
     </div>
 
@@ -105,6 +107,69 @@
       </button>
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
         <button class="btn btn-ghost btn-sm" onclick="doExport('')" style="color:var(--text-muted);font-size:12px">↓ Xuất tất cả (không giới hạn thời gian)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT IMAGES MODAL -->
+<div class="modal-overlay" id="export-img-modal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="modal-header">
+      <span class="modal-title">🖼️ Xuất ảnh cá nhân hoá</span>
+      <button class="modal-close" onclick="closeExportImagesModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:24px 28px">
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px">Tải về file ZIP chứa tất cả ảnh khách hàng đã cá nhân hoá, đặt tên theo <strong>mã đơn – tên khách – sản phẩm</strong>.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportImages('week')">
+          <span style="font-size:1.4rem">🗓️</span>
+          <span style="font-weight:700">Theo tuần</span>
+          <span style="font-size:11px;color:var(--text-muted)">7 ngày qua</span>
+        </button>
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportImages('month')">
+          <span style="font-size:1.4rem">📆</span>
+          <span style="font-weight:700">Theo tháng</span>
+          <span style="font-size:11px;color:var(--text-muted)">Tháng hiện tại</span>
+        </button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportImages('quarter')">
+        <span style="font-size:1.4rem">📈</span>
+        <span style="font-weight:700">Theo quý</span>
+        <span style="font-size:11px;color:var(--text-muted)">Quý hiện tại</span>
+      </button>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="doExportImages('')" style="color:var(--text-muted);font-size:12px">↓ Xuất tất cả (không giới hạn thời gian)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT COMPOSITE MODAL -->
+<div class="modal-overlay" id="export-comp-modal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="modal-header">
+      <span class="modal-title">🖼️✨ Xuất ảnh tổng hợp</span>
+      <button class="modal-close" onclick="closeExportCompositeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:24px 28px">
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px">Tải về file ZIP chứa ảnh <strong>sản phẩm đã chèn nội dung cá nhân hoá</strong> của từng đơn hàng.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportComposite('week')">
+          <span style="font-size:1.4rem">🗓️</span><span style="font-weight:700">Theo tuần</span>
+          <span style="font-size:11px;color:var(--text-muted)">7 ngày qua</span>
+        </button>
+        <button class="btn btn-ghost" style="padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportComposite('month')">
+          <span style="font-size:1.4rem">📆</span><span style="font-weight:700">Theo tháng</span>
+          <span style="font-size:11px;color:var(--text-muted)">Tháng hiện tại</span>
+        </button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;padding:14px;flex-direction:column;gap:4px;display:flex;align-items:center" onclick="doExportComposite('quarter')">
+        <span style="font-size:1.4rem">📈</span><span style="font-weight:700">Theo quý</span>
+        <span style="font-size:11px;color:var(--text-muted)">Quý hiện tại</span>
+      </button>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="doExportComposite('')" style="color:var(--text-muted);font-size:12px">↓ Xuất tất cả</button>
       </div>
     </div>
   </div>
@@ -294,6 +359,63 @@ async function updateStatusFromDetail(id, status) {
 }
 
 async function exportOrders() { openExportModal(); }
+
+function openExportImagesModal()     { document.getElementById('export-img-modal').classList.add('open'); }
+function closeExportImagesModal()    { document.getElementById('export-img-modal').classList.remove('open'); }
+function openExportCompositeModal()  { document.getElementById('export-comp-modal').classList.add('open'); }
+function closeExportCompositeModal() { document.getElementById('export-comp-modal').classList.remove('open'); }
+
+async function doExportComposite(period) {
+  closeExportCompositeModal();
+  const btn = document.getElementById('export-comp-btn');
+  btn.disabled = true; btn.textContent = 'Đang tải...';
+  try {
+    const token = localStorage.getItem('mv_token');
+    const qs = period ? `?period=${period}` : '';
+    const res = await fetch(`/api/seller/orders/export-composite${qs}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { const e = await res.json(); toast(e.message || 'Xuất thất bại', 'error'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+    a.href = url; a.download = `anh-tong-hop-${period||'tat-ca'}-${dateStr}.zip`;
+    a.click(); URL.revokeObjectURL(url);
+    toast('Đã xuất file ZIP ảnh tổng hợp!');
+  } catch (err) {
+    toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🖼️✨ Xuất ảnh tổng hợp';
+  }
+}
+
+async function doExportImages(period) {
+  closeExportImagesModal();
+  const btn = document.getElementById('export-img-btn');
+  btn.disabled = true; btn.textContent = 'Đang tải...';
+  try {
+    const token = localStorage.getItem('mv_token');
+    const qs = period ? `?period=${period}` : '';
+    const res = await fetch(`/api/seller/orders/export-images${qs}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { const e = await res.json(); toast(e.message || 'Xuất thất bại', 'error'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+    a.href = url;
+    a.download = `anh-ca-nhan-hoa-${period||'tat-ca'}-${dateStr}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Đã xuất file ZIP thành công!');
+  } catch (err) {
+    toast('Lỗi: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🖼️ Xuất ảnh khắc';
+  }
+}
 
 function openExportModal() {
   document.getElementById('export-modal').classList.add('open');

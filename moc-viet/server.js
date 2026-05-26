@@ -9,6 +9,7 @@ const cors         = require('cors');
 const fs2          = require('fs');
 const WebSocket    = require('ws');
 const ExcelJS      = require('exceljs');
+const AdmZip       = require('adm-zip');
 const nodemailer   = require('nodemailer');
 const { initDatabase, query, queryOne, getPool } = require('./database');
 
@@ -829,10 +830,11 @@ app.post('/api/orders', optionalAuth, async (req, res) => {
       if (activeDeal) unitPrice = Math.round(unitPrice * (1 - Number(activeDeal.discount_percent) / 100));
 
       const totalPrice = unitPrice * q;
-      const engravingText = item.engraving_text || null;
+      const engravingText    = item.engraving_text    || null;
+      const engravingPreview = item.engraving_preview || null;
       const order = await queryOne(
-        'INSERT INTO orders(user_id,product_id,shop_id,full_name,phone,address,quantity,unit_price,total_price,note,variant_name,engraving_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
-        [userId, pid, product.shop_id, full_name, phone, address, q, unitPrice, totalPrice, note||'', item.variant_name || null, engravingText]);
+        'INSERT INTO orders(user_id,product_id,shop_id,full_name,phone,address,quantity,unit_price,total_price,note,variant_name,engraving_text,engraving_preview) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id',
+        [userId, pid, product.shop_id, full_name, phone, address, q, unitPrice, totalPrice, note||'', item.variant_name || null, engravingText, engravingPreview]);
       
       createdOrders.push({ id: order.id, total_price: totalPrice, product_name: product.name, seller_id: product.seller_id });
 
@@ -886,6 +888,102 @@ app.get('/api/seller/orders', sellerAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+function _tryEmbedImage(wb, ws, engImgData, colIdx, rowNum) {
+  try {
+    if (!engImgData || !engImgData.startsWith('data:image')) return;
+    const match = engImgData.match(/^data:image\/(png|jpeg|jpg|gif|bmp|webp);base64,([A-Za-z0-9+/=]+)$/);
+    if (!match || match[2].length < 100) return; // skip truncated/invalid
+    const ext = match[1] === 'jpg' ? 'jpeg' : match[1];
+    const imgId = wb.addImage({ base64: match[2], extension: ext });
+    ws.getRow(rowNum).height = 72;
+    ws.addImage(imgId, { tl: { col: colIdx, row: rowNum - 1 }, ext: { width: 90, height: 68 }, editAs: 'oneCell' });
+  } catch(e) { /* skip bad image */ }
+}
+
+app.get('/api/seller/orders/export-images', sellerAuth, async (req, res) => {
+  try {
+    const shop = await queryOne('SELECT * FROM shops WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+    if (!shop) return res.status(404).json({ message: 'Không tìm thấy shop' });
+    const { period } = req.query;
+    const params = [shop.id]; let where = 'o.shop_id=$1 AND o.engraving_text IS NOT NULL';
+
+    let periodLabel = 'tat-ca';
+    if (period === 'week')    { where += ` AND o.created_at >= NOW() - INTERVAL '7 days'`; periodLabel = '7-ngay'; }
+    else if (period === 'month')   { where += ` AND DATE_TRUNC('month',o.created_at)=DATE_TRUNC('month',NOW())`; periodLabel = 'thang-nay'; }
+    else if (period === 'quarter') { where += ` AND DATE_TRUNC('quarter',o.created_at)=DATE_TRUNC('quarter',NOW())`; periodLabel = 'quy-nay'; }
+
+    const rows = await query(
+      'SELECT o.id, o.full_name, o.created_at, p.name AS product_name, o.variant_name, o.engraving_text ' +
+      'FROM orders o JOIN products p ON o.product_id=p.id WHERE ' + where + ' ORDER BY o.created_at DESC', params);
+
+    const imgRows = rows.filter(r => {
+      try { const e = JSON.parse(r.engraving_text); return e.type === 'image' && e.data && e.data.startsWith('data:image'); } catch { return false; }
+    });
+
+    if (imgRows.length === 0) return res.status(404).json({ message: 'Không có đơn hàng nào có ảnh cá nhân hoá trong khoảng thời gian này.' });
+
+    const sanitize = s => (s || '').replace(/[/\\:*?"<>|]/g, '-').replace(/\s+/g, '_').slice(0, 40);
+    const dateStr  = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+
+    const zip = new AdmZip();
+    for (const row of imgRows) {
+      try {
+        const eng   = JSON.parse(row.engraving_text);
+        const match = eng.data.match(/^data:image\/(png|jpeg|jpg|gif|bmp|webp);base64,([A-Za-z0-9+/=]+)$/);
+        if (!match || match[2].length < 100) continue;
+        const ext  = match[1] === 'jpg' ? 'jpg' : match[1];
+        const buf  = Buffer.from(match[2], 'base64');
+        const name = `DH${row.id}_${sanitize(row.full_name)}_${sanitize(row.product_name)}.${ext}`;
+        zip.addFile(name, buf);
+      } catch(e) {}
+    }
+
+    const zipBuf = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''anh-ca-nhan-hoa-${periodLabel}-${dateStr}.zip`);
+    res.send(zipBuf);
+  } catch (err) { if (!res.headersSent) res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/seller/orders/export-composite', sellerAuth, async (req, res) => {
+  try {
+    const shop = await queryOne('SELECT * FROM shops WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+    if (!shop) return res.status(404).json({ message: 'Không tìm thấy shop' });
+    const { period } = req.query;
+    const params = [shop.id]; let where = 'o.shop_id=$1 AND o.engraving_preview IS NOT NULL';
+
+    let periodLabel = 'tat-ca';
+    if (period === 'week')    { where += ` AND o.created_at >= NOW() - INTERVAL '7 days'`; periodLabel = '7-ngay'; }
+    else if (period === 'month')   { where += ` AND DATE_TRUNC('month',o.created_at)=DATE_TRUNC('month',NOW())`; periodLabel = 'thang-nay'; }
+    else if (period === 'quarter') { where += ` AND DATE_TRUNC('quarter',o.created_at)=DATE_TRUNC('quarter',NOW())`; periodLabel = 'quy-nay'; }
+
+    const rows = await query(
+      'SELECT o.id, o.full_name, o.created_at, p.name AS product_name, o.engraving_preview ' +
+      'FROM orders o JOIN products p ON o.product_id=p.id WHERE ' + where + ' ORDER BY o.created_at DESC', params);
+
+    if (rows.length === 0) return res.status(404).json({ message: 'Không có đơn hàng nào có ảnh tổng hợp trong khoảng thời gian này.' });
+
+    const sanitize = s => (s || '').replace(/[/\\:*?"<>|]/g, '-').replace(/\s+/g, '_').slice(0, 40);
+    const dateStr  = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+
+    const zip = new AdmZip();
+    for (const row of rows) {
+      try {
+        const match = (row.engraving_preview || '').match(/^data:image\/(png|jpeg|jpg);base64,([A-Za-z0-9+/=]+)$/);
+        if (!match || match[2].length < 100) continue;
+        const buf  = Buffer.from(match[2], 'base64');
+        const name = `DH${row.id}_${sanitize(row.full_name)}_${sanitize(row.product_name)}.png`;
+        zip.addFile(name, buf);
+      } catch(e) {}
+    }
+
+    const zipBuf = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''anh-tong-hop-${periodLabel}-${dateStr}.zip`);
+    res.send(zipBuf);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
   try {
     const shop = await queryOne('SELECT * FROM shops WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
@@ -910,7 +1008,7 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
 
     const rows = await query(
       'SELECT o.id, o.created_at, o.full_name, o.phone, o.address, o.product_id, p.name AS product_name, ' +
-      'o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
+      'o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note, o.engraving_text ' +
       'FROM orders o JOIN products p ON o.product_id=p.id ' +
       'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
 
@@ -919,27 +1017,47 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
     const statusLabel = status && status !== 'all' ? `${STATUS_VI[status]||status} - ` : '';
     const ws = wb.addWorksheet(`${statusLabel}${periodSheetLabel}`.slice(0,31));
     ws.columns = [
-      { header: 'Mã đơn',       key: 'id',           width: 10 },
-      { header: 'Ngày đặt',     key: 'date',          width: 20 },
-      { header: 'Khách hàng',   key: 'full_name',     width: 22 },
-      { header: 'SĐT',          key: 'phone',         width: 14 },
-      { header: 'Địa chỉ',      key: 'address',       width: 35 },
-      { header: 'Mã SP',             key: 'product_code',  width: 12 },
-      { header: 'Sản phẩm',          key: 'product_name',  width: 30 },
-      { header: 'Kích thước / Loại', key: 'variant_name',  width: 20 },
-      { header: 'SL',               key: 'quantity',      width: 6  },
-      { header: 'Đơn giá (đ)',      key: 'unit_price',    width: 16 },
-      { header: 'Tổng tiền (đ)',    key: 'total_price',   width: 16 },
-      { header: 'Trạng thái',       key: 'status_vi',     width: 16 },
-      { header: 'Ghi chú',          key: 'note',          width: 25 },
+      { header: 'Mã đơn',             key: 'id',              width: 10 },
+      { header: 'Ngày đặt',           key: 'date',            width: 20 },
+      { header: 'Khách hàng',         key: 'full_name',       width: 22 },
+      { header: 'SĐT',                key: 'phone',           width: 14 },
+      { header: 'Địa chỉ',            key: 'address',         width: 35 },
+      { header: 'Mã SP',              key: 'product_code',    width: 12 },
+      { header: 'Sản phẩm',           key: 'product_name',    width: 30 },
+      { header: 'Kích thước / Loại',  key: 'variant_name',    width: 20 },
+      { header: 'SL',                 key: 'quantity',        width: 6  },
+      { header: 'Đơn giá (đ)',        key: 'unit_price',      width: 16 },
+      { header: 'Tổng tiền (đ)',      key: 'total_price',     width: 16 },
+      { header: 'Trạng thái',         key: 'status_vi',       width: 16 },
+      { header: 'Ghi chú',            key: 'note',            width: 25 },
+      { header: 'Nội dung khắc',      key: 'eng_content',     width: 28 },
+      { header: 'Font / Màu chữ',     key: 'eng_style',       width: 22 },
+      { header: 'Ảnh cá nhân hoá',    key: 'eng_image',       width: 14 },
     ];
     const hdr = ws.getRow(1);
     hdr.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     hdr.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5E3C' } };
     hdr.alignment = { horizontal: 'center', vertical: 'middle' };
     hdr.height = 22;
-    rows.forEach(r => {
-      ws.addRow({
+    // Column index (0-based) for eng_image = 15
+    const IMG_COL_IDX = 15;
+    for (const r of rows) {
+      let engContent = '', engStyle = '', engImgData = null;
+      if (r.engraving_text) {
+        try {
+          const eng = typeof r.engraving_text === 'string'
+            ? JSON.parse(r.engraving_text) : r.engraving_text;
+          if (eng.type === 'text') {
+            engContent = eng.content || '';
+            const fontName = (eng.font || '').replace(/'/g, '').split(',')[0].trim();
+            engStyle = [fontName, eng.color].filter(Boolean).join(' / ');
+          } else if (eng.type === 'image') {
+            engContent = 'Hình ảnh khắc';
+            engImgData = eng.data || null;
+          }
+        } catch(e) {}
+      }
+      const dataRow = ws.addRow({
         id: r.id,
         date: new Date(r.created_at).toLocaleString('vi-VN'),
         full_name: r.full_name, phone: r.phone, address: r.address,
@@ -948,18 +1066,23 @@ app.get('/api/seller/orders/export', sellerAuth, async (req, res) => {
         unit_price: Number(r.unit_price), total_price: Number(r.total_price),
         status_vi: STATUS_VI[r.status] || r.status,
         note: r.note || '',
+        eng_content: engContent,
+        eng_style:   engStyle,
+        eng_image:   '',
       });
-    });
+      _tryEmbedImage(wb, ws, engImgData, IMG_COL_IDX, dataRow.number);
+    }
     const grandTotal = rows.reduce((s, r) => s + Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id:'', date:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
+    const totalRow = ws.addRow({ id:'', date:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'', eng_content:'', eng_style:'', eng_image:'' });
     totalRow.font = { bold: true };
     totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
     const statusSlug = status && status !== 'all' ? status : 'tat-ca';
+    const xlsBuf = await wb.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="don-hang-${statusSlug}-${periodLabel}.xlsx"`);
-    await wb.xlsx.write(res);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    res.send(xlsBuf);
+  } catch (err) { console.error('[seller export]', err); res.status(500).json({ message: err.message }); }
 });
 
 
@@ -995,7 +1118,7 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
 
     const rows = await query(
       'SELECT o.id, o.created_at, s.name AS shop_name, o.full_name, o.phone, o.address, ' +
-      'o.product_id, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note ' +
+      'o.product_id, p.name AS product_name, o.variant_name, o.quantity, o.unit_price, o.total_price, o.status, o.note, o.engraving_text ' +
       'FROM orders o JOIN products p ON o.product_id=p.id JOIN shops s ON o.shop_id=s.id ' +
       'WHERE ' + where + ' ORDER BY o.created_at DESC', params);
 
@@ -1018,14 +1141,33 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
       { header: 'Tổng tiền (đ)',     key: 'total_price',  width: 16 },
       { header: 'Trạng thái',        key: 'status_vi',    width: 16 },
       { header: 'Ghi chú',           key: 'note',         width: 25 },
+      { header: 'Nội dung khắc',     key: 'eng_content',  width: 28 },
+      { header: 'Font / Màu chữ',    key: 'eng_style',    width: 22 },
+      { header: 'Ảnh cá nhân hoá',   key: 'eng_image',    width: 14 },
     ];
     const hdr = ws.getRow(1);
     hdr.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     hdr.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B5E3C' } };
     hdr.alignment = { horizontal: 'center', vertical: 'middle' };
     hdr.height = 22;
-    rows.forEach(r => {
-      ws.addRow({
+    const IMG_COL_IDX = 16;
+    for (const r of rows) {
+      let engContent = '', engStyle = '', engImgData = null;
+      if (r.engraving_text) {
+        try {
+          const eng = typeof r.engraving_text === 'string'
+            ? JSON.parse(r.engraving_text) : r.engraving_text;
+          if (eng.type === 'text') {
+            engContent = eng.content || '';
+            const fontName = (eng.font || '').replace(/'/g, '').split(',')[0].trim();
+            engStyle = [fontName, eng.color].filter(Boolean).join(' / ');
+          } else if (eng.type === 'image') {
+            engContent = 'Hình ảnh khắc';
+            engImgData = eng.data || null;
+          }
+        } catch(e) {}
+      }
+      const dataRow = ws.addRow({
         id: r.id,
         date: new Date(r.created_at).toLocaleString('vi-VN'),
         shop_name: r.shop_name,
@@ -1035,19 +1177,22 @@ app.get('/api/admin/orders/export', adminAuth, async (req, res) => {
         unit_price: Number(r.unit_price), total_price: Number(r.total_price),
         status_vi: STATUS_VI[r.status] || r.status,
         note: r.note || '',
+        eng_content: engContent, eng_style: engStyle, eng_image: '',
       });
-    });
+      _tryEmbedImage(wb, ws, engImgData, IMG_COL_IDX, dataRow.number);
+    }
     const grandTotal = rows.reduce((s, r) => s + Number(r.total_price), 0);
-    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'' });
+    const totalRow = ws.addRow({ id:'', date:'', shop_name:'', full_name:'', phone:'', address:'', product_code:'', product_name:'TỔNG CỘNG', variant_name:'', quantity: rows.reduce((s,r)=>s+r.quantity,0), unit_price:'', total_price: grandTotal, status_vi:'', note:'', eng_content:'', eng_style:'', eng_image:'' });
     totalRow.font = { bold: true };
     totalRow.getCell('total_price').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
     ['unit_price','total_price'].forEach(k => { ws.getColumn(k).numFmt = '#,##0'; });
     const statusSlug = status && status !== 'all' ? status : 'tat-ca';
     const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+    const xlsBuf = await wb.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''don-hang-admin-${statusSlug}-${periodLabel}-${dateStr}.xlsx`);
-    await wb.xlsx.write(res);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    res.send(xlsBuf);
+  } catch (err) { console.error('[admin export]', err); res.status(500).json({ message: err.message }); }
 });
 
 const VALID_TRANSITIONS = {

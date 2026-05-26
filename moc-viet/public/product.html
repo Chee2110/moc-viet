@@ -1459,6 +1459,57 @@ function renderProduct() {
             </div>
           </div>
 
+          <!-- Thuần cá nhân hoá (standalone block above order form) -->
+          ${product.engraving_area ? `
+          <!-- Engraving section -->
+          <div class="lp-engrave-section">
+            <div class="lp-engrave-label">Thuần cá nhân hoá</div>
+            <div class="engrave-tabs">
+              <button class="engrave-tab active" onclick="switchEngraveTab('text',this)">Khắc chữ</button>
+              <button class="engrave-tab" onclick="switchEngraveTab('image',this)">Logo hoặc hình ảnh</button>
+            </div>
+            <div id="engrave-pane-text">
+              <input type="text" id="engrave-input" class="lp-engrave-input"
+                     placeholder="Nhập nội dung khắc..." maxlength="60"
+                     oninput="scheduleEngraveRender()">
+              <div style="display:flex;gap:8px;align-items:stretch">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11px;font-weight:700;color:#92400e">Chọn kiểu chữ</span>
+                  <div class="ef-dropdown" id="ef-dropdown">
+                    <input type="hidden" id="engrave-font" value="'Great Vibes', cursive">
+                    <button type="button" class="ef-trigger" id="ef-trigger" onclick="efToggle()">
+                      <div class="ef-trigger-info">
+                        <span class="ef-trigger-label" id="ef-trigger-label">Great Vibes</span>
+                        <span class="ef-trigger-sample" id="ef-trigger-sample" style="font-family:'Great Vibes',cursive">Abc 123</span>
+                      </div>
+                      <span class="ef-arrow">▼</span>
+                    </button>
+                    <div class="ef-list" id="ef-list"></div>
+                  </div>
+                </div>
+                <div style="flex-shrink:0;width:90px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:11px;font-weight:700;color:#92400e">Chọn màu chữ</span>
+                  <input type="color" class="engrave-color-free" id="engrave-color-picker"
+                         style="width:90px;flex:1;min-height:38px;padding:2px 4px;border-radius:8px;border:1.5px solid #e5c97e;cursor:pointer;display:block;box-sizing:border-box"
+                         value="#6b4a12" title="Chọn màu khắc"
+                         oninput="selectEngraveColor(this.value)">
+                </div>
+              </div>
+            </div>
+            <div id="engrave-pane-image" style="display:none">
+              <label class="engrave-img-upload-label" id="engrave-img-label">
+                <span>📎 Nhấn để tải ảnh lên</span>
+                <span style="font-size:10px;color:#b45309">Logo, chữ ký, hoa văn…</span>
+                <input type="file" accept="image/*" style="display:none"
+                       onchange="handleEngraveImageUpload(this)">
+              </label>
+            </div>
+            <button class="engrave-preview-btn" onclick="openEngravePreview()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Xem trước
+            </button>
+          </div>` : ''}
+
           <!-- Order form -->
           <div class="lp-order-box" id="order-form-anchor">
             <div class="lp-order-header">
@@ -1500,56 +1551,6 @@ function renderProduct() {
               </div>
             </div>
 
-            ${product.engraving_area ? `
-            <!-- Engraving section -->
-            <div class="lp-engrave-section">
-              <div class="lp-engrave-label">✏️ Tùy chọn khắc</div>
-              <div class="engrave-tabs">
-                <button class="engrave-tab active" onclick="switchEngraveTab('text',this)">✍️ Khắc chữ</button>
-                <button class="engrave-tab" onclick="switchEngraveTab('image',this)">🖼️ Khắc hình</button>
-              </div>
-              <div id="engrave-pane-text">
-                <input type="text" id="engrave-input" class="lp-engrave-input"
-                       placeholder="Nhập nội dung khắc..." maxlength="60"
-                       oninput="scheduleEngraveRender()">
-                <div style="display:flex;gap:8px;align-items:stretch">
-                  <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-                    <span style="font-size:11px;font-weight:700;color:#92400e">Chọn kiểu chữ</span>
-                    <div class="ef-dropdown" id="ef-dropdown">
-                      <input type="hidden" id="engrave-font" value="'Great Vibes', cursive">
-                      <button type="button" class="ef-trigger" id="ef-trigger" onclick="efToggle()">
-                        <div class="ef-trigger-info">
-                          <span class="ef-trigger-label" id="ef-trigger-label">Great Vibes</span>
-                          <span class="ef-trigger-sample" id="ef-trigger-sample" style="font-family:'Great Vibes',cursive">Abc 123</span>
-                        </div>
-                        <span class="ef-arrow">▼</span>
-                      </button>
-                      <div class="ef-list" id="ef-list"></div>
-                    </div>
-                  </div>
-                  <div style="flex-shrink:0;width:90px;display:flex;flex-direction:column;gap:4px">
-                    <span style="font-size:11px;font-weight:700;color:#92400e">Chọn màu chữ</span>
-                    <input type="color" class="engrave-color-free" id="engrave-color-picker"
-                           style="width:90px;flex:1;min-height:38px;padding:2px 4px;border-radius:8px;border:1.5px solid #e5c97e;cursor:pointer;display:block;box-sizing:border-box"
-                           value="#6b4a12" title="Chọn màu khắc"
-                           oninput="selectEngraveColor(this.value)">
-                  </div>
-                </div>
-              </div>
-              <div id="engrave-pane-image" style="display:none">
-                <label class="engrave-img-upload-label" id="engrave-img-label">
-                  <span>📎 Nhấn để tải ảnh lên</span>
-                  <span style="font-size:10px;color:#b45309">Logo, chữ ký, hoa văn…</span>
-                  <input type="file" accept="image/*" style="display:none"
-                         onchange="handleEngraveImageUpload(this)">
-                </label>
-              </div>
-              <button class="engrave-preview-btn" onclick="openEngravePreview()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                Xem trước
-              </button>
-            </div>` : ''}
-
             <!-- Total -->
             <div class="lp-total-row">
               <span class="lp-total-label">Tổng thanh toán:</span>
@@ -1564,6 +1565,7 @@ function renderProduct() {
               </button>
             </div>
           </div>
+
 
           <!-- Description -->
           ${product.description ? `
@@ -1966,11 +1968,7 @@ function _engraveDrawOnCtx(ctx, bg, SIZE) {
 }
 
 function _engraveDrawBorder(ctx, ax, ay, aw, ah) {
-  ctx.save();
-  ctx.strokeStyle = 'rgba(180,83,9,0.65)';
-  ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
-  ctx.strokeRect(ax, ay, aw, ah);
-  ctx.restore();
+  // Dashed border removed
 }
 
 function renderEngraveCanvas(canvasId = 'engrave-modal-canvas') {
@@ -2074,6 +2072,71 @@ function updateTotal() {
 }
 
 // ── Submit order ───────────────────────────────────────
+async function captureEngravePreview() {
+  if (!product.engraving_area) return null;
+  const SIZE = 600;
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE; canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+  const area = product.engraving_area;
+  const ax = area.x/100*SIZE, ay = area.y/100*SIZE;
+  const aw = area.width/100*SIZE, ah = area.height/100*SIZE;
+
+  const bgImg = await new Promise(resolve => {
+    if (_engraveBgImg && _engraveBgImg.naturalWidth) return resolve(_engraveBgImg);
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => { _engraveBgImg = img; resolve(img); };
+    img.onerror = () => resolve(null);
+    img.src = product.image_url || '';
+  });
+
+  if (bgImg) ctx.drawImage(bgImg, 0, 0, SIZE, SIZE);
+  else { ctx.fillStyle = '#ede8df'; ctx.fillRect(0, 0, SIZE, SIZE); }
+
+  if (engraveMode === 'text') {
+    const text = document.getElementById('engrave-input')?.value?.trim() || '';
+    if (!text) return null;
+    const font = document.getElementById('engrave-font')?.value || 'serif';
+    ctx.save();
+    ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
+    let fs = Math.min(ah * 0.5, 40);
+    ctx.font = `bold ${fs}px ${font}`;
+    while (ctx.measureText(text).width > aw - 8 && fs > 8) { fs--; ctx.font = `bold ${fs}px ${font}`; }
+    ctx.fillStyle = engraveColor;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const words = text.split(' '); const lines = []; let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > aw - 8 && cur) { lines.push(cur); cur = w; } else cur = test;
+    }
+    if (cur) lines.push(cur);
+    const lh = fs * 1.35;
+    lines.forEach((l, i) => ctx.fillText(l, ax + aw/2, ay + ah/2 + (i - (lines.length-1)/2) * lh));
+    ctx.restore();
+  } else if (engraveMode === 'image' && engraveImageSrc) {
+    await new Promise(resolve => {
+      const eImg = new Image();
+      eImg.onload = () => {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
+        const r = eImg.width/eImg.height, ar = aw/ah;
+        let dw, dh, dx, dy;
+        if (r > ar) { dw = aw; dh = aw/r; dx = ax; dy = ay+(ah-dh)/2; }
+        else { dh = ah; dw = ah*r; dx = ax+(aw-dw)/2; dy = ay; }
+        ctx.globalAlpha = 0.82;
+        ctx.drawImage(eImg, dx, dy, dw, dh);
+        ctx.restore(); resolve();
+      };
+      eImg.onerror = resolve;
+      eImg.src = engraveImageSrc;
+    });
+  } else {
+    return null;
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
 async function submitOrder() {
   const fn   = document.getElementById('fn').value.trim();
   const ph   = document.getElementById('ph').value.trim();
@@ -2097,17 +2160,22 @@ async function submitOrder() {
       const font = document.getElementById('engrave-font')?.value || 'Times New Roman, serif';
       if (txt) engravingText = JSON.stringify({ type: 'text', content: txt, font, color: engraveColor });
     } else if (engraveMode === 'image' && engraveImageSrc) {
-      engravingText = JSON.stringify({ type: 'image', data: engraveImageSrc.slice(0, 200) + '…' });
+      engravingText = JSON.stringify({ type: 'image', data: engraveImageSrc });
     }
+  }
+
+  let engravingPreview = null;
+  if (engravingText) {
+    try { engravingPreview = await captureEngravePreview(); } catch(e) {}
   }
 
   const items = [];
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     if (selectedChipIdx < 0) return toast('Vui lòng chọn kích thước sản phẩm', 'error');
     const v = product.variants[selectedChipIdx];
-    items.push({ product_id: product.id, variant_name: v.name, quantity: qty, engraving_text: engravingText });
+    items.push({ product_id: product.id, variant_name: v.name, quantity: qty, engraving_text: engravingText, engraving_preview: engravingPreview });
   } else {
-    items.push({ product_id: product.id, quantity: qty, engraving_text: engravingText });
+    items.push({ product_id: product.id, quantity: qty, engraving_text: engravingText, engraving_preview: engravingPreview });
   }
 
   const addr = `${det}, ${dist.options[dist.selectedIndex].text}, ${prov.options[prov.selectedIndex].text}`;

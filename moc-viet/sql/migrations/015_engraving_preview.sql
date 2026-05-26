@@ -1,0 +1,1 @@
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS engraving_preview TEXT DEFAULT NULL;
