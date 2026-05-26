@@ -574,9 +574,11 @@ app.post('/api/seller/products', sellerAuth, uploadProduct.any(), async (req, re
     }
 
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
+    let engravingArea = null;
+    try { engravingArea = req.body.engraving_area ? JSON.parse(req.body.engraving_area) : null; } catch(e) {}
     const row = await queryOne(
-      'INSERT INTO products(shop_id,name,price,description,image_url,category,stock_quantity,is_hidden,variants,images,video_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
-      [shop.id, name, price, description||'', imageUrl, category||'khac', stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl]);
+      'INSERT INTO products(shop_id,name,price,description,image_url,category,stock_quantity,is_hidden,variants,images,video_url,engraving_area) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *',
+      [shop.id, name, price, description||'', imageUrl, category||'khac', stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl, engravingArea ? JSON.stringify(engravingArea) : null]);
     res.json({ success: true, product: row });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -647,10 +649,14 @@ app.put('/api/seller/products/:id', sellerAuth, uploadProduct.any(), async (req,
     }
 
     const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
+    let engravingArea = product.engraving_area ?? null;
+    if (req.body.engraving_area !== undefined) {
+      try { engravingArea = req.body.engraving_area ? JSON.parse(req.body.engraving_area) : null; } catch(e) {}
+    }
     await query(
-      'UPDATE products SET name=$1,price=$2,description=$3,image_url=$4,category=$5,stock_quantity=$6,is_hidden=$7,variants=$8,images=$9,video_url=$10,updated_at=NOW() WHERE id=$11',
+      'UPDATE products SET name=$1,price=$2,description=$3,image_url=$4,category=$5,stock_quantity=$6,is_hidden=$7,variants=$8,images=$9,video_url=$10,engraving_area=$11,updated_at=NOW() WHERE id=$12',
       [name||product.name, price, description??product.description,
-       imageUrl, category||product.category, stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl, req.params.id]);
+       imageUrl, category||product.category, stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl, engravingArea ? JSON.stringify(engravingArea) : null, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -823,9 +829,10 @@ app.post('/api/orders', optionalAuth, async (req, res) => {
       if (activeDeal) unitPrice = Math.round(unitPrice * (1 - Number(activeDeal.discount_percent) / 100));
 
       const totalPrice = unitPrice * q;
+      const engravingText = item.engraving_text || null;
       const order = await queryOne(
-        'INSERT INTO orders(user_id,product_id,shop_id,full_name,phone,address,quantity,unit_price,total_price,note,variant_name) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id',
-        [userId, pid, product.shop_id, full_name, phone, address, q, unitPrice, totalPrice, note||'', item.variant_name || null]);
+        'INSERT INTO orders(user_id,product_id,shop_id,full_name,phone,address,quantity,unit_price,total_price,note,variant_name,engraving_text) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
+        [userId, pid, product.shop_id, full_name, phone, address, q, unitPrice, totalPrice, note||'', item.variant_name || null, engravingText]);
       
       createdOrders.push({ id: order.id, total_price: totalPrice, product_name: product.name, seller_id: product.seller_id });
 

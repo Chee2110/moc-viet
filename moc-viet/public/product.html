@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sản phẩm — Mộc Việt</title>
   <link rel="stylesheet" href="/css/modern.css">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Playfair+Display:wght@700;800&family=Great+Vibes&family=Allura&family=Cinzel:wght@700&family=Montserrat:wght@600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     /* ══════════════════════════════
        PAGE WRAPPER
@@ -391,6 +391,130 @@
       40%      { transform: rotate(4deg); }
       50%      { transform: rotate(0deg); }
     }
+    /* ── Engraving section ── */
+    .lp-engrave-section {
+      border: 1.5px dashed #d97706; border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 14px; background: #fffbeb;
+    }
+    .lp-engrave-label {
+      font-size: 13px; font-weight: 800; color: #92400e; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .engrave-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .engrave-tab {
+      flex: 1; padding: 7px 6px; border-radius: 8px;
+      border: 1.5px solid #fcd34d; background: #fff;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      color: #92400e; transition: all 0.18s;
+    }
+    .engrave-tab.active { background: #d97706; color: #fff; border-color: #d97706; }
+    .lp-engrave-input {
+      width: 100%; padding: 9px 11px; border: 1.5px solid #fcd34d;
+      border-radius: 8px; font-size: 14px; background: #fff;
+      font-family: inherit; outline: none; box-sizing: border-box;
+      transition: border-color 0.18s; margin-bottom: 8px; display: block;
+    }
+    .lp-engrave-input:focus { border-color: #d97706; }
+    .lp-engrave-font {
+      width: 100%; padding: 8px 10px; border: 1.5px solid #fcd34d;
+      border-radius: 8px; font-size: 13px; background: #fff;
+      cursor: pointer; outline: none; box-sizing: border-box; color: #374151;
+    }
+    /* Custom font dropdown */
+    .ef-dropdown { position: relative; width: 100%; }
+    .ef-trigger {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 38px; padding: 0 10px; box-sizing: border-box;
+      border: 1.5px solid #fcd34d; border-radius: 8px;
+      background: #fff; cursor: pointer; outline: none; width: 100%;
+      transition: border-color 0.18s; gap: 8px;
+    }
+    .ef-trigger:hover, .ef-trigger.open { border-color: #d97706; }
+    .ef-trigger-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; text-align: left; }
+    .ef-trigger-label { font-size: 10px; color: #b45309; font-weight: 700; line-height: 1; }
+    .ef-trigger-sample { font-size: 15px; color: #6b4a12; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .ef-arrow { font-size: 9px; color: #b45309; transition: transform 0.18s; flex-shrink: 0; }
+    .ef-trigger.open .ef-arrow { transform: rotate(180deg); }
+    .ef-list {
+      display: none; position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+      background: #fff; border: 1.5px solid #fcd34d; border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.12); z-index: 200;
+      overflow: hidden; max-height: 260px; overflow-y: auto;
+    }
+    .ef-list.open { display: block; }
+    .ef-group-label {
+      padding: 5px 12px 2px; font-size: 10px; font-weight: 800;
+      color: #b45309; text-transform: uppercase; letter-spacing: 0.4px;
+      background: #fef9ee; border-bottom: 1px solid #fef3c7;
+    }
+    .ef-option {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 14px; cursor: pointer; gap: 10px;
+      border-bottom: 1px solid #fef3c7; transition: background 0.12s;
+    }
+    .ef-option:last-child { border-bottom: none; }
+    .ef-option:hover { background: #fef3c7; }
+    .ef-option.selected { background: #fde68a; }
+    .ef-option-name { font-size: 12px; color: #92400e; font-weight: 600; white-space: nowrap; }
+    .ef-option-sample { font-size: 19px; color: #6b4a12; }
+    .engrave-img-upload-label {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 1.5px dashed #fcd34d; border-radius: 8px; padding: 16px 10px;
+      cursor: pointer; text-align: center; font-size: 13px; color: #92400e;
+      background: #fff; transition: border-color 0.18s; gap: 6px; min-height: 70px;
+    }
+    .engrave-img-upload-label:hover { border-color: #d97706; background: #fffde7; }
+    .lp-engrave-hint { font-size: 11px; color: #b45309; margin-top: 8px; }
+    .engrave-proc-spinner {
+      width: 26px; height: 26px; border: 3px solid #fcd34d;
+      border-top-color: #d97706; border-radius: 50%;
+      animation: engraveSpin 0.75s linear infinite; flex-shrink: 0;
+    }
+    @keyframes engraveSpin { to { transform: rotate(360deg); } }
+    .engrave-color-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 10px;
+    }
+    .engrave-color-label { font-size: 12px; font-weight: 700; color: #92400e; white-space: nowrap; }
+    .engrave-color-free {
+      flex: 1; height: 38px; border: 1.5px solid #fcd34d; border-radius: 8px;
+      cursor: pointer; padding: 2px 4px; background: #fff;
+    }
+    .engrave-preview-btn {
+      width: 100%; margin-top: 10px; padding: 10px;
+      background: #d97706; color: #fff; border: none; border-radius: 9px;
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: background 0.18s;
+    }
+    .engrave-preview-btn:hover { background: #b45309; }
+    .engrave-preview-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    /* Engraving preview modal */
+    .engrave-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+    }
+    .engrave-modal-overlay.open { display: flex; }
+    .engrave-modal-box {
+      background: #fff; border-radius: 16px; padding: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 92vw;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .engrave-modal-title {
+      font-size: 15px; font-weight: 800; color: #92400e;
+      display: flex; align-items: center; gap: 8px; align-self: flex-start;
+    }
+    .engrave-modal-canvas {
+      width: min(580px, 88vw); height: min(580px, 88vw);
+      border-radius: 12px; display: block;
+      border: 2px solid #fcd34d; background: #ede8df;
+    }
+    .engrave-modal-close {
+      padding: 10px 28px; background: #374151; color: #fff;
+      border: none; border-radius: 9px; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: background 0.18s;
+    }
+    .engrave-modal-close:hover { background: #111827; }
+
     /* Chip row */
     .size-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .size-chip {
@@ -1376,6 +1500,56 @@ function renderProduct() {
               </div>
             </div>
 
+            ${product.engraving_area ? `
+            <!-- Engraving section -->
+            <div class="lp-engrave-section">
+              <div class="lp-engrave-label">✏️ Tùy chọn khắc</div>
+              <div class="engrave-tabs">
+                <button class="engrave-tab active" onclick="switchEngraveTab('text',this)">✍️ Khắc chữ</button>
+                <button class="engrave-tab" onclick="switchEngraveTab('image',this)">🖼️ Khắc hình</button>
+              </div>
+              <div id="engrave-pane-text">
+                <input type="text" id="engrave-input" class="lp-engrave-input"
+                       placeholder="Nhập nội dung khắc..." maxlength="60"
+                       oninput="scheduleEngraveRender()">
+                <div style="display:flex;gap:8px;align-items:stretch">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-size:11px;font-weight:700;color:#92400e">Chọn kiểu chữ</span>
+                    <div class="ef-dropdown" id="ef-dropdown">
+                      <input type="hidden" id="engrave-font" value="'Great Vibes', cursive">
+                      <button type="button" class="ef-trigger" id="ef-trigger" onclick="efToggle()">
+                        <div class="ef-trigger-info">
+                          <span class="ef-trigger-label" id="ef-trigger-label">Great Vibes</span>
+                          <span class="ef-trigger-sample" id="ef-trigger-sample" style="font-family:'Great Vibes',cursive">Abc 123</span>
+                        </div>
+                        <span class="ef-arrow">▼</span>
+                      </button>
+                      <div class="ef-list" id="ef-list"></div>
+                    </div>
+                  </div>
+                  <div style="flex-shrink:0;width:90px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-size:11px;font-weight:700;color:#92400e">Chọn màu chữ</span>
+                    <input type="color" class="engrave-color-free" id="engrave-color-picker"
+                           style="width:90px;flex:1;min-height:38px;padding:2px 4px;border-radius:8px;border:1.5px solid #e5c97e;cursor:pointer;display:block;box-sizing:border-box"
+                           value="#6b4a12" title="Chọn màu khắc"
+                           oninput="selectEngraveColor(this.value)">
+                  </div>
+                </div>
+              </div>
+              <div id="engrave-pane-image" style="display:none">
+                <label class="engrave-img-upload-label" id="engrave-img-label">
+                  <span>📎 Nhấn để tải ảnh lên</span>
+                  <span style="font-size:10px;color:#b45309">Logo, chữ ký, hoa văn…</span>
+                  <input type="file" accept="image/*" style="display:none"
+                         onchange="handleEngraveImageUpload(this)">
+                </label>
+              </div>
+              <button class="engrave-preview-btn" onclick="openEngravePreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Xem trước
+              </button>
+            </div>` : ''}
+
             <!-- Total -->
             <div class="lp-total-row">
               <span class="lp-total-label">Tổng thanh toán:</span>
@@ -1412,7 +1586,17 @@ function renderProduct() {
 
         </div><!-- end .lp-right -->
       </div><!-- end .lp-split -->
-    </div><!-- end .lp-page -->`;
+    </div><!-- end .lp-page -->
+
+    <!-- Engraving preview modal -->
+    ${product.engraving_area ? `
+    <div class="engrave-modal-overlay" id="engrave-modal-overlay" onclick="closeEngravePreview(event)">
+      <div class="engrave-modal-box" onclick="event.stopPropagation()">
+        <div class="engrave-modal-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Xem trước khắc chữ</div>
+        <canvas id="engrave-modal-canvas" class="engrave-modal-canvas" width="600" height="600"></canvas>
+        <button class="engrave-modal-close" onclick="closeEngraveModal()">Đóng</button>
+      </div>
+    </div>` : ''}`;
 
 
   initVietnamLoc('co-province', 'co-district');
@@ -1420,6 +1604,7 @@ function renderProduct() {
   updateTotal();
   initCarouselSwipe();
   goToSlide(0);
+  if (product.engraving_area) initEngraveFontDropdown();
   if (getUser()) {
     const voBtn = document.getElementById('view-orders-btn');
     if (voBtn) voBtn.style.display = 'inline-flex';
@@ -1503,6 +1688,327 @@ function initCarouselSwipe() {
   }, { passive: true });
 }
 
+// ── Custom font dropdown ──────────────────────────────
+const EF_FONTS = [
+  { group: 'Phù hợp làm quà tặng', fonts: [
+    { label: 'Great Vibes',      value: "'Great Vibes', cursive" },
+    { label: 'Allura',           value: "'Allura', cursive" },
+  ]},
+  { group: 'Phong cách sang trọng', fonts: [
+    { label: 'Playfair Display', value: "'Playfair Display', serif" },
+    { label: 'Cinzel',           value: "'Cinzel', serif" },
+  ]},
+  { group: 'Phong cách cơ bản', fonts: [
+    { label: 'Montserrat',       value: "'Montserrat', sans-serif" },
+    { label: 'Roboto Mono',      value: "'Roboto Mono', monospace" },
+  ]},
+];
+
+function efToggle() {
+  const trigger = document.getElementById('ef-trigger');
+  const list    = document.getElementById('ef-list');
+  if (!trigger || !list) return;
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open', !isOpen);
+  trigger.classList.toggle('open', !isOpen);
+}
+
+function efSelect(value, label) {
+  const hiddenInput = document.getElementById('engrave-font');
+  if (hiddenInput) hiddenInput.value = value;
+  const trigLabel  = document.getElementById('ef-trigger-label');
+  const trigSample = document.getElementById('ef-trigger-sample');
+  if (trigLabel)  trigLabel.textContent = label;
+  if (trigSample) { trigSample.textContent = 'Abc 123'; trigSample.style.fontFamily = value; }
+  document.getElementById('ef-list')?.classList.remove('open');
+  document.getElementById('ef-trigger')?.classList.remove('open');
+  document.querySelectorAll('.ef-option').forEach(el =>
+    el.classList.toggle('selected', el.dataset.value === value)
+  );
+  scheduleEngraveRender();
+}
+
+function initEngraveFontDropdown() {
+  const list = document.getElementById('ef-list');
+  if (!list) return;
+  list.innerHTML = '';
+  EF_FONTS.forEach(group => {
+    const gl = document.createElement('div');
+    gl.className = 'ef-group-label';
+    gl.textContent = group.group;
+    list.appendChild(gl);
+    group.fonts.forEach((f, i) => {
+      const opt = document.createElement('div');
+      opt.className = 'ef-option' + (group === EF_FONTS[0] && i === 0 ? ' selected' : '');
+      opt.dataset.value = f.value;
+      const nameEl = document.createElement('span');
+      nameEl.className = 'ef-option-name';
+      nameEl.textContent = f.label;
+      const sampleEl = document.createElement('span');
+      sampleEl.className = 'ef-option-sample';
+      sampleEl.textContent = 'Abc 123';
+      sampleEl.style.fontFamily = f.value;
+      opt.appendChild(nameEl);
+      opt.appendChild(sampleEl);
+      opt.addEventListener('click', () => efSelect(f.value, f.label));
+      list.appendChild(opt);
+    });
+  });
+  document.addEventListener('click', e => {
+    const dd = document.getElementById('ef-dropdown');
+    if (dd && !dd.contains(e.target)) {
+      document.getElementById('ef-list')?.classList.remove('open');
+      document.getElementById('ef-trigger')?.classList.remove('open');
+    }
+  });
+}
+
+// ── Engraving preview (canvas) ────────────────────────
+let engraveMode      = 'text';
+let engraveColor     = '#6b4a12';
+let engraveImageSrc  = null;
+let _engraveBgImg    = null;
+let _engraveRenderTimer = null;
+
+function selectEngraveColor(color) {
+  engraveColor = color;
+  scheduleEngraveRender();
+}
+
+function switchEngraveTab(mode, btn) {
+  engraveMode = mode;
+  document.querySelectorAll('.engrave-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('engrave-pane-text').style.display  = mode === 'text'  ? 'block' : 'none';
+  document.getElementById('engrave-pane-image').style.display = mode === 'image' ? 'block' : 'none';
+  renderEngraveCanvas();
+}
+
+function scheduleEngraveRender() {
+  clearTimeout(_engraveRenderTimer);
+  _engraveRenderTimer = setTimeout(renderEngraveCanvas, 150);
+}
+
+// ── Canvas background removal + sharpen ──────────────
+function _sharpenImageData(imageData) {
+  const src = imageData.data, w = imageData.width, h = imageData.height;
+  const out = new Uint8ClampedArray(src);
+  const k = [0,-1,0, -1,5,-1, 0,-1,0];
+  for (let y = 1; y < h-1; y++) {
+    for (let x = 1; x < w-1; x++) {
+      const p = (y*w+x)*4;
+      if (src[p+3] === 0) continue;
+      for (let c = 0; c < 3; c++) {
+        let v = 0;
+        for (let ky = -1; ky <= 1; ky++)
+          for (let kx = -1; kx <= 1; kx++)
+            v += src[((y+ky)*w+(x+kx))*4+c] * k[(ky+1)*3+(kx+1)];
+        out[p+c] = Math.max(0, Math.min(255, v));
+      }
+    }
+  }
+  return new ImageData(out, w, h);
+}
+
+function _removeBackgroundCanvas(imageData, tolerance) {
+  const d = imageData.data, W = imageData.width, H = imageData.height;
+
+  // Sample background color from 4 corners + mid-edges
+  const samples = [[0,0],[W-1,0],[0,H-1],[W-1,H-1],
+                   [Math.floor(W/2),0],[Math.floor(W/2),H-1],
+                   [0,Math.floor(H/2)],[W-1,Math.floor(H/2)]];
+  let rS=0,gS=0,bS=0;
+  for(const [cx,cy] of samples){ const i=(cy*W+cx)*4; rS+=d[i]; gS+=d[i+1]; bS+=d[i+2]; }
+  const bgR=rS/samples.length, bgG=gS/samples.length, bgB=bS/samples.length;
+
+  const isMatch = (x,y) => {
+    if(x<0||x>=W||y<0||y>=H) return false;
+    const i=(y*W+x)*4;
+    if(d[i+3]===0) return true;
+    const dr=d[i]-bgR, dg=d[i+1]-bgG, db=d[i+2]-bgB;
+    return Math.sqrt(dr*dr+dg*dg+db*db) <= tolerance;
+  };
+
+  const visited = new Uint8Array(W*H);
+  const qx = new Int16Array(W*H), qy = new Int16Array(W*H);
+  let head=0, tail=0;
+
+  const enq = (x,y) => {
+    const p=y*W+x;
+    if(x<0||x>=W||y<0||y>=H||visited[p]) return;
+    if(!isMatch(x,y)) return;
+    visited[p]=1; d[p*4+3]=0;
+    qx[tail]=x; qy[tail]=y; tail++;
+  };
+
+  for(let x=0;x<W;x++){ enq(x,0); enq(x,H-1); }
+  for(let y=1;y<H-1;y++){ enq(0,y); enq(W-1,y); }
+
+  while(head<tail){
+    const x=qx[head], y=qy[head]; head++;
+    enq(x-1,y); enq(x+1,y); enq(x,y-1); enq(x,y+1);
+  }
+
+  // Feather edges: smooth boundary pixels
+  for(let y=1;y<H-1;y++){
+    for(let x=1;x<W-1;x++){
+      const p=y*W+x;
+      if(visited[p]) continue;
+      const nb = (visited[(y-1)*W+x]?1:0)+(visited[(y+1)*W+x]?1:0)
+               + (visited[y*W+x-1]?1:0)+(visited[y*W+x+1]?1:0);
+      if(nb>0) d[p*4+3]=Math.round(d[p*4+3]*(1-nb*0.22));
+    }
+  }
+  return imageData;
+}
+
+const _FILE_INPUT_HTML = `<input type="file" accept="image/*" style="display:none" onchange="handleEngraveImageUpload(this)">`;
+
+function handleEngraveImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const label = document.getElementById('engrave-img-label');
+
+  if (label) label.innerHTML = `
+    <div class="engrave-proc-spinner"></div>
+    <span style="font-size:12px;color:#b45309;font-weight:700">Đang xử lý ảnh...</span>
+    ${_FILE_INPUT_HTML}`;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if(w>MAX||h>MAX){ const s=MAX/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const imgData = ctx.getImageData(0, 0, w, h);
+      _removeBackgroundCanvas(imgData, 38);
+      ctx.putImageData(_sharpenImageData(imgData), 0, 0);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      engraveImageSrc = dataUrl;
+
+      if (label) label.innerHTML = `
+        <div style="background:repeating-conic-gradient(#e5e7eb 0% 25%,#fff 0% 50%) 0 0/14px 14px;border-radius:6px;line-height:0">
+          <img src="${dataUrl}" style="max-height:72px;max-width:100%;border-radius:6px;object-fit:contain">
+        </div>
+        <span style="font-size:10px;color:#047857;font-weight:700">✓ Đã xóa phông &amp; làm nét</span>
+        <span style="font-size:10px;color:#b45309">Nhấn để đổi ảnh</span>
+        ${_FILE_INPUT_HTML}`;
+      renderEngraveCanvas();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function _engraveDrawOnCtx(ctx, bg, SIZE) {
+  const area = product.engraving_area;
+  if (!area) return;
+  // Draw background image
+  if (bg && bg.naturalWidth) ctx.drawImage(bg, 0, 0, SIZE, SIZE);
+  else { ctx.fillStyle = '#ede8df'; ctx.fillRect(0, 0, SIZE, SIZE); }
+
+  const ax = area.x / 100 * SIZE, ay = area.y / 100 * SIZE;
+  const aw = area.width / 100 * SIZE, ah = area.height / 100 * SIZE;
+
+  if (engraveMode === 'text') {
+    const text = document.getElementById('engrave-input')?.value?.trim() || '';
+    if (text) {
+      const font = document.getElementById('engrave-font')?.value || 'Times New Roman, serif';
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
+      // measure font size to fit
+      let fs = Math.min(ah * 0.5, 40);
+      ctx.font = `bold ${fs}px ${font}`;
+      while (ctx.measureText(text).width > aw - 8 && fs > 8) {
+        fs -= 1; ctx.font = `bold ${fs}px ${font}`;
+      }
+      ctx.fillStyle = engraveColor;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      // word-wrap
+      const words = text.split(' ');
+      const lines = []; let cur = '';
+      for (const w of words) {
+        const test = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(test).width > aw - 8 && cur) { lines.push(cur); cur = w; }
+        else cur = test;
+      }
+      if (cur) lines.push(cur);
+      const lh = fs * 1.35;
+      lines.forEach((l, i) => ctx.fillText(l, ax + aw/2, ay + ah/2 + (i - (lines.length-1)/2) * lh));
+      ctx.restore();
+    }
+  } else if (engraveMode === 'image' && engraveImageSrc) {
+    const eImg = new Image();
+    eImg.onload = () => {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
+      const r = eImg.width / eImg.height, ar = aw / ah;
+      let dw, dh, dx, dy;
+      if (r > ar) { dw = aw; dh = aw/r; dx = ax; dy = ay + (ah-dh)/2; }
+      else        { dh = ah; dw = ah*r; dx = ax + (aw-dw)/2; dy = ay; }
+      ctx.globalAlpha = 0.82;
+      ctx.drawImage(eImg, dx, dy, dw, dh);
+      ctx.restore();
+      // redraw border after async draw
+      _engraveDrawBorder(ctx, ax, ay, aw, ah);
+    };
+    eImg.src = engraveImageSrc;
+  }
+  _engraveDrawBorder(ctx, ax, ay, aw, ah);
+}
+
+function _engraveDrawBorder(ctx, ax, ay, aw, ah) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(180,83,9,0.65)';
+  ctx.lineWidth = 1.5; ctx.setLineDash([5, 3]);
+  ctx.strokeRect(ax, ay, aw, ah);
+  ctx.restore();
+}
+
+function renderEngraveCanvas(canvasId = 'engrave-modal-canvas') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !product.engraving_area) return;
+  const SIZE = 600;
+  canvas.width = SIZE; canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+  const firstSlide = allSlides.find(s => s.type !== 'video');
+  const imgUrl = firstSlide?.url;
+  if (imgUrl && _engraveBgImg?.complete && _engraveBgImg?.naturalWidth) {
+    _engraveDrawOnCtx(ctx, _engraveBgImg, SIZE);
+  } else if (imgUrl) {
+    const bg = new Image();
+    bg.crossOrigin = 'anonymous';
+    bg.onload  = () => { _engraveBgImg = bg; _engraveDrawOnCtx(ctx, bg, SIZE); };
+    bg.onerror = () => _engraveDrawOnCtx(ctx, null, SIZE);
+    bg.src = imgUrl;
+  } else {
+    _engraveDrawOnCtx(ctx, null, SIZE);
+  }
+}
+
+function openEngravePreview() {
+  const overlay = document.getElementById('engrave-modal-overlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  renderEngraveCanvas('engrave-modal-canvas');
+}
+
+function closeEngravePreview(e) {
+  if (e && e.target !== document.getElementById('engrave-modal-overlay')) return;
+  document.getElementById('engrave-modal-overlay')?.classList.remove('open');
+}
+function closeEngraveModal() {
+  document.getElementById('engrave-modal-overlay')?.classList.remove('open');
+}
+
 // ── Chip selection ─────────────────────────────────────
 let selectedChipIdx = -1;
 
@@ -1584,13 +2090,24 @@ async function submitOrder() {
   const note = document.getElementById('order-note')?.value.trim() || '';
   const qty  = parseInt(document.getElementById('v-qty-main')?.value || 1);
 
+  let engravingText = null;
+  if (product.engraving_area) {
+    if (engraveMode === 'text') {
+      const txt  = document.getElementById('engrave-input')?.value?.trim() || '';
+      const font = document.getElementById('engrave-font')?.value || 'Times New Roman, serif';
+      if (txt) engravingText = JSON.stringify({ type: 'text', content: txt, font, color: engraveColor });
+    } else if (engraveMode === 'image' && engraveImageSrc) {
+      engravingText = JSON.stringify({ type: 'image', data: engraveImageSrc.slice(0, 200) + '…' });
+    }
+  }
+
   const items = [];
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     if (selectedChipIdx < 0) return toast('Vui lòng chọn kích thước sản phẩm', 'error');
     const v = product.variants[selectedChipIdx];
-    items.push({ product_id: product.id, variant_name: v.name, quantity: qty });
+    items.push({ product_id: product.id, variant_name: v.name, quantity: qty, engraving_text: engravingText });
   } else {
-    items.push({ product_id: product.id, quantity: qty });
+    items.push({ product_id: product.id, quantity: qty, engraving_text: engravingText });
   }
 
   const addr = `${det}, ${dist.options[dist.selectedIndex].text}, ${prov.options[prov.selectedIndex].text}`;

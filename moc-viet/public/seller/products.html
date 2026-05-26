@@ -57,6 +57,36 @@
       transition: var(--transition); margin-top: 12px;
     }
     .add-variant-btn:hover { background: rgba(var(--primary-rgb),.05); transform: translateY(-2px); }
+    /* Engraving area selector */
+    .engrave-toggle-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .engrave-toggle-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--primary); cursor:pointer; }
+    .engrave-toggle-row label { font-size:13px; font-weight:700; cursor:pointer; color:var(--text); }
+    .engrave-canvas-wrap {
+      position:relative; display:none; border:2px dashed var(--border-color);
+      border-radius:10px; overflow:hidden; cursor:crosshair; user-select:none;
+      background:#f9fafb; margin-bottom:8px;
+    }
+    .engrave-canvas-wrap.active { display:block; }
+    .engrave-canvas-wrap { aspect-ratio:1/1; }
+    .engrave-canvas-wrap img { display:block; width:100%; height:100%; object-fit:cover; pointer-events:none; }
+    .engrave-canvas-wrap .no-img-hint {
+      padding:32px; text-align:center; color:var(--text-muted); font-size:13px;
+    }
+    .engrave-sel-rect {
+      position:absolute; border:2px dashed #dc2626;
+      background:rgba(220,38,38,0.12); pointer-events:none; display:none;
+    }
+    .engrave-sel-rect .engrave-sel-label {
+      position:absolute; top:-20px; left:0; background:#dc2626; color:#fff;
+      font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap;
+    }
+    .engrave-hint { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    .engrave-clear-btn {
+      display:none; background:#fff; border:1px solid #fca5a5; color:#dc2626;
+      font-size:12px; font-weight:700; padding:5px 12px; border-radius:8px;
+      cursor:pointer; margin-top:6px; transition:var(--transition);
+    }
+    .engrave-clear-btn:hover { background:#fee2e2; }
     .section-divider {
       font-weight: 800; color: var(--primary); font-size: 12px;
       text-transform: uppercase; letter-spacing: 1.2px;
@@ -246,6 +276,23 @@
             <textarea id="p-desc" class="form-control" rows="3" placeholder="Mô tả chất liệu, kích thước, công dụng..."></textarea>
           </div>
 
+          <div class="section-divider">Vùng khắc chữ</div>
+          <div class="form-group">
+            <div class="engrave-toggle-row">
+              <input type="checkbox" id="engrave-enable" onchange="toggleEngraveSection()">
+              <label for="engrave-enable">Cho phép khắc chữ lên sản phẩm này</label>
+            </div>
+            <div class="engrave-canvas-wrap" id="engrave-canvas-wrap">
+              <div class="no-img-hint" id="engrave-no-img">Thêm ảnh sản phẩm để chọn vùng khắc</div>
+              <img id="engrave-preview-img" src="" alt="" style="display:none">
+              <div class="engrave-sel-rect" id="engrave-sel-rect">
+                <span class="engrave-sel-label">Vùng khắc</span>
+              </div>
+            </div>
+            <div class="engrave-hint" id="engrave-hint" style="display:none">Kéo chuột trên ảnh để chọn vùng khắc chữ</div>
+            <button type="button" class="engrave-clear-btn" id="engrave-clear-btn" onclick="clearEngraveArea()">✕ Xóa vùng khắc</button>
+          </div>
+
           <div class="section-divider">Phân loại sản phẩm <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(tên, giá, số lượng cho từng loại)</span></div>
 
           <div class="variant-table-head">
@@ -331,6 +378,109 @@ let products = [];
 let editId = null;
 let variantList = [];
 let sellerShopName = 'Cửa hàng của bạn';
+
+// ── Engraving area ────────────────────────────────────
+let engravingArea = null; // {x,y,width,height} in % of container
+
+function toggleEngraveSection() {
+  const enabled = document.getElementById('engrave-enable').checked;
+  const wrap = document.getElementById('engrave-canvas-wrap');
+  const hint = document.getElementById('engrave-hint');
+  wrap.classList.toggle('active', enabled);
+  hint.style.display = enabled ? 'block' : 'none';
+  if (!enabled) { engravingArea = null; updateEngraveClearBtn(); }
+  else refreshEngraveImage();
+}
+
+function refreshEngraveImage() {
+  const img = document.getElementById('engrave-preview-img');
+  const noImg = document.getElementById('engrave-no-img');
+  const firstImg = productMedia.find(m => m.type === 'image');
+  if (firstImg && (firstImg._preview || firstImg._url)) {
+    img.src = firstImg._preview || firstImg._url;
+    img.style.display = 'block';
+    noImg.style.display = 'none';
+    initEngraveDrawing();
+  } else {
+    img.style.display = 'none';
+    noImg.style.display = 'block';
+  }
+  renderEngraveRect();
+}
+
+function renderEngraveRect() {
+  const rect = document.getElementById('engrave-sel-rect');
+  if (!rect) return;
+  if (engravingArea) {
+    rect.style.display = 'block';
+    rect.style.left    = engravingArea.x + '%';
+    rect.style.top     = engravingArea.y + '%';
+    rect.style.width   = engravingArea.width + '%';
+    rect.style.height  = engravingArea.height + '%';
+  } else {
+    rect.style.display = 'none';
+  }
+  updateEngraveClearBtn();
+}
+
+function updateEngraveClearBtn() {
+  const btn = document.getElementById('engrave-clear-btn');
+  if (btn) btn.style.display = engravingArea ? 'inline-block' : 'none';
+}
+
+function clearEngraveArea() {
+  engravingArea = null;
+  renderEngraveRect();
+}
+
+let _engraveListening = false;
+function initEngraveDrawing() {
+  if (_engraveListening) return;
+  _engraveListening = true;
+  const wrap = document.getElementById('engrave-canvas-wrap');
+  let dragging = false, sx = 0, sy = 0;
+
+  function getPct(e) {
+    const r = wrap.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.max(0, Math.min(100, (clientX - r.left) / r.width  * 100)),
+      y: Math.max(0, Math.min(100, (clientY - r.top)  / r.height * 100))
+    };
+  }
+
+  function onStart(e) {
+    const p = getPct(e); sx = p.x; sy = p.y; dragging = true;
+    engravingArea = { x: sx, y: sy, width: 0, height: 0 };
+    renderEngraveRect();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const p = getPct(e);
+    engravingArea = {
+      x: Math.min(sx, p.x), y: Math.min(sy, p.y),
+      width: Math.abs(p.x - sx), height: Math.abs(p.y - sy)
+    };
+    renderEngraveRect();
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    if (engravingArea && (engravingArea.width < 3 || engravingArea.height < 3)) {
+      engravingArea = null;
+      renderEngraveRect();
+    }
+  }
+
+  wrap.addEventListener('mousedown',  onStart);
+  wrap.addEventListener('touchstart', onStart, { passive: true });
+  document.addEventListener('mousemove',  onMove);
+  document.addEventListener('touchmove',  onMove, { passive: false });
+  document.addEventListener('mouseup',    onEnd);
+  document.addEventListener('touchend',   onEnd);
+}
 
 // Load shop name once for preview
 (async () => {
@@ -526,6 +676,10 @@ function openModal(id = null) {
     } else {
       variantList = [{ name: '', sku: '', price: String(p.price||''), quantity: p.stock_quantity||1, image_url: '', _file: null, _preview: null }];
     }
+    // Load engraving area
+    engravingArea = p.engraving_area || null;
+    const engraveChk = document.getElementById('engrave-enable');
+    if (engraveChk) engraveChk.checked = !!engravingArea;
   } else {
     document.getElementById('p-name').value = '';
     loadCategorySelect(categoryList[0]?.value || 'khac');
@@ -533,12 +687,17 @@ function openModal(id = null) {
     document.getElementById('p-desc').value     = '';
     productMedia = [];
     variantList = [{ name: '', sku: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null, _pos: '50% 50%', _zoom: 100 }];
+    engravingArea = null;
+    const engraveChk = document.getElementById('engrave-enable');
+    if (engraveChk) engraveChk.checked = false;
   }
 
   renderVariants();
   renderImgSlots();
   initImgDropZone();
   updateLivePreview();
+  _engraveListening = false;
+  toggleEngraveSection();
   document.getElementById('product-modal').classList.add('open');
 }
 
@@ -586,6 +745,8 @@ function renderImgSlots() {
     slots.push(`<div class="img-slot" onclick="document.getElementById('p-video-input').click()" title="Thêm video (tối đa 10 phút)" style="flex-direction:column;gap:4px"><span style="font-size:22px;pointer-events:none">🎬</span><span style="font-size:10px;pointer-events:none;color:var(--text-muted)">+ Video</span></div>`);
 
   container.innerHTML = slots.join('');
+  // Refresh engrave preview whenever images change
+  if (document.getElementById('engrave-enable')?.checked) refreshEngraveImage();
 }
 
 function slotDragStart(e, idx) {
@@ -842,6 +1003,7 @@ async function saveProduct() {
 
   const variantsPayload = variantList.map(({ name, sku, price, quantity, image_url }) => ({ name, sku: sku||'', price, quantity, image_url }));
   fd.append('variants', JSON.stringify(variantsPayload));
+  fd.append('engraving_area', engravingArea ? JSON.stringify(engravingArea) : '');
 
   // Extract images and video from unified productMedia
   const images = productMedia.filter(m => m.type === 'image');
