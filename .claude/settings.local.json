@@ -1,31 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)",
-      "Bash(node gen-favicon.js)",
-      "Bash(npm ls *)",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\moc-viet\\\\public\\\\icons\\\\\" | Where-Object { $_.Name -match \"cart|bag|shop|buy\" } | Select-Object Name)",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\moc-viet\" -Recurse -Force | Where-Object { $_.PSIsContainer -eq $false } | Select-Object -ExpandProperty FullName | Sort-Object)",
-      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\moc-viet\\\\public\" -Recurse -Force | Where-Object { $_.PSIsContainer -eq $false } | Select-Object -ExpandProperty FullName | Sort-Object)",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\moc-viet\" -Force)",
-      "Bash(git push *)",
-      "PowerShell(Write-Output $pwd)",
-      "Bash(node -e ' *)",
-      "Bash(cat package.json)",
-      "Bash(cat .env)",
-      "Bash(cat Procfile)",
-      "Bash(cat render.yaml)",
-      "Bash(cat railway.json)",
-      "Bash(dir \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\moc-viet\\\\sql\" /b)",
-      "Bash(npm --version)",
-      "Bash(xargs grep -l -i \"excel\\\\|xlsx\\\\|export\\\\|báo cáo\")",
-      "Bash(node -e \"require\\('./server.js'\\)\")",
-      "Bash(node --check \"c:/Users/Admin/OneDrive/Desktop/MOC VIET/moc-viet/server.js\")",
-      "Bash(node -e \"const E=require\\('exceljs'\\); const wb=new E.Workbook\\(\\); const ws=wb.addWorksheet\\('t'\\); ws.columns=[{header:'A',key:'a',width:10}]; ws.addRow\\({a:1}\\); console.log\\('ExcelJS OK:', E.version||'unknown'\\);\")",
-      "Bash(node -e \"const E=require\\('exceljs'\\); console.log\\('ExcelJS version loaded OK'\\);\")",
-      "Bash(node -e \"require\\('archiver'\\); console.log\\('archiver OK'\\)\")",
-      "Bash(node -e \"const a = require\\('archiver'\\); console.log\\('type:', typeof a\\); console.log\\('keys:', Object.keys\\(a\\).slice\\(0,5\\)\\);\")",
-      "Bash(node -e \"const Z=require\\('adm-zip'\\); console.log\\('adm-zip OK:', typeof Z\\);\")"
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\.claude\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Admin\\OneDrive\\Desktop\\MOC VIET\\.claude"
     ]
   }
 }
