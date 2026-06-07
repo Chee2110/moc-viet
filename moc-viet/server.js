@@ -1415,17 +1415,79 @@ app.get('/api/admin/products/:id', adminAuth, async (req, res) => {
     res.json(product);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
-app.put('/api/admin/products/:id', adminAuth, async (req, res) => {
+app.put('/api/admin/products/:id', adminAuth, uploadProduct.any(), async (req, res) => {
   try {
     const product = await queryOne('SELECT * FROM products WHERE id=$1 AND is_deleted=false', [req.params.id]);
     if (!product) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
-    const { name, description, category, price, stock_quantity, is_hidden } = req.body;
-    const isHidden = is_hidden === true || is_hidden === 'true' || is_hidden === '1';
+    const { name, description, category } = req.body;
+
+    let variants = [];
+    try { variants = JSON.parse(req.body.variants || '[]'); } catch(e) {}
+
+    const files = req.files || [];
+    let imageMeta = [];
+    try { imageMeta = JSON.parse(req.body.image_positions || '[]'); } catch(e) {}
+    const images = [];
+    for (let i = 0; i < 5; i++) {
+      const f = files.find(f => f.fieldname === `product_image_${i}`);
+      const meta = imageMeta[i] || { pos: '50% 50%', zoom: 100, existing_url: '' };
+      if (f) {
+        images.push({ url: '/uploads/' + f.filename, pos: meta.pos, zoom: meta.zoom });
+      } else if (meta.existing_url) {
+        images.push({ url: meta.existing_url, pos: meta.pos, zoom: meta.zoom });
+      }
+    }
+    if (!images.length) {
+      const legacyFile = files.find(f => f.fieldname === 'image');
+      if (legacyFile) {
+        images.push({ url: '/uploads/' + legacyFile.filename, pos: '50% 50%', zoom: 100 });
+      } else {
+        const existing = Array.isArray(product.images) ? product.images : (product.image_url ? [product.image_url] : []);
+        existing.forEach(item => images.push(typeof item === 'string' ? { url: item, pos: '50% 50%', zoom: 100 } : item));
+      }
+    }
+    const imageUrl = images[0]?.url || product.image_url;
+
+    for (const file of files) {
+      if (file.fieldname.startsWith('variant_image_')) {
+        const idx = parseInt(file.fieldname.replace('variant_image_', ''));
+        if (variants[idx]) variants[idx].image_url = '/uploads/' + file.filename;
+      }
+    }
+
+    let price, stock;
+    if (variants.length > 0) {
+      price = Math.min(...variants.map(v => parseFloat(v.price) || 0));
+      stock = variants.reduce((s, v) => s + (parseInt(v.quantity) || 0), 0);
+    } else {
+      price = parseFloat(req.body.price) || product.price;
+      stock = parseInt(req.body.stock_quantity) || product.stock_quantity;
+    }
+
+    const videoFile = files.find(f => f.fieldname === 'product_video');
+    const videoUrl = videoFile
+      ? '/uploads/' + videoFile.filename
+      : (req.body.existing_video_url || product.video_url || null);
+
+    const videoIndex = parseInt(req.body.video_index);
+    if (videoUrl) {
+      const vidObj = { url: videoUrl, type: 'video' };
+      if (!isNaN(videoIndex) && videoIndex >= 0 && videoIndex <= images.length) {
+        images.splice(videoIndex, 0, vidObj);
+      } else {
+        images.push(vidObj);
+      }
+    }
+
+    const isHidden = req.body.is_hidden === '1' || req.body.is_hidden === 'true';
+    let engravingArea = product.engraving_area ?? null;
+    if (req.body.engraving_area !== undefined) {
+      try { engravingArea = req.body.engraving_area ? JSON.parse(req.body.engraving_area) : null; } catch(e) {}
+    }
     await query(
-      'UPDATE products SET name=$1, price=$2, description=$3, category=$4, stock_quantity=$5, is_hidden=$6, updated_at=NOW() WHERE id=$7',
-      [name || product.name, parseFloat(price) || product.price, description ?? product.description,
-       category || product.category, parseInt(stock_quantity) ?? product.stock_quantity, isHidden, req.params.id]
-    );
+      'UPDATE products SET name=$1,price=$2,description=$3,image_url=$4,category=$5,stock_quantity=$6,is_hidden=$7,variants=$8,images=$9,video_url=$10,engraving_area=$11,updated_at=NOW() WHERE id=$12',
+      [name||product.name, price, description??product.description,
+       imageUrl, category||product.category, stock, isHidden, JSON.stringify(variants), JSON.stringify(images), videoUrl, engravingArea ? JSON.stringify(engravingArea) : null, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

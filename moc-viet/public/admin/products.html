@@ -6,15 +6,14 @@
   <title>Quản lý Sản phẩm — Mộc Việt Admin</title>
   <link rel="stylesheet" href="/css/modern.css">
   <style>
+    /* ── Product table ── */
     .filter-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
     .filter-row input, .filter-row select {
       padding:9px 13px; border:1.5px solid var(--border-color); border-radius:8px;
-      font-size:14px; font-family:inherit; outline:none; background:#fafafa;
-      transition:border-color 0.2s;
+      font-size:14px; font-family:inherit; outline:none; background:#fafafa; transition:border-color 0.2s;
     }
     .filter-row input:focus, .filter-row select:focus { border-color:var(--primary); background:#fff; }
     .filter-row input[type=text] { flex:1; min-width:180px; }
-
     .prod-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; border:1.5px solid var(--border-color); }
     .prod-table th { background:#f8f7f4; padding:11px 14px; text-align:left; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; border-bottom:1.5px solid var(--border-color); }
     .prod-table td { padding:12px 14px; font-size:14px; color:var(--text-main); border-bottom:1px solid var(--border-color); vertical-align:middle; }
@@ -26,42 +25,147 @@
     .prod-shop { font-size:12px; color:var(--text-muted); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .badge-hidden { background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
     .badge-visible { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
-
     .action-btn { padding:5px 12px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.15s; border:1.5px solid; }
-    .btn-edit { background:#f0fdf4; border-color:#86efac; color:#16a34a; }
-    .btn-edit:hover { background:#dcfce7; }
-    .btn-del { background:#fee2e2; border-color:#fca5a5; color:#dc2626; }
-    .btn-del:hover { background:#fca5a5; }
-
-    /* Modal */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:#fff; border-radius:16px; padding:28px 28px 24px; width:100%; max-width:520px; box-shadow:0 8px 40px rgba(0,0,0,0.18); max-height:90vh; overflow-y:auto; }
-    .modal-title { font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:20px; }
-    .form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
-    .form-group label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; }
-    .form-group input, .form-group textarea, .form-group select {
-      padding:9px 13px; border:1.5px solid var(--border-color); border-radius:8px;
-      font-size:14px; font-family:inherit; outline:none; background:#fafafa;
-      transition:border-color 0.2s; width:100%; box-sizing:border-box;
-    }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--primary); background:#fff; }
-    .form-group textarea { resize:vertical; min-height:80px; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .toggle-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-    .toggle-row label { font-size:14px; font-weight:600; color:var(--text-main); cursor:pointer; }
-    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
-    .btn-save { padding:9px 22px; background:var(--primary); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
-    .btn-save:hover { opacity:0.88; }
-    .btn-save:disabled { opacity:0.55; cursor:not-allowed; }
-    .btn-cancel { padding:9px 18px; background:#f3f4f6; color:var(--text-muted); border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
-    .btn-cancel:hover { background:#e5e7eb; }
-
+    .btn-edit-t { background:#f0fdf4; border-color:#86efac; color:#16a34a; }
+    .btn-edit-t:hover { background:#dcfce7; }
+    .btn-del-t { background:#fee2e2; border-color:#fca5a5; color:#dc2626; }
+    .btn-del-t:hover { background:#fca5a5; }
+    .results-count { font-size:13px; color:var(--text-muted); margin-bottom:10px; }
     .pagination { display:flex; gap:6px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
     .page-btn { padding:6px 12px; border-radius:7px; border:1.5px solid var(--border-color); background:#fff; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.15s; }
     .page-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
     .page-btn:hover:not(.active) { background:#f4f2ec; border-color:var(--primary); }
-    .results-count { font-size:13px; color:var(--text-muted); margin-bottom:10px; }
+
+    /* ── Variant styles (from seller) ── */
+    .variant-table-head {
+      display: grid; grid-template-columns: 1fr 110px 120px 90px 44px 34px;
+      gap: 12px; padding: 10px 0; font-size: 11px; font-weight: 800;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 1px solid var(--border-color); margin-bottom: 12px;
+    }
+    .variant-row {
+      display: grid; grid-template-columns: 1fr 110px 120px 90px 44px 34px;
+      gap: 12px; align-items: center; margin-bottom: 12px; animation: fadeIn 0.3s ease;
+    }
+    .variant-row .form-control { margin: 0; padding: 10px 12px; font-size: 14px; background: white; }
+    .v-img-label {
+      display: flex; align-items: center; justify-content: center;
+      height: 40px; border: 1.5px dashed var(--border-color); border-radius: 8px;
+      cursor: pointer; transition: var(--transition); font-size: 18px; background: #fff;
+    }
+    .v-img-label:hover { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.02); }
+    .v-img-label img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; }
+    .remove-variant-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px; background: #fff;
+      color: #ff4d4f; border: 1px solid #ffccc7; cursor: pointer; font-size: 14px; transition: var(--transition);
+    }
+    .remove-variant-btn:hover { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+    .add-variant-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      background: #fff; border: 1.5px dashed var(--primary); color: var(--primary);
+      font-weight: 700; font-size: 14px; padding: 14px; border-radius: 12px;
+      cursor: pointer; transition: var(--transition); margin-top: 12px;
+    }
+    .add-variant-btn:hover { background: rgba(var(--primary-rgb),.05); transform: translateY(-2px); }
+
+    /* ── Engraving ── */
+    .engrave-toggle-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .engrave-toggle-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--primary); cursor:pointer; }
+    .engrave-toggle-row label { font-size:13px; font-weight:700; cursor:pointer; color:var(--text); }
+    .engrave-canvas-wrap {
+      position:relative; display:none; border:2px dashed var(--border-color);
+      border-radius:10px; overflow:hidden; cursor:crosshair; user-select:none;
+      background:#f9fafb; margin-bottom:8px;
+    }
+    .engrave-canvas-wrap.active { display:block; }
+    .engrave-canvas-wrap { aspect-ratio:1/1; }
+    .engrave-canvas-wrap img { display:block; width:100%; height:100%; object-fit:cover; pointer-events:none; }
+    .engrave-canvas-wrap .no-img-hint { padding:32px; text-align:center; color:var(--text-muted); font-size:13px; }
+    .engrave-sel-rect {
+      position:absolute; border:2px dashed #dc2626;
+      background:rgba(220,38,38,0.12); pointer-events:none; display:none;
+    }
+    .engrave-sel-rect .engrave-sel-label {
+      position:absolute; top:-20px; left:0; background:#dc2626; color:#fff;
+      font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap;
+    }
+    .engrave-hint { font-size:11px; color:var(--text-muted); margin-top:4px; }
+    .engrave-clear-btn {
+      display:none; background:#fff; border:1px solid #fca5a5; color:#dc2626;
+      font-size:12px; font-weight:700; padding:5px 12px; border-radius:8px;
+      cursor:pointer; margin-top:6px; transition:var(--transition);
+    }
+    .engrave-clear-btn:hover { background:#fee2e2; }
+
+    /* ── Section divider ── */
+    .section-divider {
+      font-weight: 800; color: var(--primary); font-size: 12px;
+      text-transform: uppercase; letter-spacing: 1.2px; margin: 20px 0 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal .form-group { margin-bottom: 16px; }
+
+    /* ── Image slots ── */
+    .img-slots { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .img-slot {
+      width: 84px; height: 84px; border: 2px dashed var(--border-color);
+      border-radius: 12px; background: #fafafa; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; transition: var(--transition);
+      position: relative; font-size: 24px; color: var(--text-muted); overflow: hidden; flex-shrink: 0;
+    }
+    .img-slot:hover { border-color: var(--primary); background: white; box-shadow: var(--shadow-sm); }
+    .img-slot.has-img { border-color: var(--primary); border-style: solid; }
+    .img-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+    .img-slot-del {
+      position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: rgba(0,0,0,0.55); color: white; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      z-index: 2; opacity: 0; transition: opacity 0.15s; border: none;
+    }
+    .img-slot:hover .img-slot-del { opacity: 1; }
+    .img-slot-badge {
+      position: absolute; bottom: 3px; left: 5px; font-size: 9px; font-weight: 700;
+      color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.35);
+      border-radius: 4px; padding: 1px 4px; pointer-events: none;
+    }
+    .img-slot-edit-btn {
+      position: absolute; bottom: 3px; right: 22px; width: 20px; height: 20px;
+      border-radius: 4px; background: rgba(0,0,0,0.6); color: #fff; font-size: 12px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      z-index: 3; opacity: 0; transition: opacity 0.15s; border: none; pointer-events: all; line-height: 1;
+    }
+    .img-slot:hover .img-slot-edit-btn { opacity: 1; }
+    .img-slots-wrap {
+      border: 2px dashed var(--border-color); border-radius: 14px;
+      padding: 12px 12px 8px; transition: border-color 0.2s, background 0.2s; background: #fafafa;
+    }
+    .img-slots-wrap.drag-over { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.04); }
+    .img-slots-wrap-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+    /* ── Pos editor ── */
+    .pos-editor-overlay {
+      display: none; position: fixed; z-index: 10000; inset: 0;
+      background: rgba(0,0,0,0.72); align-items: center; justify-content: center;
+    }
+    .pos-editor-overlay.open { display: flex; }
+    .pos-editor-box { background: #fff; border-radius: 16px; padding: 22px; width: 320px; box-shadow: 0 24px 64px rgba(0,0,0,0.35); }
+    #pos-editor-preview {
+      width: 260px; height: 260px; border-radius: 12px; margin: 0 auto;
+      border: 2px solid var(--border-color); background-size: cover;
+      background-repeat: no-repeat; background-position: 50% 50%;
+      cursor: grab; user-select: none;
+    }
+    #pos-editor-preview.grabbing { cursor: grabbing; }
+
+    /* ── Shop tag in modal ── */
+    .modal-shop-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0fdf4; border: 1px solid #86efac; border-radius: 20px;
+      padding: 3px 12px; font-size: 12px; font-weight: 700; color: #16a34a;
+      margin-bottom: 14px;
+    }
   </style>
 </head>
 <body>
@@ -128,40 +232,150 @@
   </main>
 </div>
 
-<!-- Edit Modal -->
-<div class="modal-overlay" id="edit-modal" onclick="onOverlayClick(event)">
-  <div class="modal-box">
-    <div class="modal-title">Chỉnh sửa sản phẩm</div>
-    <input type="hidden" id="edit-id">
-    <div class="form-group">
-      <label>Tên sản phẩm <span style="color:#dc2626">*</span></label>
-      <input type="text" id="edit-name" placeholder="Tên sản phẩm">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Giá (₫)</label>
-        <input type="number" id="edit-price" min="0" placeholder="0">
+<!-- ══ EDIT MODAL (giống hệt form seller) ══ -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal" style="max-width:1200px;width:96%">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title">Chỉnh sửa sản phẩm</span>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px">Thay đổi thông tin sản phẩm của shop bên dưới.</p>
       </div>
-      <div class="form-group">
-        <label>Tồn kho</label>
-        <input type="number" id="edit-stock" min="0" placeholder="0">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:0">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:0">
+
+        <!-- LEFT: Form -->
+        <div style="padding:20px 24px;border-right:1px solid var(--border-color);max-height:72vh;overflow-y:auto">
+
+          <!-- Shop badge -->
+          <div class="modal-shop-tag" id="modal-shop-tag">🏪 <span id="modal-shop-name">...</span></div>
+
+          <div class="section-divider">Thông tin cơ bản</div>
+
+          <div class="form-group">
+            <label class="form-label">Tên sản phẩm chính <span class="req">*</span></label>
+            <input type="text" id="p-name" class="form-control" placeholder="VD: Kệ sách gỗ tre tự nhiên" oninput="updateLivePreview()">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="form-group">
+              <label class="form-label">Danh mục</label>
+              <select id="p-category" class="form-control">
+                <option value="khac">Đang tải...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Trạng thái</label>
+              <select id="p-status" class="form-control" onchange="updateLivePreview()">
+                <option value="visible">Đang bán</option>
+                <option value="hidden">Đã ẩn</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ảnh &amp; Video sản phẩm <span style="font-weight:400;color:var(--text-muted)">(tối đa 5 ảnh + 1 video — kéo ảnh để sắp xếp lại)</span></label>
+            <div class="img-slots-wrap" id="img-slots-wrap">
+              <div class="img-slots" id="img-slots"></div>
+              <div class="img-slots-wrap-hint">Kéo ảnh vào đây hoặc nhấn <strong>+</strong> để chọn &nbsp;·&nbsp; Kéo slot để sắp xếp &nbsp;·&nbsp; Nhấn <strong>✥</strong> để căn chỉnh khung</div>
+            </div>
+            <input type="file" id="p-img-input" accept="image/*" multiple style="display:none" onchange="handleSlotFile(event)">
+            <input type="file" id="p-video-input" accept="video/*" style="display:none" onchange="handleVideoFile(event)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mô tả sản phẩm</label>
+            <textarea id="p-desc" class="form-control" rows="3" placeholder="Mô tả chất liệu, kích thước, công dụng..."></textarea>
+          </div>
+
+          <div class="section-divider">Vùng khắc chữ</div>
+          <div class="form-group">
+            <div class="engrave-toggle-row">
+              <input type="checkbox" id="engrave-enable" onchange="toggleEngraveSection()">
+              <label for="engrave-enable">Cho phép khắc chữ lên sản phẩm này</label>
+            </div>
+            <div class="engrave-canvas-wrap" id="engrave-canvas-wrap">
+              <div class="no-img-hint" id="engrave-no-img">Thêm ảnh sản phẩm để chọn vùng khắc</div>
+              <img id="engrave-preview-img" src="" alt="" style="display:none">
+              <div class="engrave-sel-rect" id="engrave-sel-rect">
+                <span class="engrave-sel-label">Vùng khắc</span>
+              </div>
+            </div>
+            <div class="engrave-hint" id="engrave-hint" style="display:none">Kéo chuột trên ảnh để chọn vùng khắc chữ</div>
+            <button type="button" class="engrave-clear-btn" id="engrave-clear-btn" onclick="clearEngraveArea()">✕ Xóa vùng khắc</button>
+          </div>
+
+          <div class="section-divider">Phân loại sản phẩm <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(tên, giá, số lượng cho từng loại)</span></div>
+          <div class="variant-table-head">
+            <span>Tên phân loại</span>
+            <span>Mã phân loại</span>
+            <span>Giá (đ)</span>
+            <span>Số lượng</span>
+            <span style="text-align:center">Ảnh</span>
+            <span></span>
+          </div>
+          <div id="variant-list"></div>
+          <button type="button" class="add-variant-btn" onclick="addVariant()">
+            <span style="font-size:18px;line-height:1">+</span> Thêm phân loại
+          </button>
+
+        </div>
+
+        <!-- RIGHT: Preview -->
+        <div style="padding:28px 24px;background:#fafafa;display:flex;flex-direction:column;align-items:center">
+          <div style="font-weight:700;color:var(--text-muted);margin-bottom:20px;font-size:11px;text-transform:uppercase;letter-spacing:1px;align-self:flex-start">Xem trước</div>
+          <div id="live-preview-card" style="width:100%;transform:scale(.93);transform-origin:top"></div>
+          <div style="margin-top:auto;padding-top:16px;width:100%">
+            <div style="font-size:11px;line-height:1.5;color:var(--text-muted);background:rgba(var(--primary-rgb),.05);border:1px solid rgba(var(--primary-rgb),.12);border-radius:10px;padding:10px 12px">
+              <strong style="color:var(--primary)">Lưu ý:</strong> Thay đổi của admin sẽ được áp dụng ngay lập tức cho shop.
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
-    <div class="form-group">
-      <label>Danh mục</label>
-      <select id="edit-category"></select>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveProduct()">Lưu thay đổi</button>
     </div>
-    <div class="form-group">
-      <label>Mô tả</label>
-      <textarea id="edit-desc" placeholder="Mô tả sản phẩm..."></textarea>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-confirm-modal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="modal-body" style="padding:32px 28px 20px">
+      <div style="margin-bottom:12px"><img src="/icons/delete.png" style="width:48px;height:48px;object-fit:contain;opacity:.5" alt=""></div>
+      <h3 style="margin:0 0 8px;font-size:1.1rem">Xóa sản phẩm?</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin:0 0 24px">Hành động này không thể hoàn tác. Sản phẩm sẽ bị ẩn khỏi hệ thống.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-ghost" onclick="closeDeleteConfirm()">Hủy</button>
+        <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeleteProduct()">Xác nhận xóa</button>
+      </div>
     </div>
-    <div class="toggle-row">
-      <input type="checkbox" id="edit-hidden" style="width:16px;height:16px;cursor:pointer">
-      <label for="edit-hidden">Ẩn sản phẩm (không hiển thị với người mua)</label>
+  </div>
+</div>
+
+<!-- Position Editor -->
+<div class="pos-editor-overlay" id="pos-editor-overlay">
+  <div class="pos-editor-box">
+    <div style="font-weight:700;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span>✥</span> Căn chỉnh ảnh trong khung
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Huỷ</button>
-      <button class="btn-save" id="btn-save" onclick="saveProduct()">Lưu thay đổi</button>
+    <div id="pos-editor-preview"></div>
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Kéo ảnh để căn vị trí</label>
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px">Thu phóng</label>
+      </div>
+      <input type="range" id="pos-zoom" min="100" max="280" value="100" oninput="onZoomChange(this.value)" style="width:100%">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="cancelPosEditor()">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmPosEditor()">Xong ✓</button>
     </div>
   </div>
 </div>
@@ -173,15 +387,29 @@ requireRole('admin');
 document.getElementById('sidebar-email').textContent = getUser().email;
 initDashNotif();
 
+// ── State ──────────────────────────────────────────────
 const PAGE_SIZE = 20;
 let allProducts = [];
 let filteredProducts = [];
 let currentPage = 1;
 let searchTimer = null;
-let categories = [];
+let editId = null;
+let variantList = [];
+let productMedia = [];
+let activeMediaIdx = -1;
+let dragSrcIdx = null;
+let engravingArea = null;
+let _engraveListening = false;
+let _pendingDeleteId = null;
+let currentShopName = '';
+let posEditorIdx = -1;
+let posEditorState = { x: 50, y: 50, zoom: 100 };
+let posEditorDragging = false;
+let posEditorDragStart = {};
 
+// ── Init ───────────────────────────────────────────────
 window.onload = async () => {
-  await Promise.all([loadShops(), loadCategories()]);
+  await Promise.all([loadShops(), loadCategorySelect()]);
   loadProducts();
 };
 
@@ -196,16 +424,13 @@ async function loadShops() {
   });
 }
 
-async function loadCategories() {
-  categories = await api.get('/api/categories') || [];
-  const sel = document.getElementById('edit-category');
-  sel.innerHTML = '<option value="">-- Chọn danh mục --</option>';
-  categories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.value;
-    opt.textContent = c.label;
-    sel.appendChild(opt);
-  });
+async function loadCategorySelect(selectedValue) {
+  const cats = await api.get('/api/categories') || [];
+  const sel = document.getElementById('p-category');
+  if (!sel) return;
+  sel.innerHTML = cats.map(c =>
+    `<option value="${c.value}"${c.value === selectedValue ? ' selected' : ''}>${c.label}</option>`
+  ).join('') || '<option value="khac">Khác</option>';
 }
 
 function onSearchInput() {
@@ -217,13 +442,11 @@ async function loadProducts() {
   const container = document.getElementById('table-container');
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   currentPage = 1;
-
   const search = document.getElementById('inp-search').value.trim();
   const shopId = document.getElementById('sel-shop').value;
   let url = '/api/admin/products?';
   if (search) url += `search=${encodeURIComponent(search)}&`;
   if (shopId) url += `shop_id=${shopId}&`;
-
   allProducts = await api.get(url) || [];
   filteredProducts = allProducts;
   renderPage();
@@ -235,58 +458,38 @@ function renderPage() {
   currentPage = Math.min(currentPage, totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filteredProducts.slice(start, start + PAGE_SIZE);
-
   document.getElementById('results-count').textContent = `Tìm thấy ${total} sản phẩm`;
-
   const container = document.getElementById('table-container');
   if (!pageItems.length) {
     container.innerHTML = '<div class="empty-state"><p>Không có sản phẩm nào</p></div>';
     document.getElementById('pagination').innerHTML = '';
     return;
   }
-
   container.innerHTML = `
     <table class="prod-table">
-      <thead>
-        <tr>
-          <th>Ảnh</th>
-          <th>Tên sản phẩm</th>
-          <th>Shop</th>
-          <th>Giá</th>
-          <th>Tồn kho</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${pageItems.map(p => {
-          const imgSrc = getFirstImage(p);
-          const imgTag = imgSrc
-            ? `<img src="${imgSrc}" class="prod-thumb" alt="" onerror="this.style.display='none'">`
-            : `<div class="prod-thumb-placeholder">📦</div>`;
-          const badge = p.is_hidden
-            ? `<span class="badge-hidden">Đang ẩn</span>`
-            : `<span class="badge-visible">Hiển thị</span>`;
-          return `<tr>
-            <td>${imgTag}</td>
-            <td>
-              <div class="prod-name" title="${esc(p.name)}">${esc(p.name)}</div>
-            </td>
-            <td><div class="prod-shop" title="${esc(p.shop_name)}">${esc(p.shop_name)}</div></td>
-            <td>${fmtPrice(p.price)}</td>
-            <td>${p.stock_quantity ?? 0}</td>
-            <td>${badge}</td>
-            <td>
-              <div style="display:flex;gap:6px">
-                <button class="action-btn btn-edit" onclick="openEdit(${p.id})">Sửa</button>
-                <button class="action-btn btn-del" onclick="deleteProduct(${p.id}, '${esc(p.name).replace(/'/g,"\\'")}')">Xoá</button>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
+      <thead><tr><th>Ảnh</th><th>Tên sản phẩm</th><th>Shop</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>${pageItems.map(p => {
+        const imgSrc = getFirstImage(p);
+        const imgTag = imgSrc
+          ? `<img src="${imgSrc}" class="prod-thumb" alt="" onerror="this.style.display='none'">`
+          : `<div class="prod-thumb-placeholder">📦</div>`;
+        const badge = p.is_hidden
+          ? `<span class="badge-hidden">Đang ẩn</span>`
+          : `<span class="badge-visible">Hiển thị</span>`;
+        return `<tr>
+          <td>${imgTag}</td>
+          <td><div class="prod-name" title="${esc(p.name)}">${esc(p.name)}</div></td>
+          <td><div class="prod-shop" title="${esc(p.shop_name)}">${esc(p.shop_name)}</div></td>
+          <td>${fmtPrice(p.price)}</td>
+          <td>${p.stock_quantity ?? 0}</td>
+          <td>${badge}</td>
+          <td><div style="display:flex;gap:6px">
+            <button class="action-btn btn-edit-t" onclick="openModal(${p.id})">Sửa</button>
+            <button class="action-btn btn-del-t" onclick="deleteProduct(${p.id},'${esc(p.name).replace(/'/g,"\\'")}')">Xoá</button>
+          </div></td>
+        </tr>`;
+      }).join('')}</tbody>
     </table>`;
-
   renderPagination(totalPages);
 }
 
@@ -294,15 +497,12 @@ function renderPagination(totalPages) {
   const pg = document.getElementById('pagination');
   if (totalPages <= 1) { pg.innerHTML = ''; return; }
   let html = '';
-  const start = Math.max(1, currentPage - 2);
-  const end = Math.min(totalPages, currentPage + 2);
-  if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>`;
-  if (start > 2) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
-  for (let i = start; i <= end; i++) {
-    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
-  }
-  if (end < totalPages - 1) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
-  if (end < totalPages) html += `<button class="page-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;
+  const s = Math.max(1, currentPage - 2), e = Math.min(totalPages, currentPage + 2);
+  if (s > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>`;
+  if (s > 2) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
+  for (let i = s; i <= e; i++) html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+  if (e < totalPages - 1) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
+  if (e < totalPages) html += `<button class="page-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;
   pg.innerHTML = html;
 }
 
@@ -317,78 +517,526 @@ function getFirstImage(p) {
   return p.image_url || null;
 }
 
-function fmtPrice(v) {
-  return Number(v).toLocaleString('vi-VN') + '₫';
-}
-
+function fmtPrice(v) { return Number(v).toLocaleString('vi-VN') + '₫'; }
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-async function openEdit(id) {
-  const p = await api.get(`/api/admin/products/${id}`);
-  if (!p || p.message) { toast('Không tải được sản phẩm', 'error'); return; }
+// ── Engraving ──────────────────────────────────────────
+function toggleEngraveSection() {
+  const enabled = document.getElementById('engrave-enable').checked;
+  const wrap = document.getElementById('engrave-canvas-wrap');
+  const hint = document.getElementById('engrave-hint');
+  wrap.classList.toggle('active', enabled);
+  hint.style.display = enabled ? 'block' : 'none';
+  if (!enabled) { engravingArea = null; updateEngraveClearBtn(); }
+  else refreshEngraveImage();
+}
 
-  document.getElementById('edit-id').value = p.id;
-  document.getElementById('edit-name').value = p.name || '';
-  document.getElementById('edit-price').value = p.price || 0;
-  document.getElementById('edit-stock').value = p.stock_quantity || 0;
-  document.getElementById('edit-desc').value = p.description || '';
-  document.getElementById('edit-hidden').checked = !!p.is_hidden;
-  document.getElementById('edit-category').value = p.category || '';
+function refreshEngraveImage() {
+  const img = document.getElementById('engrave-preview-img');
+  const noImg = document.getElementById('engrave-no-img');
+  const firstImg = productMedia.find(m => m.type === 'image');
+  if (firstImg && (firstImg._preview || firstImg._url)) {
+    img.src = firstImg._preview || firstImg._url;
+    img.style.display = 'block';
+    noImg.style.display = 'none';
+    initEngraveDrawing();
+  } else {
+    img.style.display = 'none';
+    noImg.style.display = 'block';
+  }
+  renderEngraveRect();
+}
 
-  document.getElementById('edit-modal').classList.add('open');
-  document.getElementById('edit-name').focus();
+function renderEngraveRect() {
+  const rect = document.getElementById('engrave-sel-rect');
+  if (!rect) return;
+  if (engravingArea) {
+    rect.style.display = 'block';
+    rect.style.left   = engravingArea.x + '%';
+    rect.style.top    = engravingArea.y + '%';
+    rect.style.width  = engravingArea.width + '%';
+    rect.style.height = engravingArea.height + '%';
+  } else {
+    rect.style.display = 'none';
+  }
+  updateEngraveClearBtn();
+}
+
+function updateEngraveClearBtn() {
+  const btn = document.getElementById('engrave-clear-btn');
+  if (btn) btn.style.display = engravingArea ? 'inline-block' : 'none';
+}
+
+function clearEngraveArea() { engravingArea = null; renderEngraveRect(); }
+
+function initEngraveDrawing() {
+  if (_engraveListening) return;
+  _engraveListening = true;
+  const wrap = document.getElementById('engrave-canvas-wrap');
+  let dragging = false, sx = 0, sy = 0;
+  function getPct(e) {
+    const r = wrap.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.max(0, Math.min(100, (clientX - r.left) / r.width  * 100)),
+      y: Math.max(0, Math.min(100, (clientY - r.top)  / r.height * 100))
+    };
+  }
+  wrap.addEventListener('mousedown', e => { const p = getPct(e); sx = p.x; sy = p.y; dragging = true; engravingArea = { x: sx, y: sy, width: 0, height: 0 }; renderEngraveRect(); });
+  wrap.addEventListener('touchstart', e => { const p = getPct(e); sx = p.x; sy = p.y; dragging = true; engravingArea = { x: sx, y: sy, width: 0, height: 0 }; renderEngraveRect(); }, { passive: true });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return; e.preventDefault();
+    const p = getPct(e);
+    engravingArea = { x: Math.min(sx, p.x), y: Math.min(sy, p.y), width: Math.abs(p.x - sx), height: Math.abs(p.y - sy) };
+    renderEngraveRect();
+  });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return; e.preventDefault();
+    const p = getPct(e);
+    engravingArea = { x: Math.min(sx, p.x), y: Math.min(sy, p.y), width: Math.abs(p.x - sx), height: Math.abs(p.y - sy) };
+    renderEngraveRect();
+  }, { passive: false });
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    if (engravingArea && (engravingArea.width < 3 || engravingArea.height < 3)) { engravingArea = null; renderEngraveRect(); }
+  }
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+// ── Modal open/close ───────────────────────────────────
+function openModal(id) {
+  editId = id;
+  const p = allProducts.find(x => x.id === id);
+  if (!p) { toast('Không tìm thấy sản phẩm', 'error'); return; }
+
+  currentShopName = p.shop_name || 'Shop';
+  document.getElementById('modal-shop-name').textContent = currentShopName;
+
+  const imgInput = document.getElementById('p-img-input');
+  if (imgInput) imgInput.value = '';
+  const vi = document.getElementById('p-video-input');
+  if (vi) vi.value = '';
+  activeMediaIdx = -1;
+  productMedia.filter(m => m.type === 'video' && m._preview?.startsWith('blob:')).forEach(m => URL.revokeObjectURL(m._preview));
+  productMedia = [];
+
+  document.getElementById('p-name').value = p.name || '';
+  loadCategorySelect(p.category || 'khac');
+  document.getElementById('p-status').value = p.is_hidden ? 'hidden' : 'visible';
+  document.getElementById('p-desc').value = p.description || '';
+
+  const rawImgs = Array.isArray(p.images) && p.images.length ? p.images : (p.image_url ? [p.image_url] : []);
+  let hasVideoInImages = false;
+  rawImgs.forEach(item => {
+    if (typeof item === 'string') {
+      productMedia.push({ type:'image', _file:null, _preview:item, _url:item, _pos:'50% 50%', _zoom:100 });
+    } else {
+      if (item.type === 'video') {
+        hasVideoInImages = true;
+        productMedia.push({ type:'video', _file:null, _preview:item.url, _url:item.url });
+      } else {
+        productMedia.push({ type:'image', _file:null, _preview:item.url||item, _url:item.url||item, _pos:item.pos||'50% 50%', _zoom:item.zoom||100 });
+      }
+    }
+  });
+  if (p.video_url && !hasVideoInImages) {
+    productMedia.push({ type:'video', _file:null, _preview:p.video_url, _url:p.video_url });
+  }
+
+  const vars = Array.isArray(p.variants) ? p.variants : [];
+  if (vars.length > 0) {
+    variantList = vars.map(v => ({ name: v.name||'', sku: v.sku||'', price: v.price||'', quantity: v.quantity||0, image_url: v.image_url||'', _file: null, _preview: v.image_url||null }));
+  } else {
+    variantList = [{ name: '', sku: '', price: String(p.price||''), quantity: p.stock_quantity||1, image_url: '', _file: null, _preview: null }];
+  }
+
+  engravingArea = p.engraving_area || null;
+  const engraveChk = document.getElementById('engrave-enable');
+  if (engraveChk) engraveChk.checked = !!engravingArea;
+
+  renderVariants();
+  renderImgSlots();
+  initImgDropZone();
+  updateLivePreview();
+  _engraveListening = false;
+  toggleEngraveSection();
+  document.getElementById('product-modal').classList.add('open');
 }
 
 function closeModal() {
-  document.getElementById('edit-modal').classList.remove('open');
+  document.getElementById('product-modal').classList.remove('open');
+  editId = null;
 }
 
-function onOverlayClick(e) {
-  if (e.target === document.getElementById('edit-modal')) closeModal();
-}
-
-async function saveProduct() {
-  const id = document.getElementById('edit-id').value;
-  const name = document.getElementById('edit-name').value.trim();
-  if (!name) { toast('Tên sản phẩm không được để trống', 'error'); return; }
-
-  const btn = document.getElementById('btn-save');
-  btn.disabled = true; btn.textContent = 'Đang lưu...';
-
-  const res = await api.put(`/api/admin/products/${id}`, {
-    name,
-    price: document.getElementById('edit-price').value,
-    stock_quantity: document.getElementById('edit-stock').value,
-    description: document.getElementById('edit-desc').value,
-    category: document.getElementById('edit-category').value,
-    is_hidden: document.getElementById('edit-hidden').checked
+// ── Variant helpers ────────────────────────────────────
+function syncVariantsFromDOM() {
+  document.querySelectorAll('.variant-row').forEach((row, i) => {
+    if (!variantList[i]) return;
+    variantList[i].name     = row.querySelector('.v-name').value;
+    variantList[i].sku      = row.querySelector('.v-sku').value;
+    variantList[i].price    = row.querySelector('.v-price').value;
+    variantList[i].quantity = parseInt(row.querySelector('.v-qty').value) || 0;
   });
+}
 
-  btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+function addVariant() {
+  syncVariantsFromDOM();
+  variantList.push({ name: '', sku: '', price: '', quantity: 1, image_url: '', _file: null, _preview: null });
+  renderVariants();
+}
 
+function removeVariant(i) {
+  if (variantList.length <= 1) { toast('Cần ít nhất 1 phân loại', 'error'); return; }
+  syncVariantsFromDOM();
+  variantList.splice(i, 1);
+  renderVariants();
+  updateLivePreview();
+}
+
+function renderVariants() {
+  const container = document.getElementById('variant-list');
+  container.innerHTML = variantList.map((v, i) => `
+    <div class="variant-row">
+      <input class="form-control v-name" placeholder="VD: Màu xanh, Size M" value="${escHtml(v.name)}" oninput="updateLivePreview()">
+      <input class="form-control v-sku" placeholder="VD: MV-XL-01" value="${escHtml(v.sku||'')}">
+      <div style="position:relative">
+        <input class="form-control v-price" type="number" placeholder="Giá" min="1000" value="${v.price}" oninput="updateLivePreview()" style="padding-right:24px">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);pointer-events:none">đ</span>
+      </div>
+      <input class="form-control v-qty" type="number" placeholder="SL" min="0" value="${v.quantity}" oninput="updateLivePreview()">
+      <label class="v-img-label" id="v-img-label-${i}" title="Ảnh phân loại (tùy chọn)">
+        ${v._preview ? `<img src="${v._preview}">` : ''}
+        <input type="file" accept="image/*" style="display:none" onchange="previewVariantImg(${i},this)">
+      </label>
+      <button type="button" class="remove-variant-btn" onclick="removeVariant(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function previewVariantImg(i, input) {
+  const file = input.files[0];
+  if (!file) return;
+  variantList[i]._file = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    variantList[i]._preview = ev.target.result;
+    const label = document.getElementById('v-img-label-' + i);
+    if (label) label.innerHTML = `<img src="${ev.target.result}"><input type="file" accept="image/*" style="display:none" onchange="previewVariantImg(${i},this)">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Image slots ────────────────────────────────────────
+function renderImgSlots() {
+  const container = document.getElementById('img-slots');
+  if (!container) return;
+  const slots = [];
+  const imgCount = productMedia.filter(m => m.type === 'image').length;
+  const hasVideo = productMedia.some(m => m.type === 'video');
+  let firstImage = true;
+  productMedia.forEach((item, i) => {
+    const drag = `draggable="true" ondragstart="slotDragStart(event,${i})" ondragover="slotDragOver(event,${i})" ondrop="slotDrop(event,${i})" ondragend="slotDragEnd()"`;
+    if (item.type === 'image') {
+      const src = item._preview || item._url || '';
+      const pos = item._pos || '50% 50%';
+      const badge = firstImage ? '<span class="img-slot-badge">Chính</span>' : '';
+      firstImage = false;
+      slots.push(`
+        <div class="img-slot has-img" title="Kéo để sắp xếp" ${drag}>
+          <img src="${src}" alt="" style="object-position:${pos}" onclick="openSlot(${i})">
+          <button class="img-slot-del" onclick="removeMediaSlot(${i},event)" title="Xóa">×</button>
+          <button class="img-slot-edit-btn" onclick="openPosEditor(${i},event)" title="Căn chỉnh ảnh">✥</button>
+          ${badge}
+        </div>`);
+    } else {
+      const vSrc = item._preview || item._url || '';
+      slots.push(`
+        <div class="img-slot has-img" title="Kéo để sắp xếp" ${drag}>
+          <video src="${vSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></video>
+          <button class="img-slot-del" onclick="removeMediaSlot(${i},event)" title="Xóa video">×</button>
+          <span class="img-slot-badge" style="background:#7c3aed">▶ Video</span>
+        </div>`);
+    }
+  });
+  if (imgCount < 5)
+    slots.push(`<div class="img-slot" onclick="addNewImage()" title="Thêm ảnh"><span style="pointer-events:none">+</span></div>`);
+  if (!hasVideo)
+    slots.push(`<div class="img-slot" onclick="document.getElementById('p-video-input').click()" title="Thêm video" style="flex-direction:column;gap:4px"><span style="font-size:22px;pointer-events:none">🎬</span><span style="font-size:10px;pointer-events:none;color:var(--text-muted)">+ Video</span></div>`);
+  container.innerHTML = slots.join('');
+  if (document.getElementById('engrave-enable')?.checked) refreshEngraveImage();
+}
+
+function slotDragStart(e, idx) { dragSrcIdx = idx; e.dataTransfer.effectAllowed = 'move'; e.currentTarget.style.opacity = '0.4'; }
+function slotDragOver(e, idx) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function slotDrop(e, idx) {
+  e.preventDefault();
+  if (dragSrcIdx === null || dragSrcIdx === idx) { dragSrcIdx = null; return; }
+  const moved = productMedia.splice(dragSrcIdx, 1)[0];
+  productMedia.splice(idx, 0, moved);
+  dragSrcIdx = null;
+  renderImgSlots(); updateLivePreview();
+}
+function slotDragEnd() { dragSrcIdx = null; renderImgSlots(); }
+
+function addNewImage() { activeMediaIdx = -1; const inp = document.getElementById('p-img-input'); inp.value = ''; inp.multiple = true; inp.click(); }
+function openSlot(mediaIdx) { activeMediaIdx = mediaIdx; const inp = document.getElementById('p-img-input'); inp.value = ''; inp.multiple = false; inp.click(); }
+
+function handleSlotFile(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  if (activeMediaIdx >= 0 && productMedia[activeMediaIdx]?.type === 'image') {
+    const item = productMedia[activeMediaIdx];
+    item._file = files[0]; item._url = '';
+    const reader = new FileReader();
+    reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
+    reader.readAsDataURL(files[0]);
+  } else {
+    const imgCount = productMedia.filter(m => m.type === 'image').length;
+    let added = 0;
+    files.forEach(file => {
+      if (imgCount + added >= 5) return;
+      const item = { type:'image', _file:file, _preview:'', _url:'', _pos:'50% 50%', _zoom:100 };
+      productMedia.push(item);
+      const reader = new FileReader();
+      reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
+      reader.readAsDataURL(file);
+      added++;
+    });
+  }
+  activeMediaIdx = -1;
+}
+
+function removeMediaSlot(mediaIdx, event) {
+  event.stopPropagation();
+  const item = productMedia[mediaIdx];
+  if (item?.type === 'video' && item._preview?.startsWith('blob:')) URL.revokeObjectURL(item._preview);
+  productMedia.splice(mediaIdx, 1);
+  renderImgSlots(); updateLivePreview();
+}
+
+function handleVideoFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const tempVideo = document.createElement('video');
+  tempVideo.preload = 'metadata';
+  const checkUrl = URL.createObjectURL(file);
+  tempVideo.src = checkUrl;
+  tempVideo.onloadedmetadata = () => {
+    URL.revokeObjectURL(checkUrl);
+    if (tempVideo.duration > 600) { toast('Video quá dài — tối đa 10 phút', 'error'); e.target.value = ''; return; }
+    const vi = productMedia.findIndex(m => m.type === 'video');
+    if (vi >= 0) { if (productMedia[vi]._preview?.startsWith('blob:')) URL.revokeObjectURL(productMedia[vi]._preview); productMedia.splice(vi, 1); }
+    const previewUrl = URL.createObjectURL(file);
+    productMedia.push({ type:'video', _file:file, _preview:previewUrl, _url:'' });
+    renderImgSlots();
+  };
+}
+
+function initImgDropZone() {
+  const wrap = document.getElementById('img-slots-wrap');
+  if (!wrap || wrap._ddInit) return;
+  wrap._ddInit = true;
+  wrap.addEventListener('dragover', e => { e.preventDefault(); wrap.classList.add('drag-over'); });
+  wrap.addEventListener('dragleave', e => { if (!wrap.contains(e.relatedTarget)) wrap.classList.remove('drag-over'); });
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    wrap.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    const imgCount = productMedia.filter(m => m.type === 'image').length;
+    const available = 5 - imgCount;
+    if (available <= 0) { toast('Đã đạt tối đa 5 ảnh', 'error'); return; }
+    files.slice(0, available).forEach(file => {
+      const item = { type:'image', _file:file, _preview:'', _url:'', _pos:'50% 50%', _zoom:100 };
+      productMedia.push(item);
+      const reader = new FileReader();
+      reader.onload = ev => { item._preview = ev.target.result; renderImgSlots(); updateLivePreview(); };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+// ── Pos editor ─────────────────────────────────────────
+function openPosEditor(idx, event) {
+  event.stopPropagation();
+  const img = productMedia[idx];
+  if (!img || img.type !== 'image') return;
+  posEditorIdx = idx;
+  const parts = (img._pos || '50% 50%').split(' ');
+  posEditorState = { x: parseFloat(parts[0]) || 50, y: parseFloat(parts[1]) || 50, zoom: img._zoom || 100 };
+  const src = img._preview || img._url || '';
+  const el = document.getElementById('pos-editor-preview');
+  el.style.backgroundImage = `url('${src.replace(/'/g, "\\'")}')`;
+  document.getElementById('pos-zoom').value = posEditorState.zoom;
+  updatePosEditorPreview();
+  document.getElementById('pos-editor-overlay').classList.add('open');
+}
+
+function updatePosEditorPreview() {
+  const el = document.getElementById('pos-editor-preview');
+  const z = posEditorState.zoom;
+  el.style.backgroundPosition = `${posEditorState.x}% ${posEditorState.y}%`;
+  el.style.backgroundSize = z <= 100 ? 'cover' : `${z}% ${z}%`;
+}
+
+function onZoomChange(v) { posEditorState.zoom = parseInt(v); updatePosEditorPreview(); }
+function cancelPosEditor() { document.getElementById('pos-editor-overlay').classList.remove('open'); posEditorIdx = -1; }
+function confirmPosEditor() {
+  if (posEditorIdx >= 0 && productMedia[posEditorIdx]?.type === 'image') {
+    productMedia[posEditorIdx]._pos  = `${posEditorState.x.toFixed(1)}% ${posEditorState.y.toFixed(1)}%`;
+    productMedia[posEditorIdx]._zoom = posEditorState.zoom;
+    renderImgSlots(); updateLivePreview();
+  }
+  document.getElementById('pos-editor-overlay').classList.remove('open');
+  posEditorIdx = -1;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('pos-editor-preview');
+  if (!el) return;
+  el.addEventListener('mousedown', e => {
+    posEditorDragging = true;
+    posEditorDragStart = { mx: e.clientX, my: e.clientY, ox: posEditorState.x, oy: posEditorState.y };
+    el.classList.add('grabbing'); e.preventDefault();
+  });
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    posEditorDragging = true;
+    posEditorDragStart = { mx: t.clientX, my: t.clientY, ox: posEditorState.x, oy: posEditorState.y };
+    e.preventDefault();
+  }, { passive: false });
+});
+document.addEventListener('mousemove', e => {
+  if (!posEditorDragging) return;
+  posEditorState.x = Math.max(0, Math.min(100, posEditorDragStart.ox - (e.clientX - posEditorDragStart.mx) * 0.3));
+  posEditorState.y = Math.max(0, Math.min(100, posEditorDragStart.oy - (e.clientY - posEditorDragStart.my) * 0.3));
+  updatePosEditorPreview();
+});
+document.addEventListener('touchmove', e => {
+  if (!posEditorDragging) return;
+  const t = e.touches[0];
+  posEditorState.x = Math.max(0, Math.min(100, posEditorDragStart.ox - (t.clientX - posEditorDragStart.mx) * 0.3));
+  posEditorState.y = Math.max(0, Math.min(100, posEditorDragStart.oy - (t.clientY - posEditorDragStart.my) * 0.3));
+  updatePosEditorPreview(); e.preventDefault();
+}, { passive: false });
+document.addEventListener('mouseup', () => { if (posEditorDragging) { posEditorDragging = false; document.getElementById('pos-editor-preview')?.classList.remove('grabbing'); } });
+document.addEventListener('touchend', () => { posEditorDragging = false; });
+
+// ── Live preview ───────────────────────────────────────
+function updateLivePreview() {
+  const name = document.getElementById('p-name')?.value || 'Tên sản phẩm';
+  const firstImg = productMedia.find(m => m.type === 'image');
+  const imgUrl = firstImg?._preview || firstImg?._url || '';
+  let minPrice = 0;
+  document.querySelectorAll('.v-price').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (v > 0 && (minPrice === 0 || v < minPrice)) minPrice = v;
+  });
+  document.getElementById('live-preview-card').innerHTML = `
+    <div class="product-card" style="box-shadow:var(--shadow-md);pointer-events:none">
+      <div class="product-img-wrap">
+        ${imgUrl ? `<img src="${imgUrl}" class="product-img">` : `<div class="product-img" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:3rem"></div>`}
+      </div>
+      <div class="product-body">
+        <div class="product-shop">${esc(currentShopName)}</div>
+        <div class="product-name">${esc(name)}</div>
+        <div class="product-price-wrap">
+          <span class="product-price">${minPrice > 0 ? fmtPrice(minPrice) : '—'}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Save ───────────────────────────────────────────────
+async function saveProduct() {
+  syncVariantsFromDOM();
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) return toast('Vui lòng nhập tên sản phẩm', 'error');
+  if (variantList.length === 0) return toast('Cần ít nhất 1 phân loại', 'error');
+  for (let i = 0; i < variantList.length; i++) {
+    const price = parseFloat(variantList[i].price);
+    if (!price || price < 1000) return toast(`Phân loại #${i+1}: giá phải ≥ 1.000 đ`, 'error');
+  }
+
+  const fd = new FormData();
+  fd.append('name',        name);
+  fd.append('category',    document.getElementById('p-category').value);
+  fd.append('description', document.getElementById('p-desc').value.trim());
+  fd.append('is_hidden',   document.getElementById('p-status').value === 'hidden' ? '1' : '0');
+
+  const variantsPayload = variantList.map(({ name, sku, price, quantity, image_url }) => ({ name, sku: sku||'', price, quantity, image_url }));
+  fd.append('variants', JSON.stringify(variantsPayload));
+  fd.append('engraving_area', engravingArea ? JSON.stringify(engravingArea) : '');
+
+  const images = productMedia.filter(m => m.type === 'image');
+  const videoItem = productMedia.find(m => m.type === 'video');
+  const videoIndex = productMedia.findIndex(m => m.type === 'video');
+
+  const imageMeta = images.map(img => ({ pos: img._pos || '50% 50%', zoom: img._zoom || 100, existing_url: img._url || '' }));
+  fd.append('image_positions', JSON.stringify(imageMeta));
+  images.forEach((img, i) => { if (img._file) fd.append(`product_image_${i}`, img._file); });
+  variantList.forEach((v, i) => { if (v._file) fd.append(`variant_image_${i}`, v._file); });
+
+  if (videoItem) {
+    if (videoItem._file) fd.append('product_video', videoItem._file);
+    else if (videoItem._url) fd.append('existing_video_url', videoItem._url);
+    if (videoIndex >= 0) fd.append('video_index', videoIndex);
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+  try {
+    const res = await api.put(`/api/admin/products/${editId}`, fd);
+    btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+    if (res && (res.success || res.product)) {
+      toast('Đã cập nhật sản phẩm!');
+      closeModal();
+      loadProducts();
+    } else {
+      toast(res?.message || 'Lỗi không xác định', 'error');
+    }
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+    toast('Có lỗi xảy ra: ' + (err.message || 'Kết nối thất bại'), 'error');
+  }
+}
+
+// ── Delete ─────────────────────────────────────────────
+function deleteProduct(id, name) {
+  _pendingDeleteId = id;
+  document.getElementById('delete-confirm-modal').classList.add('open');
+}
+
+function closeDeleteConfirm() {
+  _pendingDeleteId = null;
+  document.getElementById('delete-confirm-modal').classList.remove('open');
+}
+
+async function confirmDeleteProduct() {
+  if (!_pendingDeleteId) return;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.textContent = 'Đang xóa...';
+  const res = await api.delete(`/api/admin/products/${_pendingDeleteId}`);
+  btn.disabled = false; btn.textContent = 'Xác nhận xóa';
   if (res && res.success) {
-    toast('Đã cập nhật sản phẩm', 'success');
-    closeModal();
+    toast('Đã xóa sản phẩm');
+    closeDeleteConfirm();
     loadProducts();
   } else {
     toast(res?.message || 'Có lỗi xảy ra', 'error');
   }
 }
 
-async function deleteProduct(id, name) {
-  if (!confirm(`Xoá sản phẩm "${name}"?\n\nSản phẩm sẽ bị ẩn khỏi hệ thống.`)) return;
-  const res = await api.delete(`/api/admin/products/${id}`);
-  if (res && res.success) {
-    toast('Đã xoá sản phẩm', 'success');
-    loadProducts();
-  } else {
-    toast(res?.message || 'Có lỗi xảy ra', 'error');
-  }
-}
-
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeDeleteConfirm(); cancelPosEditor(); } });
 </script>
 </body>
 </html>
