@@ -1398,8 +1398,42 @@ app.post('/api/admin/notifications/broadcast', adminAuth, async (req, res) => {
 
 // ── Admin deals
 app.get('/api/admin/products', adminAuth, async (req, res) => {
-  try { res.json(await query('SELECT p.*, s.name AS shop_name FROM products p JOIN shops s ON p.shop_id=s.id WHERE p.is_deleted=false ORDER BY p.created_at DESC')); }
-  catch (err) { res.status(500).json({ message: err.message }); }
+  try {
+    const { search, shop_id } = req.query;
+    let sql = 'SELECT p.*, s.name AS shop_name FROM products p JOIN shops s ON p.shop_id=s.id WHERE p.is_deleted=false';
+    const params = [];
+    if (shop_id) { params.push(shop_id); sql += ` AND p.shop_id=$${params.length}`; }
+    if (search) { params.push(`%${search}%`); sql += ` AND p.name ILIKE $${params.length}`; }
+    sql += ' ORDER BY p.created_at DESC';
+    res.json(await query(sql, params));
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+app.get('/api/admin/products/:id', adminAuth, async (req, res) => {
+  try {
+    const product = await queryOne('SELECT p.*, s.name AS shop_name FROM products p JOIN shops s ON p.shop_id=s.id WHERE p.id=$1', [req.params.id]);
+    if (!product) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    res.json(product);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+app.put('/api/admin/products/:id', adminAuth, async (req, res) => {
+  try {
+    const product = await queryOne('SELECT * FROM products WHERE id=$1 AND is_deleted=false', [req.params.id]);
+    if (!product) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+    const { name, description, category, price, stock_quantity, is_hidden } = req.body;
+    const isHidden = is_hidden === true || is_hidden === 'true' || is_hidden === '1';
+    await query(
+      'UPDATE products SET name=$1, price=$2, description=$3, category=$4, stock_quantity=$5, is_hidden=$6, updated_at=NOW() WHERE id=$7',
+      [name || product.name, parseFloat(price) || product.price, description ?? product.description,
+       category || product.category, parseInt(stock_quantity) ?? product.stock_quantity, isHidden, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+app.delete('/api/admin/products/:id', adminAuth, async (req, res) => {
+  try {
+    await query('UPDATE products SET is_deleted=true, deleted_at=NOW() WHERE id=$1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 app.get('/api/admin/deals', adminAuth, async (req, res) => {
   try { res.json(await query('SELECT d.*, p.name AS product_name, p.price AS original_price FROM deals d JOIN products p ON d.product_id=p.id ORDER BY d.created_at DESC')); }

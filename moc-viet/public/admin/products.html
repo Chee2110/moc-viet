@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/img/logo-favicon.svg"><link rel="icon" type="image/png" href="/img/logo.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quản lý Sản phẩm — Mộc Việt Admin</title>
+  <link rel="stylesheet" href="/css/modern.css">
+  <style>
+    .filter-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
+    .filter-row input, .filter-row select {
+      padding:9px 13px; border:1.5px solid var(--border-color); border-radius:8px;
+      font-size:14px; font-family:inherit; outline:none; background:#fafafa;
+      transition:border-color 0.2s;
+    }
+    .filter-row input:focus, .filter-row select:focus { border-color:var(--primary); background:#fff; }
+    .filter-row input[type=text] { flex:1; min-width:180px; }
+
+    .prod-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; border:1.5px solid var(--border-color); }
+    .prod-table th { background:#f8f7f4; padding:11px 14px; text-align:left; font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; border-bottom:1.5px solid var(--border-color); }
+    .prod-table td { padding:12px 14px; font-size:14px; color:var(--text-main); border-bottom:1px solid var(--border-color); vertical-align:middle; }
+    .prod-table tr:last-child td { border-bottom:none; }
+    .prod-table tr:hover td { background:#fafaf8; }
+    .prod-thumb { width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color); background:#f4f2ec; }
+    .prod-thumb-placeholder { width:48px; height:48px; border-radius:8px; border:1px solid var(--border-color); background:#f4f2ec; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .prod-name { font-weight:600; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .prod-shop { font-size:12px; color:var(--text-muted); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .badge-hidden { background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
+    .badge-visible { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
+
+    .action-btn { padding:5px 12px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.15s; border:1.5px solid; }
+    .btn-edit { background:#f0fdf4; border-color:#86efac; color:#16a34a; }
+    .btn-edit:hover { background:#dcfce7; }
+    .btn-del { background:#fee2e2; border-color:#fca5a5; color:#dc2626; }
+    .btn-del:hover { background:#fca5a5; }
+
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:16px; padding:28px 28px 24px; width:100%; max-width:520px; box-shadow:0 8px 40px rgba(0,0,0,0.18); max-height:90vh; overflow-y:auto; }
+    .modal-title { font-size:18px; font-weight:800; color:var(--text-main); margin-bottom:20px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+    .form-group label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.4px; }
+    .form-group input, .form-group textarea, .form-group select {
+      padding:9px 13px; border:1.5px solid var(--border-color); border-radius:8px;
+      font-size:14px; font-family:inherit; outline:none; background:#fafafa;
+      transition:border-color 0.2s; width:100%; box-sizing:border-box;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--primary); background:#fff; }
+    .form-group textarea { resize:vertical; min-height:80px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .toggle-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .toggle-row label { font-size:14px; font-weight:600; color:var(--text-main); cursor:pointer; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    .btn-save { padding:9px 22px; background:var(--primary); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity 0.15s; }
+    .btn-save:hover { opacity:0.88; }
+    .btn-save:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn-cancel { padding:9px 18px; background:#f3f4f6; color:var(--text-muted); border:1.5px solid var(--border-color); border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-cancel:hover { background:#e5e7eb; }
+
+    .pagination { display:flex; gap:6px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
+    .page-btn { padding:6px 12px; border-radius:7px; border:1.5px solid var(--border-color); background:#fff; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+    .page-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .page-btn:hover:not(.active) { background:#f4f2ec; border-color:var(--primary); }
+    .results-count { font-size:13px; color:var(--text-muted); margin-bottom:10px; }
+  </style>
+</head>
+<body>
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-logo"><img src="/img/logo.png" alt="Mộc Việt" class="dash-logo-img"></div>
+    <div class="dash-user-info">
+      <div id="sidebar-email" class="dash-user-email">...</div>
+      <div class="dash-user-role">Quản trị viên</div>
+    </div>
+    <nav class="dash-nav">
+      <div class="dash-nav-label">Quản trị</div>
+      <a href="/admin/shops.html"><span class="nav-icon"><img src="/icons/duyetShop.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Duyệt Shop</a>
+      <a href="/admin/products.html" class="active"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Sản phẩm</a>
+      <a href="/admin/orders.html"><span class="nav-icon"><img src="/icons/product.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Đơn hàng</a>
+      <a href="/admin/deals.html"><span class="nav-icon"><img src="/icons/deal.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Deal &amp; Sự kiện</a>
+      <a href="/admin/users.html"><span class="nav-icon"><img src="/icons/profile.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Người dùng</a>
+      <a href="/admin/revenue.html"><span class="nav-icon"><img src="/icons/wallet.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Doanh thu</a>
+      <a href="/admin/categories.html"><span class="nav-icon"><img src="/icons/category.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Danh mục</a>
+      <a href="/admin/settings.html"><span class="nav-icon"><img src="/icons/camera.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Cài đặt</a>
+      <div class="dash-nav-label">Tài khoản</div>
+      <a href="/admin/profile.html"><span class="nav-icon"></span> Hồ sơ cá nhân</a>
+      <div class="dash-nav-label">Ứng dụng</div>
+      <a href="/"><span class="nav-icon"><img src="/icons/arrow-left.png" class="icon-img-sm" style="filter:brightness(10);opacity:.85" alt=""></span> Xem trang chủ</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <button onclick="logout()" class="btn btn-ghost btn-sm btn-block" style="color:rgba(255,255,255,0.7)">Đăng xuất</button>
+    </div>
+  </aside>
+
+  <main class="dash-content">
+    <div class="dash-header">
+      <div>
+        <h2 class="dash-title">Quản lý Sản phẩm</h2>
+        <p class="dash-subtitle">Chỉnh sửa và xoá sản phẩm của tất cả các shop trên hệ thống.</p>
+      </div>
+      <div style="position:relative">
+        <button class="navbar-icon-btn" id="notif-toggle" onclick="toggleNotif()">
+          <img src="/icons/notification.png" alt="">
+          <span class="notif-badge" id="notif-badge"></span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            <span>Thông báo</span>
+            <button onclick="markAllRead()" style="font-size:12px;background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Đọc tất cả</button>
+          </div>
+          <div class="notif-list" id="notif-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <input type="text" id="inp-search" placeholder="Tìm kiếm tên sản phẩm..." oninput="onSearchInput()">
+      <select id="sel-shop" onchange="loadProducts()">
+        <option value="">Tất cả Shop</option>
+      </select>
+    </div>
+
+    <div class="results-count" id="results-count"></div>
+    <div id="table-container">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal" onclick="onOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-title">Chỉnh sửa sản phẩm</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label>Tên sản phẩm <span style="color:#dc2626">*</span></label>
+      <input type="text" id="edit-name" placeholder="Tên sản phẩm">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Giá (₫)</label>
+        <input type="number" id="edit-price" min="0" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Tồn kho</label>
+        <input type="number" id="edit-stock" min="0" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Danh mục</label>
+      <select id="edit-category"></select>
+    </div>
+    <div class="form-group">
+      <label>Mô tả</label>
+      <textarea id="edit-desc" placeholder="Mô tả sản phẩm..."></textarea>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="edit-hidden" style="width:16px;height:16px;cursor:pointer">
+      <label for="edit-hidden">Ẩn sản phẩm (không hiển thị với người mua)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="btn-save" id="btn-save" onclick="saveProduct()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+requireRole('admin');
+document.getElementById('sidebar-email').textContent = getUser().email;
+initDashNotif();
+
+const PAGE_SIZE = 20;
+let allProducts = [];
+let filteredProducts = [];
+let currentPage = 1;
+let searchTimer = null;
+let categories = [];
+
+window.onload = async () => {
+  await Promise.all([loadShops(), loadCategories()]);
+  loadProducts();
+};
+
+async function loadShops() {
+  const shops = await api.get('/api/admin/shops');
+  const sel = document.getElementById('sel-shop');
+  (shops || []).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadCategories() {
+  categories = await api.get('/api/categories') || [];
+  const sel = document.getElementById('edit-category');
+  sel.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c.label;
+    sel.appendChild(opt);
+  });
+}
+
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadProducts, 350);
+}
+
+async function loadProducts() {
+  const container = document.getElementById('table-container');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  currentPage = 1;
+
+  const search = document.getElementById('inp-search').value.trim();
+  const shopId = document.getElementById('sel-shop').value;
+  let url = '/api/admin/products?';
+  if (search) url += `search=${encodeURIComponent(search)}&`;
+  if (shopId) url += `shop_id=${shopId}&`;
+
+  allProducts = await api.get(url) || [];
+  filteredProducts = allProducts;
+  renderPage();
+}
+
+function renderPage() {
+  const total = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filteredProducts.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('results-count').textContent = `Tìm thấy ${total} sản phẩm`;
+
+  const container = document.getElementById('table-container');
+  if (!pageItems.length) {
+    container.innerHTML = '<div class="empty-state"><p>Không có sản phẩm nào</p></div>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="prod-table">
+      <thead>
+        <tr>
+          <th>Ảnh</th>
+          <th>Tên sản phẩm</th>
+          <th>Shop</th>
+          <th>Giá</th>
+          <th>Tồn kho</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${pageItems.map(p => {
+          const imgSrc = getFirstImage(p);
+          const imgTag = imgSrc
+            ? `<img src="${imgSrc}" class="prod-thumb" alt="" onerror="this.style.display='none'">`
+            : `<div class="prod-thumb-placeholder">📦</div>`;
+          const badge = p.is_hidden
+            ? `<span class="badge-hidden">Đang ẩn</span>`
+            : `<span class="badge-visible">Hiển thị</span>`;
+          return `<tr>
+            <td>${imgTag}</td>
+            <td>
+              <div class="prod-name" title="${esc(p.name)}">${esc(p.name)}</div>
+            </td>
+            <td><div class="prod-shop" title="${esc(p.shop_name)}">${esc(p.shop_name)}</div></td>
+            <td>${fmtPrice(p.price)}</td>
+            <td>${p.stock_quantity ?? 0}</td>
+            <td>${badge}</td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <button class="action-btn btn-edit" onclick="openEdit(${p.id})">Sửa</button>
+                <button class="action-btn btn-del" onclick="deleteProduct(${p.id}, '${esc(p.name).replace(/'/g,"\\'")}')">Xoá</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById('pagination');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  let html = '';
+  const start = Math.max(1, currentPage - 2);
+  const end = Math.min(totalPages, currentPage + 2);
+  if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>`;
+  if (start > 2) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
+  for (let i = start; i <= end; i++) {
+    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (end < totalPages - 1) html += `<span style="padding:6px 4px;color:var(--text-muted)">…</span>`;
+  if (end < totalPages) html += `<button class="page-btn" onclick="goPage(${totalPages})">${totalPages}</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(n) { currentPage = n; renderPage(); window.scrollTo(0, 0); }
+
+function getFirstImage(p) {
+  if (p.images) {
+    const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+    const first = Array.isArray(imgs) ? imgs.find(i => i && i.type !== 'video') : null;
+    if (first) return typeof first === 'string' ? first : first.url;
+  }
+  return p.image_url || null;
+}
+
+function fmtPrice(v) {
+  return Number(v).toLocaleString('vi-VN') + '₫';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function openEdit(id) {
+  const p = await api.get(`/api/admin/products/${id}`);
+  if (!p || p.message) { toast('Không tải được sản phẩm', 'error'); return; }
+
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-name').value = p.name || '';
+  document.getElementById('edit-price').value = p.price || 0;
+  document.getElementById('edit-stock').value = p.stock_quantity || 0;
+  document.getElementById('edit-desc').value = p.description || '';
+  document.getElementById('edit-hidden').checked = !!p.is_hidden;
+  document.getElementById('edit-category').value = p.category || '';
+
+  document.getElementById('edit-modal').classList.add('open');
+  document.getElementById('edit-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+function onOverlayClick(e) {
+  if (e.target === document.getElementById('edit-modal')) closeModal();
+}
+
+async function saveProduct() {
+  const id = document.getElementById('edit-id').value;
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { toast('Tên sản phẩm không được để trống', 'error'); return; }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = 'Đang lưu...';
+
+  const res = await api.put(`/api/admin/products/${id}`, {
+    name,
+    price: document.getElementById('edit-price').value,
+    stock_quantity: document.getElementById('edit-stock').value,
+    description: document.getElementById('edit-desc').value,
+    category: document.getElementById('edit-category').value,
+    is_hidden: document.getElementById('edit-hidden').checked
+  });
+
+  btn.disabled = false; btn.textContent = 'Lưu thay đổi';
+
+  if (res && res.success) {
+    toast('Đã cập nhật sản phẩm', 'success');
+    closeModal();
+    loadProducts();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`Xoá sản phẩm "${name}"?\n\nSản phẩm sẽ bị ẩn khỏi hệ thống.`)) return;
+  const res = await api.delete(`/api/admin/products/${id}`);
+  if (res && res.success) {
+    toast('Đã xoá sản phẩm', 'success');
+    loadProducts();
+  } else {
+    toast(res?.message || 'Có lỗi xảy ra', 'error');
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
