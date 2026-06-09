@@ -4,10 +4,27 @@
       "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\Admin\\\\OneDrive\\\\Desktop\\\\MOC VIET\\\\.claude\")",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npm --version)",
+      "PowerShell(psql -U postgres -c \"SELECT 1\" 2>&1)",
+      "PowerShell(psql -U postgres -c \"CREATE DATABASE mocviet;\" 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
+      "Read(//c/Program Files/PostgreSQL/**)",
+      "PowerShell($env:PGPASSWORD = \"Dhc2110@\"; psql -U postgres -c \"SELECT 1 FROM pg_database WHERE datname='mocviet';\" 2>&1)",
+      "PowerShell($env:PGPASSWORD = 'Dhc2110@'; psql -U postgres -c \"SELECT 1 FROM pg_database WHERE datname='mocviet';\" 2>&1)",
+      "PowerShell(netstat -an)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\data\" -ErrorAction SilentlyContinue | Where-Object {$_.Name -eq 'pg_hba.conf'} | Select-Object FullName)",
+      "Bash(sc query *)",
+      "Bash(chmod 600 /tmp/pgpass.conf)",
+      "Bash(PGPASSFILE=/tmp/pgpass.conf psql -U postgres -h localhost -c \"\\\\l\")",
+      "Bash(cp \"C:/Program Files/PostgreSQL/18/data/pg_hba.conf\" \"C:/Program Files/PostgreSQL/18/data/pg_hba.conf.backup\" 2>&1)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/pg_ctl.exe\" reload -D \"C:/Program Files/PostgreSQL/18/data\")",
+      "PowerShell(Restart-Service -Name \"postgresql-x64-18\" -Force 2>&1)",
+      "Bash(net stop *)",
+      "Bash(net start *)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\Admin\\OneDrive\\Desktop\\MOC VIET\\.claude"
+      "c:\\Users\\Admin\\OneDrive\\Desktop\\MOC VIET\\.claude",
+      "C:\\Program Files\\PostgreSQL\\18\\data"
     ]
   }
 }
