@@ -123,6 +123,16 @@ app.get('/san-pham/:slug', (req, res) => res.sendFile(path.join(__dirname, 'publ
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/icons', express.static(path.join(__dirname, 'icons')));
 
+// ── BonCi: quản lý kho hàng & hóa đơn ─────────────────────────────────────
+const bonciRoutes = require('./bonci-routes');
+app.use('/api/inv', bonciRoutes);
+// Logo của BonCi (bundle tham chiếu từ root)
+app.get('/logo.png',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'inv', 'logo.png')));
+app.get('/logo_hoa_don.jpg',(req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'inv', 'logo_hoa_don.jpg')));
+// Serve BonCi SPA cho React Router (phải đặt sau API routes)
+app.get('/admin/inv', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'inv', 'index.html')));
+app.get('/admin/inv/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'inv', 'index.html')));
+
 const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs2.existsSync(uploadDir)) fs2.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({

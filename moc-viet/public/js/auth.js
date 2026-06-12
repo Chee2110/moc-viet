@@ -101,6 +101,7 @@ function initNavbar() {
       <div class="user-dropdown" id="user-dropdown">
         <a href="${dashLink}"><img src="/icons/dashboard.png" class="icon-img-sm" alt=""> Dashboard</a>
         ${user.role !== 'buyer' ? `<a href="/${user.role}/profile.html"><img src="/icons/profile.png" class="icon-img-sm" alt=""> Trang cá nhân</a>` : ''}
+        ${user.role === 'admin' ? `<a href="#" onclick="openBonci(event)"><img src="/icons/dashboard.png" class="icon-img-sm" alt=""> Quản lý kho</a>` : ''}
         ${user.role === 'buyer' ? '<a href="/buyer/wishlist.html"><span style="margin-right:8px">❤️</span> Yêu thích</a>' : ''}
         ${user.role === 'buyer' ? '<a href="/buyer/track.html"><img src="/icons/clock.png" class="icon-img-sm" alt=""> Tra cứu đơn</a>' : ''}
         <button onclick="logout()"><img src="/icons/profile.png" class="icon-img-sm" alt=""> Đăng xuất</button>
@@ -195,4 +196,19 @@ function initMobileMenu() {
   window.addEventListener('resize', () => {
     if (window.innerWidth > 768) closeSidebar();
   });
+}
+
+async function openBonci(e) {
+  e.preventDefault();
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res  = await fetch('/api/inv/auth/sso', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('bonci_token', data.token);
+      localStorage.setItem('bonci_user', JSON.stringify(data.user));
+    }
+  } catch {}
+  window.open('/admin/inv/', '_blank');
 }
