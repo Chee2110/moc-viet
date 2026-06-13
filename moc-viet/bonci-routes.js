@@ -104,7 +104,16 @@ async function nextProductCode(client, companyId) {
 router.get('/products', invAuth, async (req, res) => {
   try {
     const rows = await query(
-      `SELECT p.*, COALESCE(i.quantity,0)::float8 AS stock
+      `SELECT p.id, p.company_id, p.product_code, p.name, p.unit,
+              p.cost_price, p.sell_price, p.description, p.category, p.created_at,
+              COALESCE(i.quantity,0)::float8 AS stock,
+              COALESCE(
+                NULLIF(p.distributor,''),
+                (SELECT supplier FROM inv_inventory_logs
+                 WHERE product_id=p.id AND company_id=p.company_id
+                   AND supplier IS NOT NULL AND supplier!=''
+                 ORDER BY date DESC, id DESC LIMIT 1)
+              ) AS distributor
        FROM inv_products p LEFT JOIN inv_inventory i ON i.product_id=p.id
        WHERE p.company_id=$1 ORDER BY p.product_code`,
       [req.user.company_id]
@@ -989,7 +998,14 @@ router.get('/reports/products', invAuth, async (req, res) => {
     const companyId=req.user.company_id, now=new Date();
     const from=req.query.from||`${now.getFullYear()}-01-01`, to=req.query.to||now.toISOString().slice(0,10);
     const rows=await query(
-      `SELECT p.id,p.product_code,p.name,p.unit,p.cost_price::float8,p.sell_price::float8,p.category,
+      `SELECT p.id,p.product_code,p.name,p.unit,p.cost_price::float8,p.sell_price::float8,p.category,p.description,
+              COALESCE(
+                NULLIF(p.distributor,''),
+                (SELECT supplier FROM inv_inventory_logs
+                 WHERE product_id=p.id AND company_id=p.company_id
+                   AND supplier IS NOT NULL AND supplier!=''
+                 ORDER BY date DESC, id DESC LIMIT 1)
+              ) AS distributor,
               COALESCE(inv.quantity,0)::float8 AS stock,
               COALESCE(SUM(CASE WHEN il.type IN ('import','init') AND il.invoice_id IS NULL AND il.date BETWEEN $1 AND $2 THEN il.quantity ELSE 0 END),0)::float8 AS imported_qty,
               COALESCE((SELECT SUM(CASE WHEN i2.is_return=0 OR i2.is_return IS NULL THEN ii2.quantity ELSE -ii2.quantity END)
@@ -997,7 +1013,7 @@ router.get('/reports/products', invAuth, async (req, res) => {
                         WHERE ii2.product_id=p.id AND i2.company_id=p.company_id AND i2.date BETWEEN $3 AND $4),0)::float8 AS sold_qty
        FROM inv_products p LEFT JOIN inv_inventory inv ON inv.product_id=p.id
        LEFT JOIN inv_inventory_logs il ON il.product_id=p.id AND il.company_id=p.company_id
-       WHERE p.company_id=$5 GROUP BY p.id,inv.quantity ORDER BY p.product_code`,
+       WHERE p.company_id=$5 GROUP BY p.id,p.distributor,inv.quantity ORDER BY p.product_code`,
       [from,to,from,to,companyId]
     );
     res.json(rows);
