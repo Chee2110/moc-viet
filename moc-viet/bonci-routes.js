@@ -113,6 +113,26 @@ router.get('/products', invAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/products/meta', invAuth, async (req, res) => {
+  try {
+    const companyId = req.user.company_id;
+    const [distributorsRes, unitsRes] = await Promise.all([
+      query(
+        `SELECT DISTINCT distributor FROM inv_products WHERE company_id=$1 AND distributor!='' AND distributor IS NOT NULL ORDER BY distributor`,
+        [companyId]
+      ),
+      query(
+        `SELECT DISTINCT unit FROM inv_products WHERE company_id=$1 AND unit!='' AND unit IS NOT NULL ORDER BY unit`,
+        [companyId]
+      )
+    ]);
+    res.json({
+      distributors: distributorsRes.map(r => r.distributor),
+      units: unitsRes.map(r => r.unit)
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/products', invAuth, async (req, res) => {
   const { product_code, name, unit, cost_price, sell_price, description, category, distributor, initial_stock } = req.body;
   const companyId = req.user.company_id;
@@ -132,8 +152,8 @@ router.post('/products', invAuth, async (req, res) => {
     if (initial_stock && Number(initial_stock) > 0) {
       const today = new Date().toISOString().slice(0,10);
       await client.query(
-        'INSERT INTO inv_inventory_logs(product_id,company_id,type,quantity,price,date,note) VALUES($1,$2,$3,$4,$5,$6,$7)',
-        [productId, companyId, 'init', initial_stock, cost_price||0, today, 'Tồn kho ban đầu']
+        'INSERT INTO inv_inventory_logs(product_id,company_id,type,quantity,price,date,note,supplier) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
+        [productId, companyId, 'init', initial_stock, cost_price||0, today, 'Tồn kho ban đầu', distributor||'']
       );
       await client.query('UPDATE inv_inventory SET quantity=$1,updated_at=NOW() WHERE product_id=$2', [initial_stock, productId]);
     }
@@ -328,7 +348,11 @@ router.get('/inventory/imports', invAuth, async (req, res) => {
 
     const rows = await query(sql, params);
     const suppliersRes = await query(
-      `SELECT DISTINCT supplier FROM inv_inventory_logs WHERE company_id=$1 AND type='import' AND supplier!='' AND supplier IS NOT NULL ORDER BY supplier`,
+      `SELECT DISTINCT supplier FROM (
+        SELECT supplier FROM inv_inventory_logs WHERE company_id=$1 AND type IN ('import','init') AND supplier!='' AND supplier IS NOT NULL
+        UNION
+        SELECT distributor AS supplier FROM inv_products WHERE company_id=$1 AND distributor!='' AND distributor IS NOT NULL
+      ) AS s ORDER BY supplier`,
       [companyId]
     );
     const suppliers = suppliersRes.map(r => r.supplier);

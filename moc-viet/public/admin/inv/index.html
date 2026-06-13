@@ -107,5 +107,46 @@
         });
       })();
     </script>
+
+    <!-- Datalist cho autocomplete nhà cung cấp và đơn vị -->
+    <datalist id="bonci-distributor-dl"></datalist>
+    <datalist id="bonci-unit-dl"></datalist>
+    <script>
+      (function () {
+        function loadBonciMeta() {
+          var token = localStorage.getItem('bonci_token');
+          if (!token) { setTimeout(loadBonciMeta, 2000); return; }
+          fetch('/api/inv/products/meta', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(data) {
+            if (!data) return;
+            var dList = document.getElementById('bonci-distributor-dl');
+            var uList = document.getElementById('bonci-unit-dl');
+            if (dList && data.distributors) {
+              dList.innerHTML = data.distributors.map(function(d) {
+                return '<option value="' + d.replace(/"/g, '&quot;') + '">';
+              }).join('');
+            }
+            if (uList && data.units) {
+              uList.innerHTML = data.units.map(function(u) {
+                return '<option value="' + u.replace(/"/g, '&quot;') + '">';
+              }).join('');
+            }
+          })
+          .catch(function() {});
+        }
+        // Load ngay khi trang sẵn sàng
+        setTimeout(loadBonciMeta, 1500);
+        // Reload khi focus vào input autocomplete để luôn cập nhật mới nhất
+        document.addEventListener('focusin', function(e) {
+          var list = e.target && e.target.getAttribute && e.target.getAttribute('list');
+          if (list === 'bonci-distributor-dl' || list === 'bonci-unit-dl') {
+            loadBonciMeta();
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
