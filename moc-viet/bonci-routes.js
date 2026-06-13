@@ -181,6 +181,12 @@ router.put('/products/:id', invAuth, async (req, res) => {
        WHERE id=$9 AND company_id=$10`,
       [product_code||null, name||null, unit||null, cost_price??null, sell_price??null, description??null, category??null, distributor??null, req.params.id, companyId]
     );
+    if (distributor !== null && distributor !== undefined) {
+      await query(
+        `UPDATE inv_inventory_logs SET supplier=$1 WHERE product_id=$2 AND company_id=$3 AND type='init'`,
+        [distributor, req.params.id, companyId]
+      );
+    }
     res.json({ message: 'Cập nhật thành công' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
