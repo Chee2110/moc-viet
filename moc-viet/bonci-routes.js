@@ -534,8 +534,8 @@ router.get('/invoices/:id/export-excel', invAuth, async (req, res) => {
     n=ws.addRow([null,null,null,`Mã số thuế: ${company?.tax_code||''}`]).number;
     merge(n,'D','H'); gc(n,'D').font={size:12,name:TNR}; ws.getRow(n).height=20;
 
-    const repStr=[company?.representative?`Người đại diện: ${company.representative}`:'',company?.representative_title?`Chức vụ: ${company.representative_title}`:''].filter(Boolean).join('  -  ');
-    n=ws.addRow([null,null,null,repStr]).number; merge(n,'D','H'); gc(n,'D').font={size:12,name:TNR}; ws.getRow(n).height=20;
+    const bankStr=[company?.bank_account?`Số tài khoản: ${company.bank_account}${company?.bank_name?' - '+company.bank_name:''}`:'',company?.bank_account_2?`STK 2: ${company.bank_account_2}${company?.bank_name_2?' - '+company.bank_name_2:''}`:''].filter(Boolean).join('  |  ');
+    n=ws.addRow([null,null,null,bankStr]).number; merge(n,'D','H'); gc(n,'D').font={size:12,name:TNR}; ws.getRow(n).height=20;
 
     const telStr=`Số điện thoại: ${company?.phone||''}${company?.email?'      -  Gmail: '+company.email:''}`;
     n=ws.addRow([null,null,null,telStr]).number; merge(n,'D','H'); gc(n,'D').font={size:12,name:TNR}; ws.getRow(n).height=20;
