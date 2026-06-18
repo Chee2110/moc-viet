@@ -7,6 +7,8 @@ const path            = require('path');
 // Parse TIMESTAMPTZ (1184) and TIMESTAMP (1114) always as UTC
 types.setTypeParser(1184, str => new Date(str));
 types.setTypeParser(1114, str => new Date(str + 'Z'));
+// Return DATE (1082) as plain "YYYY-MM-DD" string — prevents timezone shift
+types.setTypeParser(1082, str => str);
 
 const pool = new Pool({
   host:     process.env.DB_HOST     || 'localhost',
