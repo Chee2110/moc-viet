@@ -126,3 +126,4 @@ async function initDatabase() {
 }
 
 module.exports = { initDatabase, getPool, query, queryOne };
+// Watch reload trigger

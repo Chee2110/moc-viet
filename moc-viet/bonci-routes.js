@@ -402,10 +402,16 @@ async function nextInvoiceNumber(client, companyId) {
   const now=new Date(), yy=String(now.getFullYear()).slice(-2), mm=String(now.getMonth()+1).padStart(2,'0');
   const prefix=`${yy}${mm}`;
   const r = await client.query(
-    `SELECT COUNT(*)::int AS count FROM inv_invoices WHERE company_id=$1 AND invoice_number LIKE $2 AND (is_return=0 OR is_return IS NULL)`,
+    `SELECT MAX(invoice_number) AS max_num FROM inv_invoices WHERE company_id=$1 AND invoice_number LIKE $2 AND invoice_number NOT LIKE '%-HT%'`,
     [companyId, `${prefix}%`]
   );
-  return `${prefix}${String((r.rows[0].count||0)+1).padStart(3,'0')}`;
+  const maxNum = r.rows[0].max_num;
+  let nextNum = 1;
+  if (maxNum) {
+    const lastSuffix = parseInt(maxNum.slice(prefix.length)) || 0;
+    nextNum = lastSuffix + 1;
+  }
+  return `${prefix}${String(nextNum).padStart(3,'0')}`;
 }
 
 async function upsertCustomer(client, companyId, name, address) {
@@ -724,10 +730,20 @@ router.delete('/invoices/:id', invAuth, async (req, res) => {
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
-    const inv=await client.query('SELECT id FROM inv_invoices WHERE id=$1 AND company_id=$2',[req.params.id,req.user.company_id]);
+    const inv=await client.query('SELECT * FROM inv_invoices WHERE id=$1 AND company_id=$2',[req.params.id,req.user.company_id]);
     if (!inv.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error:'Không tìm thấy hóa đơn' }); }
-    const items=await client.query('SELECT * FROM inv_invoice_items WHERE invoice_id=$1',[req.params.id]);
-    for (const item of items.rows) await client.query('UPDATE inv_inventory SET quantity=quantity+$1,updated_at=NOW() WHERE product_id=$2',[item.quantity,item.product_id]);
+    const invoice=inv.rows[0];
+    
+    // Chỉ hoàn lại tồn kho nếu hóa đơn chưa thanh toán (unpaid) và không phải là hóa đơn hoàn hàng (is_return != 1)
+    const shouldRestoreStock = (invoice.status === 'unpaid' && (invoice.is_return === 0 || invoice.is_return === null));
+    
+    if (shouldRestoreStock) {
+      const items=await client.query('SELECT * FROM inv_invoice_items WHERE invoice_id=$1',[req.params.id]);
+      for (const item of items.rows) {
+        await client.query('UPDATE inv_inventory SET quantity=quantity+$1,updated_at=NOW() WHERE product_id=$2',[item.quantity,item.product_id]);
+      }
+    }
+    
     await client.query('DELETE FROM inv_inventory_logs WHERE invoice_id=$1',[req.params.id]);
     await client.query('DELETE FROM inv_invoice_items WHERE invoice_id=$1',[req.params.id]);
     await client.query('DELETE FROM inv_invoices WHERE id=$1',[req.params.id]);
@@ -747,26 +763,18 @@ router.post('/invoices/:id/return', invAuth, async (req, res) => {
     const orig=await client.query('SELECT * FROM inv_invoices WHERE id=$1 AND company_id=$2 AND (is_return=0 OR is_return IS NULL)',[req.params.id,companyId]);
     if (!orig.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error:'Không tìm thấy hóa đơn' }); }
     const original=orig.rows[0];
-    const returnDate=new Date().toISOString().slice(0,10), vatRate=Number(original.vat_rate);
-    const subtotal=items.reduce((s,i)=>s+Number(i.quantity)*Number(i.unit_price),0);
-    const vatAmount=subtotal*vatRate/100, totalAmount=subtotal+vatAmount;
-    const rc=await client.query('SELECT COUNT(*)::int AS cnt FROM inv_invoices WHERE original_invoice_id=$1 AND is_return=1',[req.params.id]);
-    const returnSuffix=(rc.rows[0].cnt||0)+1, returnNumber=`${original.invoice_number}-HT${returnSuffix}`;
-    const r=await client.query(
-      `INSERT INTO inv_invoices(company_id,invoice_number,customer_id,customer_name,customer_address,customer_representative,customer_title,date,vat_rate,subtotal,vat_amount,total_amount,status,note,is_return,original_invoice_id)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'paid',$13,1,$14) RETURNING id`,
-      [companyId,returnNumber,original.customer_id,original.customer_name,original.customer_address,original.customer_representative,original.customer_title,returnDate,vatRate,subtotal,vatAmount,totalAmount,`Hoàn hàng từ ${original.invoice_number}`,Number(req.params.id)]
-    );
-    const returnId=r.rows[0].id;
+    const returnDate=new Date().toISOString().slice(0,10);
+    
+    // Cập nhật trạng thái hóa đơn gốc thành hoàn hàng
+    await client.query('UPDATE inv_invoices SET is_return=1 WHERE id=$1', [req.params.id]);
+    
     for (const item of items) {
-      await client.query('INSERT INTO inv_invoice_items(invoice_id,product_id,product_code,product_name,unit,quantity,unit_price,cost_price,total_price) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-        [returnId,item.product_id,item.product_code,item.product_name,item.unit,item.quantity,item.unit_price,item.cost_price||0,Number(item.quantity)*Number(item.unit_price)]);
       await client.query('UPDATE inv_inventory SET quantity=quantity+$1,updated_at=NOW() WHERE product_id=$2',[item.quantity,item.product_id]);
       await client.query(`INSERT INTO inv_inventory_logs(product_id,company_id,type,quantity,price,date,note,invoice_id) VALUES($1,$2,'import',$3,$4,$5,$6,$7)`,
-        [item.product_id,companyId,item.quantity,item.cost_price||0,returnDate,`Hoàn hàng từ ${original.invoice_number}`,returnId]);
+        [item.product_id,companyId,item.quantity,item.cost_price||0,returnDate,`Hoàn hàng từ ${original.invoice_number}`,Number(req.params.id)]);
     }
     await client.query('COMMIT');
-    res.json({ message:'Hoàn hàng thành công', invoice_number:returnNumber });
+    res.json({ message:'Hoàn hàng thành công', invoice_number:original.invoice_number });
   } catch (err) { await client.query('ROLLBACK'); res.status(500).json({ error:err.message }); }
   finally { client.release(); }
 });
@@ -937,8 +945,8 @@ router.get('/reports/dashboard', invAuth, async (req, res) => {
     const totalProducts=await queryOne('SELECT COUNT(*)::int AS count FROM inv_products WHERE company_id=$1',[companyId]);
     const totalStock=await queryOne('SELECT COALESCE(SUM(i.quantity),0)::float8 AS total FROM inv_inventory i JOIN inv_products p ON p.id=i.product_id WHERE p.company_id=$1',[companyId]);
     const monthRevenue=await queryOne(
-      `SELECT COALESCE(SUM(CASE WHEN inv.is_return=0 OR inv.is_return IS NULL THEN ii.quantity*ii.unit_price ELSE -(ii.quantity*ii.unit_price) END),0)::float8 AS revenue,
-              COALESCE(SUM(CASE WHEN inv.is_return=0 OR inv.is_return IS NULL THEN ii.quantity*ii.cost_price ELSE -(ii.quantity*ii.cost_price) END),0)::float8 AS cogs
+      `SELECT COALESCE(SUM(CASE WHEN inv.is_return=1 THEN 0 ELSE ii.quantity*ii.unit_price END),0)::float8 AS revenue,
+              COALESCE(SUM(CASE WHEN inv.is_return=1 THEN 0 ELSE ii.quantity*ii.cost_price END),0)::float8 AS cogs
        FROM inv_invoice_items ii JOIN inv_invoices inv ON inv.id=ii.invoice_id
        WHERE inv.company_id=$1 AND inv.date BETWEEN $2 AND $3`,
       [companyId,monthStart,monthEnd]
@@ -947,12 +955,12 @@ router.get('/reports/dashboard', invAuth, async (req, res) => {
     const year=now.getFullYear(), monthlyRevenue=[];
     for (let m=1;m<=12;m++) {
       const mStart=`${year}-${String(m).padStart(2,'0')}-01`, mEnd=new Date(year,m,0).toISOString().slice(0,10);
-      const r=await queryOne(`SELECT COALESCE(SUM(ii.quantity*ii.unit_price),0)::float8 AS revenue FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3`,[companyId,mStart,mEnd]);
+      const r=await queryOne(`SELECT COALESCE(SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity*ii.unit_price END),0)::float8 AS revenue FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3`,[companyId,mStart,mEnd]);
       monthlyRevenue.push({ month:m, revenue:Number(r.revenue) });
     }
 
     const top5Selling=await query(
-      `SELECT ii.product_name, SUM(ii.quantity)::float8 AS total_qty, SUM(ii.total_price)::float8 AS total_revenue
+      `SELECT ii.product_name, SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity END)::float8 AS total_qty, SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)::float8 AS total_revenue
        FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id
        WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3
        GROUP BY ii.product_id,ii.product_name ORDER BY total_qty DESC LIMIT 5`,
@@ -968,20 +976,20 @@ router.get('/reports/dashboard', invAuth, async (req, res) => {
 
     const pieCategoryData=await query(
       `SELECT COALESCE(NULLIF(p.category,''),'Không phân loại') AS name,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)::float8 AS value
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)::float8 AS value
        FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id JOIN inv_products p ON p.id=ii.product_id
        WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3
-       GROUP BY COALESCE(NULLIF(p.category,''),'Không phân loại') HAVING SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)>0
+       GROUP BY COALESCE(NULLIF(p.category,''),'Không phân loại') HAVING SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)>0
        ORDER BY value DESC`,
       [companyId,monthStart,monthEnd]
     );
 
     const pieProductData=await query(
       `SELECT ii.product_name AS name, COALESCE(NULLIF(p.category,''),'Không phân loại') AS category,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)::float8 AS value
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)::float8 AS value
        FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id JOIN inv_products p ON p.id=ii.product_id
        WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3 GROUP BY ii.product_id,ii.product_name,p.category
-       HAVING SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)>0 ORDER BY value DESC`,
+       HAVING SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)>0 ORDER BY value DESC`,
       [companyId,monthStart,monthEnd]
     );
 
@@ -1008,7 +1016,7 @@ router.get('/reports/products', invAuth, async (req, res) => {
               ) AS distributor,
               COALESCE(inv.quantity,0)::float8 AS stock,
               COALESCE(SUM(CASE WHEN il.type IN ('import','init') AND il.invoice_id IS NULL AND il.date BETWEEN $1 AND $2 THEN il.quantity ELSE 0 END),0)::float8 AS imported_qty,
-              COALESCE((SELECT SUM(CASE WHEN i2.is_return=0 OR i2.is_return IS NULL THEN ii2.quantity ELSE -ii2.quantity END)
+              COALESCE((SELECT SUM(CASE WHEN i2.is_return=1 THEN 0 ELSE ii2.quantity END)
                         FROM inv_invoice_items ii2 JOIN inv_invoices i2 ON i2.id=ii2.invoice_id
                         WHERE ii2.product_id=p.id AND i2.company_id=p.company_id AND i2.date BETWEEN $3 AND $4),0)::float8 AS sold_qty
        FROM inv_products p LEFT JOIN inv_inventory inv ON inv.product_id=p.id
@@ -1035,8 +1043,8 @@ router.get('/reports/revenue', invAuth, async (req, res) => {
        FROM inv_products p LEFT JOIN inv_inventory inv ON inv.product_id=p.id
        LEFT JOIN (SELECT product_id, SUM(quantity*price) AS total_import_cost FROM inv_inventory_logs WHERE type IN ('import','init') AND company_id=$1 GROUP BY product_id) import_data ON import_data.product_id=p.id
        LEFT JOIN (SELECT ii.product_id,
-                    SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity*ii.unit_price ELSE -(ii.quantity*ii.unit_price) END) AS total_revenue,
-                    SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity*ii.cost_price ELSE -(ii.quantity*ii.cost_price) END) AS total_cogs
+                    SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity*ii.unit_price END) AS total_revenue,
+                    SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity*ii.cost_price END) AS total_cogs
                   FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id
                   WHERE i.company_id=$2 AND i.date BETWEEN $3 AND $4 GROUP BY ii.product_id) sale_data ON sale_data.product_id=p.id
        WHERE p.company_id=$5 ORDER BY p.product_code`,
@@ -1055,26 +1063,26 @@ router.get('/reports/category-revenue', invAuth, async (req, res) => {
 
     const catRows=await query(
       `SELECT COALESCE(NULLIF(p.category,''),'Không phân loại') AS category,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)::float8 AS revenue,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity*ii.cost_price ELSE -(ii.quantity*ii.cost_price) END)::float8 AS cogs,
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)::float8 AS revenue,
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity*ii.cost_price END)::float8 AS cogs,
               COUNT(DISTINCT ii.product_id)::int AS product_count,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity ELSE -ii.quantity END)::float8 AS total_qty
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity END)::float8 AS total_qty
        FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id JOIN inv_products p ON p.id=ii.product_id
        WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3
        GROUP BY COALESCE(NULLIF(p.category,''),'Không phân loại')
-       HAVING SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)>0
+       HAVING SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)>0
        ORDER BY revenue DESC`,
       [companyId,from,to]
     );
 
     const productRows=await query(
       `SELECT COALESCE(NULLIF(p.category,''),'Không phân loại') AS category, ii.product_name AS name, p.product_code,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)::float8 AS revenue,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity*ii.cost_price ELSE -(ii.quantity*ii.cost_price) END)::float8 AS cogs,
-              SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.quantity ELSE -ii.quantity END)::float8 AS qty
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)::float8 AS revenue,
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity*ii.cost_price END)::float8 AS cogs,
+              SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.quantity END)::float8 AS qty
        FROM inv_invoice_items ii JOIN inv_invoices i ON i.id=ii.invoice_id JOIN inv_products p ON p.id=ii.product_id
        WHERE i.company_id=$1 AND i.date BETWEEN $2 AND $3 GROUP BY ii.product_id,ii.product_name,p.category,p.product_code
-       HAVING SUM(CASE WHEN i.is_return=0 OR i.is_return IS NULL THEN ii.total_price ELSE -ii.total_price END)>0
+       HAVING SUM(CASE WHEN i.is_return=1 THEN 0 ELSE ii.total_price END)>0
        ORDER BY revenue DESC`,
       [companyId,from,to]
     );
