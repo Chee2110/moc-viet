@@ -200,6 +200,34 @@ router.put('/products/:id', invAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.patch('/products/:id/stock', invAuth, async (req, res) => {
+  try {
+    const { stock } = req.body;
+    const companyId = req.user.company_id;
+    if (stock === undefined || isNaN(Number(stock))) {
+      return res.status(400).json({ error: 'Số lượng tồn kho không hợp lệ' });
+    }
+    const quantity = Number(stock);
+    const productId = req.params.id;
+    const product = await queryOne('SELECT id FROM inv_products WHERE id=$1 AND company_id=$2', [productId, companyId]);
+    if (!product) return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+
+    await query('UPDATE inv_inventory SET quantity=$1, updated_at=NOW() WHERE product_id=$2', [quantity, productId]);
+
+    // Thêm log cập nhật
+    const today = new Date().toISOString().slice(0, 10);
+    await query(
+      `INSERT INTO inv_inventory_logs(product_id, company_id, type, quantity, price, date, note) 
+       VALUES($1, $2, 'init', $3, 0, $4, 'Cập nhật tồn kho trực tiếp')`,
+      [productId, companyId, quantity, today]
+    );
+
+    res.json({ message: 'Cập nhật tồn kho thành công', stock: quantity });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/products/:id', invAuth, async (req, res) => {
   const client = await getPool().connect();
   try {
