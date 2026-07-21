@@ -583,6 +583,9 @@ router.get('/invoices/:id/export-excel', invAuth, async (req, res) => {
     n=ws.addRow([null,`Ngày ${d.getDate()} tháng ${d.getMonth()+1} năm ${d.getFullYear()}`]).number;
     merge(n,'B','H'); gc(n,'B').font={bold:true,size:12,name:TNR}; gc(n,'B').alignment=CA; ws.getRow(n).height=22;
 
+    n=ws.addRow([null,`Số hóa đơn: ${invoice.invoice_number}`]).number;
+    merge(n,'B','H'); gc(n,'B').font={italic:true,size:12,name:TNR}; gc(n,'B').alignment=CA; ws.getRow(n).height=22;
+
     n=ws.addRow([null,'Kính gửi: ',null,invoice.customer_name||'']).number;
     merge(n,'B','C'); gc(n,'B').font={size:12,name:TNR}; gc(n,'B').alignment=LA; gc(n,'D').font={bold:true,size:11,name:TNR}; ws.getRow(n).height=22;
 
